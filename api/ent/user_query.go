@@ -4,13 +4,18 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/agent"
+	"github.com/codelite7/momentum/api/ent/bookmark"
+	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
@@ -18,12 +23,19 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx        *QueryContext
-	order      []user.OrderOption
-	inters     []Interceptor
-	predicates []predicate.User
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*User) error
+	ctx                *QueryContext
+	order              []user.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.User
+	withAgent          *AgentQuery
+	withBookmarks      *BookmarkQuery
+	withThreads        *ThreadQuery
+	withMessages       *MessageQuery
+	modifiers          []func(*sql.Selector)
+	loadTotal          []func(context.Context, []*User) error
+	withNamedBookmarks map[string]*BookmarkQuery
+	withNamedThreads   map[string]*ThreadQuery
+	withNamedMessages  map[string]*MessageQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +70,94 @@ func (uq *UserQuery) Unique(unique bool) *UserQuery {
 func (uq *UserQuery) Order(o ...user.OrderOption) *UserQuery {
 	uq.order = append(uq.order, o...)
 	return uq
+}
+
+// QueryAgent chains the current query on the "agent" edge.
+func (uq *UserQuery) QueryAgent() *AgentQuery {
+	query := (&AgentClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(agent.Table, agent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.AgentTable, user.AgentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBookmarks chains the current query on the "bookmarks" edge.
+func (uq *UserQuery) QueryBookmarks() *BookmarkQuery {
+	query := (&BookmarkClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(bookmark.Table, bookmark.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.BookmarksTable, user.BookmarksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryThreads chains the current query on the "threads" edge.
+func (uq *UserQuery) QueryThreads() *ThreadQuery {
+	query := (&ThreadClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(thread.Table, thread.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ThreadsTable, user.ThreadsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryMessages chains the current query on the "messages" edge.
+func (uq *UserQuery) QueryMessages() *MessageQuery {
+	query := (&MessageClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(message.Table, message.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.MessagesTable, user.MessagesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first User entity from the query.
@@ -247,15 +347,63 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:     uq.config,
-		ctx:        uq.ctx.Clone(),
-		order:      append([]user.OrderOption{}, uq.order...),
-		inters:     append([]Interceptor{}, uq.inters...),
-		predicates: append([]predicate.User{}, uq.predicates...),
+		config:        uq.config,
+		ctx:           uq.ctx.Clone(),
+		order:         append([]user.OrderOption{}, uq.order...),
+		inters:        append([]Interceptor{}, uq.inters...),
+		predicates:    append([]predicate.User{}, uq.predicates...),
+		withAgent:     uq.withAgent.Clone(),
+		withBookmarks: uq.withBookmarks.Clone(),
+		withThreads:   uq.withThreads.Clone(),
+		withMessages:  uq.withMessages.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
 	}
+}
+
+// WithAgent tells the query-builder to eager-load the nodes that are connected to
+// the "agent" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithAgent(opts ...func(*AgentQuery)) *UserQuery {
+	query := (&AgentClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withAgent = query
+	return uq
+}
+
+// WithBookmarks tells the query-builder to eager-load the nodes that are connected to
+// the "bookmarks" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithBookmarks(opts ...func(*BookmarkQuery)) *UserQuery {
+	query := (&BookmarkClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withBookmarks = query
+	return uq
+}
+
+// WithThreads tells the query-builder to eager-load the nodes that are connected to
+// the "threads" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithThreads(opts ...func(*ThreadQuery)) *UserQuery {
+	query := (&ThreadClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withThreads = query
+	return uq
+}
+
+// WithMessages tells the query-builder to eager-load the nodes that are connected to
+// the "messages" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithMessages(opts ...func(*MessageQuery)) *UserQuery {
+	query := (&MessageClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withMessages = query
+	return uq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -334,8 +482,14 @@ func (uq *UserQuery) prepareQuery(ctx context.Context) error {
 
 func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, error) {
 	var (
-		nodes = []*User{}
-		_spec = uq.querySpec()
+		nodes       = []*User{}
+		_spec       = uq.querySpec()
+		loadedTypes = [4]bool{
+			uq.withAgent != nil,
+			uq.withBookmarks != nil,
+			uq.withThreads != nil,
+			uq.withMessages != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*User).scanValues(nil, columns)
@@ -343,6 +497,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &User{config: uq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(uq.modifiers) > 0 {
@@ -357,12 +512,182 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := uq.withAgent; query != nil {
+		if err := uq.loadAgent(ctx, query, nodes, nil,
+			func(n *User, e *Agent) { n.Edges.Agent = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withBookmarks; query != nil {
+		if err := uq.loadBookmarks(ctx, query, nodes,
+			func(n *User) { n.Edges.Bookmarks = []*Bookmark{} },
+			func(n *User, e *Bookmark) { n.Edges.Bookmarks = append(n.Edges.Bookmarks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withThreads; query != nil {
+		if err := uq.loadThreads(ctx, query, nodes,
+			func(n *User) { n.Edges.Threads = []*Thread{} },
+			func(n *User, e *Thread) { n.Edges.Threads = append(n.Edges.Threads, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withMessages; query != nil {
+		if err := uq.loadMessages(ctx, query, nodes,
+			func(n *User) { n.Edges.Messages = []*Message{} },
+			func(n *User, e *Message) { n.Edges.Messages = append(n.Edges.Messages, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedBookmarks {
+		if err := uq.loadBookmarks(ctx, query, nodes,
+			func(n *User) { n.appendNamedBookmarks(name) },
+			func(n *User, e *Bookmark) { n.appendNamedBookmarks(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedThreads {
+		if err := uq.loadThreads(ctx, query, nodes,
+			func(n *User) { n.appendNamedThreads(name) },
+			func(n *User, e *Thread) { n.appendNamedThreads(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedMessages {
+		if err := uq.loadMessages(ctx, query, nodes,
+			func(n *User) { n.appendNamedMessages(name) },
+			func(n *User, e *Message) { n.appendNamedMessages(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range uq.loadTotal {
 		if err := uq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (uq *UserQuery) loadAgent(ctx context.Context, query *AgentQuery, nodes []*User, init func(*User), assign func(*User, *Agent)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.Agent(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.AgentColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_agent
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_agent" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_agent" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*User, init func(*User), assign func(*User, *Bookmark)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Bookmark(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.BookmarksColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_bookmarks
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_bookmarks" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_bookmarks" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadThreads(ctx context.Context, query *ThreadQuery, nodes []*User, init func(*User), assign func(*User, *Thread)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Thread(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ThreadsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_threads
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_threads" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_threads" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadMessages(ctx context.Context, query *MessageQuery, nodes []*User, init func(*User), assign func(*User, *Message)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Message(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.MessagesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_messages
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_messages" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_messages" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (uq *UserQuery) sqlCount(ctx context.Context) (int, error) {
@@ -447,6 +772,48 @@ func (uq *UserQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedBookmarks tells the query-builder to eager-load the nodes that are connected to the "bookmarks"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedBookmarks(name string, opts ...func(*BookmarkQuery)) *UserQuery {
+	query := (&BookmarkClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedBookmarks == nil {
+		uq.withNamedBookmarks = make(map[string]*BookmarkQuery)
+	}
+	uq.withNamedBookmarks[name] = query
+	return uq
+}
+
+// WithNamedThreads tells the query-builder to eager-load the nodes that are connected to the "threads"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedThreads(name string, opts ...func(*ThreadQuery)) *UserQuery {
+	query := (&ThreadClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedThreads == nil {
+		uq.withNamedThreads = make(map[string]*ThreadQuery)
+	}
+	uq.withNamedThreads[name] = query
+	return uq
+}
+
+// WithNamedMessages tells the query-builder to eager-load the nodes that are connected to the "messages"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedMessages(name string, opts ...func(*MessageQuery)) *UserQuery {
+	query := (&MessageClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedMessages == nil {
+		uq.withNamedMessages = make(map[string]*MessageQuery)
+	}
+	uq.withNamedMessages[name] = query
+	return uq
 }
 
 // UserGroupBy is the group-by builder for User entities.

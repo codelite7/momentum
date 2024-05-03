@@ -35,6 +35,17 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "users":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: a.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			a.withUsers = query
 		case "createdAt":
 			if _, ok := fieldSeen[agent.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, agent.FieldCreatedAt)
@@ -145,6 +156,39 @@ func (b *BookmarkQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "user":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: b.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			b.withUser = query
+
+		case "thread":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ThreadClient{config: b.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, threadImplementors)...); err != nil {
+				return err
+			}
+			b.withThread = query
+
+		case "message":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&MessageClient{config: b.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, messageImplementors)...); err != nil {
+				return err
+			}
+			b.withMessage = query
 		case "createdAt":
 			if _, ok := fieldSeen[bookmark.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, bookmark.FieldCreatedAt)
@@ -217,6 +261,41 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "sentBy":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: m.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			m.withSentBy = query
+
+		case "thread":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ThreadClient{config: m.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, threadImplementors)...); err != nil {
+				return err
+			}
+			m.withThread = query
+
+		case "bookmarks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BookmarkClient{config: m.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, bookmarkImplementors)...); err != nil {
+				return err
+			}
+			m.WithNamedBookmarks(alias, func(wq *BookmarkQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[message.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, message.FieldCreatedAt)
@@ -294,6 +373,65 @@ func (t *ThreadQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "createdBy":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			t.withCreatedBy = query
+
+		case "messages":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&MessageClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, messageImplementors)...); err != nil {
+				return err
+			}
+			t.WithNamedMessages(alias, func(wq *MessageQuery) {
+				*wq = *query
+			})
+
+		case "bookmarks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BookmarkClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, bookmarkImplementors)...); err != nil {
+				return err
+			}
+			t.WithNamedBookmarks(alias, func(wq *BookmarkQuery) {
+				*wq = *query
+			})
+
+		case "child":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ThreadClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, threadImplementors)...); err != nil {
+				return err
+			}
+			t.withChild = query
+
+		case "parent":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ThreadClient{config: t.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, threadImplementors)...); err != nil {
+				return err
+			}
+			t.withParent = query
 		case "createdAt":
 			if _, ok := fieldSeen[thread.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, thread.FieldCreatedAt)
@@ -399,6 +537,56 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "agent":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AgentClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, agentImplementors)...); err != nil {
+				return err
+			}
+			u.withAgent = query
+
+		case "bookmarks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BookmarkClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, bookmarkImplementors)...); err != nil {
+				return err
+			}
+			u.WithNamedBookmarks(alias, func(wq *BookmarkQuery) {
+				*wq = *query
+			})
+
+		case "threads":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ThreadClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, threadImplementors)...); err != nil {
+				return err
+			}
+			u.WithNamedThreads(alias, func(wq *ThreadQuery) {
+				*wq = *query
+			})
+
+		case "messages":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&MessageClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, messageImplementors)...); err != nil {
+				return err
+			}
+			u.WithNamedMessages(alias, func(wq *MessageQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[user.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, user.FieldCreatedAt)

@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"time"
@@ -23,7 +24,16 @@ func (User) Fields() []ent.Field {
 }
 
 func (User) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		// a user can have an agent, a user with an agent is an ai user
+		edge.To("agent", Agent.Type).Unique(),
+		// a user can have many bookmarks
+		edge.To("bookmarks", Bookmark.Type),
+		// a user can have many threads
+		edge.To("threads", Thread.Type),
+		// a user can send many messages
+		edge.To("messages", Message.Type),
+	}
 }
 
 func (User) Annotations() []schema.Annotation {

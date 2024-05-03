@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -20,8 +21,44 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
+	// EdgeAgent holds the string denoting the agent edge name in mutations.
+	EdgeAgent = "agent"
+	// EdgeBookmarks holds the string denoting the bookmarks edge name in mutations.
+	EdgeBookmarks = "bookmarks"
+	// EdgeThreads holds the string denoting the threads edge name in mutations.
+	EdgeThreads = "threads"
+	// EdgeMessages holds the string denoting the messages edge name in mutations.
+	EdgeMessages = "messages"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// AgentTable is the table that holds the agent relation/edge.
+	AgentTable = "agents"
+	// AgentInverseTable is the table name for the Agent entity.
+	// It exists in this package in order to avoid circular dependency with the "agent" package.
+	AgentInverseTable = "agents"
+	// AgentColumn is the table column denoting the agent relation/edge.
+	AgentColumn = "user_agent"
+	// BookmarksTable is the table that holds the bookmarks relation/edge.
+	BookmarksTable = "bookmarks"
+	// BookmarksInverseTable is the table name for the Bookmark entity.
+	// It exists in this package in order to avoid circular dependency with the "bookmark" package.
+	BookmarksInverseTable = "bookmarks"
+	// BookmarksColumn is the table column denoting the bookmarks relation/edge.
+	BookmarksColumn = "user_bookmarks"
+	// ThreadsTable is the table that holds the threads relation/edge.
+	ThreadsTable = "threads"
+	// ThreadsInverseTable is the table name for the Thread entity.
+	// It exists in this package in order to avoid circular dependency with the "thread" package.
+	ThreadsInverseTable = "threads"
+	// ThreadsColumn is the table column denoting the threads relation/edge.
+	ThreadsColumn = "user_threads"
+	// MessagesTable is the table that holds the messages relation/edge.
+	MessagesTable = "messages"
+	// MessagesInverseTable is the table name for the Message entity.
+	// It exists in this package in order to avoid circular dependency with the "message" package.
+	MessagesInverseTable = "messages"
+	// MessagesColumn is the table column denoting the messages relation/edge.
+	MessagesColumn = "user_messages"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -72,4 +109,81 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByEmail orders the results by the email field.
 func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+}
+
+// ByAgentField orders the results by agent field.
+func ByAgentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAgentStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByBookmarksCount orders the results by bookmarks count.
+func ByBookmarksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBookmarksStep(), opts...)
+	}
+}
+
+// ByBookmarks orders the results by bookmarks terms.
+func ByBookmarks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBookmarksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByThreadsCount orders the results by threads count.
+func ByThreadsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newThreadsStep(), opts...)
+	}
+}
+
+// ByThreads orders the results by threads terms.
+func ByThreads(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newThreadsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByMessagesCount orders the results by messages count.
+func ByMessagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newMessagesStep(), opts...)
+	}
+}
+
+// ByMessages orders the results by messages terms.
+func ByMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newAgentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AgentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, AgentTable, AgentColumn),
+	)
+}
+func newBookmarksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BookmarksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BookmarksTable, BookmarksColumn),
+	)
+}
+func newThreadsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ThreadsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ThreadsTable, ThreadsColumn),
+	)
+}
+func newMessagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MessagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, MessagesTable, MessagesColumn),
+	)
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -18,8 +19,35 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// EdgeUser holds the string denoting the user edge name in mutations.
+	EdgeUser = "user"
+	// EdgeThread holds the string denoting the thread edge name in mutations.
+	EdgeThread = "thread"
+	// EdgeMessage holds the string denoting the message edge name in mutations.
+	EdgeMessage = "message"
 	// Table holds the table name of the bookmark in the database.
 	Table = "bookmarks"
+	// UserTable is the table that holds the user relation/edge.
+	UserTable = "bookmarks"
+	// UserInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	UserInverseTable = "users"
+	// UserColumn is the table column denoting the user relation/edge.
+	UserColumn = "user_bookmarks"
+	// ThreadTable is the table that holds the thread relation/edge.
+	ThreadTable = "bookmarks"
+	// ThreadInverseTable is the table name for the Thread entity.
+	// It exists in this package in order to avoid circular dependency with the "thread" package.
+	ThreadInverseTable = "threads"
+	// ThreadColumn is the table column denoting the thread relation/edge.
+	ThreadColumn = "thread_bookmarks"
+	// MessageTable is the table that holds the message relation/edge.
+	MessageTable = "bookmarks"
+	// MessageInverseTable is the table name for the Message entity.
+	// It exists in this package in order to avoid circular dependency with the "message" package.
+	MessageInverseTable = "messages"
+	// MessageColumn is the table column denoting the message relation/edge.
+	MessageColumn = "message_bookmarks"
 )
 
 // Columns holds all SQL columns for bookmark fields.
@@ -29,10 +57,23 @@ var Columns = []string{
 	FieldUpdatedAt,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "bookmarks"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"message_bookmarks",
+	"thread_bookmarks",
+	"user_bookmarks",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -64,4 +105,46 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByUserField orders the results by user field.
+func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByThreadField orders the results by thread field.
+func ByThreadField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newThreadStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByMessageField orders the results by message field.
+func ByMessageField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMessageStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newUserStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+	)
+}
+func newThreadStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ThreadInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ThreadTable, ThreadColumn),
+	)
+}
+func newMessageStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MessageInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, MessageTable, MessageColumn),
+	)
 }

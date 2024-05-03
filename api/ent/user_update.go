@@ -11,8 +11,13 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/agent"
+	"github.com/codelite7/momentum/api/ent/bookmark"
+	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
+	"github.com/google/uuid"
 )
 
 // UserUpdate is the builder for updating User entities.
@@ -56,9 +61,142 @@ func (uu *UserUpdate) SetNillableEmail(s *string) *UserUpdate {
 	return uu
 }
 
+// SetAgentID sets the "agent" edge to the Agent entity by ID.
+func (uu *UserUpdate) SetAgentID(id uuid.UUID) *UserUpdate {
+	uu.mutation.SetAgentID(id)
+	return uu
+}
+
+// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
+func (uu *UserUpdate) SetNillableAgentID(id *uuid.UUID) *UserUpdate {
+	if id != nil {
+		uu = uu.SetAgentID(*id)
+	}
+	return uu
+}
+
+// SetAgent sets the "agent" edge to the Agent entity.
+func (uu *UserUpdate) SetAgent(a *Agent) *UserUpdate {
+	return uu.SetAgentID(a.ID)
+}
+
+// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
+func (uu *UserUpdate) AddBookmarkIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddBookmarkIDs(ids...)
+	return uu
+}
+
+// AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
+func (uu *UserUpdate) AddBookmarks(b ...*Bookmark) *UserUpdate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uu.AddBookmarkIDs(ids...)
+}
+
+// AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
+func (uu *UserUpdate) AddThreadIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddThreadIDs(ids...)
+	return uu
+}
+
+// AddThreads adds the "threads" edges to the Thread entity.
+func (uu *UserUpdate) AddThreads(t ...*Thread) *UserUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uu.AddThreadIDs(ids...)
+}
+
+// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
+func (uu *UserUpdate) AddMessageIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddMessageIDs(ids...)
+	return uu
+}
+
+// AddMessages adds the "messages" edges to the Message entity.
+func (uu *UserUpdate) AddMessages(m ...*Message) *UserUpdate {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uu.AddMessageIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
+}
+
+// ClearAgent clears the "agent" edge to the Agent entity.
+func (uu *UserUpdate) ClearAgent() *UserUpdate {
+	uu.mutation.ClearAgent()
+	return uu
+}
+
+// ClearBookmarks clears all "bookmarks" edges to the Bookmark entity.
+func (uu *UserUpdate) ClearBookmarks() *UserUpdate {
+	uu.mutation.ClearBookmarks()
+	return uu
+}
+
+// RemoveBookmarkIDs removes the "bookmarks" edge to Bookmark entities by IDs.
+func (uu *UserUpdate) RemoveBookmarkIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveBookmarkIDs(ids...)
+	return uu
+}
+
+// RemoveBookmarks removes "bookmarks" edges to Bookmark entities.
+func (uu *UserUpdate) RemoveBookmarks(b ...*Bookmark) *UserUpdate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uu.RemoveBookmarkIDs(ids...)
+}
+
+// ClearThreads clears all "threads" edges to the Thread entity.
+func (uu *UserUpdate) ClearThreads() *UserUpdate {
+	uu.mutation.ClearThreads()
+	return uu
+}
+
+// RemoveThreadIDs removes the "threads" edge to Thread entities by IDs.
+func (uu *UserUpdate) RemoveThreadIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveThreadIDs(ids...)
+	return uu
+}
+
+// RemoveThreads removes "threads" edges to Thread entities.
+func (uu *UserUpdate) RemoveThreads(t ...*Thread) *UserUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uu.RemoveThreadIDs(ids...)
+}
+
+// ClearMessages clears all "messages" edges to the Message entity.
+func (uu *UserUpdate) ClearMessages() *UserUpdate {
+	uu.mutation.ClearMessages()
+	return uu
+}
+
+// RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
+func (uu *UserUpdate) RemoveMessageIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveMessageIDs(ids...)
+	return uu
+}
+
+// RemoveMessages removes "messages" edges to Message entities.
+func (uu *UserUpdate) RemoveMessages(m ...*Message) *UserUpdate {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uu.RemoveMessageIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -102,6 +240,170 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if uu.mutation.AgentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.AgentTable,
+			Columns: []string{user.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.AgentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.AgentTable,
+			Columns: []string{user.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.BookmarksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.BookmarksTable,
+			Columns: []string{user.BookmarksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedBookmarksIDs(); len(nodes) > 0 && !uu.mutation.BookmarksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.BookmarksTable,
+			Columns: []string{user.BookmarksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.BookmarksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.BookmarksTable,
+			Columns: []string{user.BookmarksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.ThreadsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ThreadsTable,
+			Columns: []string{user.ThreadsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedThreadsIDs(); len(nodes) > 0 && !uu.mutation.ThreadsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ThreadsTable,
+			Columns: []string{user.ThreadsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ThreadsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ThreadsTable,
+			Columns: []string{user.ThreadsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.MessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.MessagesTable,
+			Columns: []string{user.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedMessagesIDs(); len(nodes) > 0 && !uu.mutation.MessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.MessagesTable,
+			Columns: []string{user.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.MessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.MessagesTable,
+			Columns: []string{user.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -151,9 +453,142 @@ func (uuo *UserUpdateOne) SetNillableEmail(s *string) *UserUpdateOne {
 	return uuo
 }
 
+// SetAgentID sets the "agent" edge to the Agent entity by ID.
+func (uuo *UserUpdateOne) SetAgentID(id uuid.UUID) *UserUpdateOne {
+	uuo.mutation.SetAgentID(id)
+	return uuo
+}
+
+// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableAgentID(id *uuid.UUID) *UserUpdateOne {
+	if id != nil {
+		uuo = uuo.SetAgentID(*id)
+	}
+	return uuo
+}
+
+// SetAgent sets the "agent" edge to the Agent entity.
+func (uuo *UserUpdateOne) SetAgent(a *Agent) *UserUpdateOne {
+	return uuo.SetAgentID(a.ID)
+}
+
+// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
+func (uuo *UserUpdateOne) AddBookmarkIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddBookmarkIDs(ids...)
+	return uuo
+}
+
+// AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
+func (uuo *UserUpdateOne) AddBookmarks(b ...*Bookmark) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uuo.AddBookmarkIDs(ids...)
+}
+
+// AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
+func (uuo *UserUpdateOne) AddThreadIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddThreadIDs(ids...)
+	return uuo
+}
+
+// AddThreads adds the "threads" edges to the Thread entity.
+func (uuo *UserUpdateOne) AddThreads(t ...*Thread) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uuo.AddThreadIDs(ids...)
+}
+
+// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
+func (uuo *UserUpdateOne) AddMessageIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddMessageIDs(ids...)
+	return uuo
+}
+
+// AddMessages adds the "messages" edges to the Message entity.
+func (uuo *UserUpdateOne) AddMessages(m ...*Message) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uuo.AddMessageIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
+}
+
+// ClearAgent clears the "agent" edge to the Agent entity.
+func (uuo *UserUpdateOne) ClearAgent() *UserUpdateOne {
+	uuo.mutation.ClearAgent()
+	return uuo
+}
+
+// ClearBookmarks clears all "bookmarks" edges to the Bookmark entity.
+func (uuo *UserUpdateOne) ClearBookmarks() *UserUpdateOne {
+	uuo.mutation.ClearBookmarks()
+	return uuo
+}
+
+// RemoveBookmarkIDs removes the "bookmarks" edge to Bookmark entities by IDs.
+func (uuo *UserUpdateOne) RemoveBookmarkIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveBookmarkIDs(ids...)
+	return uuo
+}
+
+// RemoveBookmarks removes "bookmarks" edges to Bookmark entities.
+func (uuo *UserUpdateOne) RemoveBookmarks(b ...*Bookmark) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uuo.RemoveBookmarkIDs(ids...)
+}
+
+// ClearThreads clears all "threads" edges to the Thread entity.
+func (uuo *UserUpdateOne) ClearThreads() *UserUpdateOne {
+	uuo.mutation.ClearThreads()
+	return uuo
+}
+
+// RemoveThreadIDs removes the "threads" edge to Thread entities by IDs.
+func (uuo *UserUpdateOne) RemoveThreadIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveThreadIDs(ids...)
+	return uuo
+}
+
+// RemoveThreads removes "threads" edges to Thread entities.
+func (uuo *UserUpdateOne) RemoveThreads(t ...*Thread) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uuo.RemoveThreadIDs(ids...)
+}
+
+// ClearMessages clears all "messages" edges to the Message entity.
+func (uuo *UserUpdateOne) ClearMessages() *UserUpdateOne {
+	uuo.mutation.ClearMessages()
+	return uuo
+}
+
+// RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
+func (uuo *UserUpdateOne) RemoveMessageIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveMessageIDs(ids...)
+	return uuo
+}
+
+// RemoveMessages removes "messages" edges to Message entities.
+func (uuo *UserUpdateOne) RemoveMessages(m ...*Message) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uuo.RemoveMessageIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -227,6 +662,170 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if uuo.mutation.AgentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.AgentTable,
+			Columns: []string{user.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.AgentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.AgentTable,
+			Columns: []string{user.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.BookmarksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.BookmarksTable,
+			Columns: []string{user.BookmarksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedBookmarksIDs(); len(nodes) > 0 && !uuo.mutation.BookmarksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.BookmarksTable,
+			Columns: []string{user.BookmarksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.BookmarksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.BookmarksTable,
+			Columns: []string{user.BookmarksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ThreadsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ThreadsTable,
+			Columns: []string{user.ThreadsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedThreadsIDs(); len(nodes) > 0 && !uuo.mutation.ThreadsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ThreadsTable,
+			Columns: []string{user.ThreadsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ThreadsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ThreadsTable,
+			Columns: []string{user.ThreadsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.MessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.MessagesTable,
+			Columns: []string{user.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedMessagesIDs(); len(nodes) > 0 && !uuo.mutation.MessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.MessagesTable,
+			Columns: []string{user.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.MessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.MessagesTable,
+			Columns: []string{user.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

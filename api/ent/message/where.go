@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/google/uuid"
 )
@@ -213,6 +214,75 @@ func ContentEqualFold(v string) predicate.Message {
 // ContentContainsFold applies the ContainsFold predicate on the "content" field.
 func ContentContainsFold(v string) predicate.Message {
 	return predicate.Message(sql.FieldContainsFold(FieldContent, v))
+}
+
+// HasSentBy applies the HasEdge predicate on the "sent_by" edge.
+func HasSentBy() predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, SentByTable, SentByColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSentByWith applies the HasEdge predicate on the "sent_by" edge with a given conditions (other predicates).
+func HasSentByWith(preds ...predicate.User) predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := newSentByStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasThread applies the HasEdge predicate on the "thread" edge.
+func HasThread() predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ThreadTable, ThreadColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasThreadWith applies the HasEdge predicate on the "thread" edge with a given conditions (other predicates).
+func HasThreadWith(preds ...predicate.Thread) predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := newThreadStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBookmarks applies the HasEdge predicate on the "bookmarks" edge.
+func HasBookmarks() predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BookmarksTable, BookmarksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBookmarksWith applies the HasEdge predicate on the "bookmarks" edge with a given conditions (other predicates).
+func HasBookmarksWith(preds ...predicate.Bookmark) predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := newBookmarksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

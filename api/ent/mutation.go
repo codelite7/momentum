@@ -47,6 +47,8 @@ type AgentMutation struct {
 	name          *string
 	model         *string
 	clearedFields map[string]struct{}
+	users         *uuid.UUID
+	clearedusers  bool
 	done          bool
 	oldValue      func(context.Context) (*Agent, error)
 	predicates    []predicate.Agent
@@ -300,6 +302,45 @@ func (m *AgentMutation) ResetModel() {
 	m.model = nil
 }
 
+// SetUsersID sets the "users" edge to the User entity by id.
+func (m *AgentMutation) SetUsersID(id uuid.UUID) {
+	m.users = &id
+}
+
+// ClearUsers clears the "users" edge to the User entity.
+func (m *AgentMutation) ClearUsers() {
+	m.clearedusers = true
+}
+
+// UsersCleared reports if the "users" edge to the User entity was cleared.
+func (m *AgentMutation) UsersCleared() bool {
+	return m.clearedusers
+}
+
+// UsersID returns the "users" edge ID in the mutation.
+func (m *AgentMutation) UsersID() (id uuid.UUID, exists bool) {
+	if m.users != nil {
+		return *m.users, true
+	}
+	return
+}
+
+// UsersIDs returns the "users" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UsersID instead. It exists only for internal usage by the builders.
+func (m *AgentMutation) UsersIDs() (ids []uuid.UUID) {
+	if id := m.users; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUsers resets all changes to the "users" edge.
+func (m *AgentMutation) ResetUsers() {
+	m.users = nil
+	m.clearedusers = false
+}
+
 // Where appends a list predicates to the AgentMutation builder.
 func (m *AgentMutation) Where(ps ...predicate.Agent) {
 	m.predicates = append(m.predicates, ps...)
@@ -484,19 +525,28 @@ func (m *AgentMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AgentMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.users != nil {
+		edges = append(edges, agent.EdgeUsers)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *AgentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case agent.EdgeUsers:
+		if id := m.users; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AgentMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -508,40 +558,63 @@ func (m *AgentMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AgentMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedusers {
+		edges = append(edges, agent.EdgeUsers)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *AgentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case agent.EdgeUsers:
+		return m.clearedusers
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *AgentMutation) ClearEdge(name string) error {
+	switch name {
+	case agent.EdgeUsers:
+		m.ClearUsers()
+		return nil
+	}
 	return fmt.Errorf("unknown Agent unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *AgentMutation) ResetEdge(name string) error {
+	switch name {
+	case agent.EdgeUsers:
+		m.ResetUsers()
+		return nil
+	}
 	return fmt.Errorf("unknown Agent edge %s", name)
 }
 
 // BookmarkMutation represents an operation that mutates the Bookmark nodes in the graph.
 type BookmarkMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Bookmark, error)
-	predicates    []predicate.Bookmark
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	created_at     *time.Time
+	updated_at     *time.Time
+	clearedFields  map[string]struct{}
+	user           *uuid.UUID
+	cleareduser    bool
+	thread         *uuid.UUID
+	clearedthread  bool
+	message        *uuid.UUID
+	clearedmessage bool
+	done           bool
+	oldValue       func(context.Context) (*Bookmark, error)
+	predicates     []predicate.Bookmark
 }
 
 var _ ent.Mutation = (*BookmarkMutation)(nil)
@@ -720,6 +793,123 @@ func (m *BookmarkMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *BookmarkMutation) SetUserID(id uuid.UUID) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *BookmarkMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *BookmarkMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *BookmarkMutation) UserID() (id uuid.UUID, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *BookmarkMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *BookmarkMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// SetThreadID sets the "thread" edge to the Thread entity by id.
+func (m *BookmarkMutation) SetThreadID(id uuid.UUID) {
+	m.thread = &id
+}
+
+// ClearThread clears the "thread" edge to the Thread entity.
+func (m *BookmarkMutation) ClearThread() {
+	m.clearedthread = true
+}
+
+// ThreadCleared reports if the "thread" edge to the Thread entity was cleared.
+func (m *BookmarkMutation) ThreadCleared() bool {
+	return m.clearedthread
+}
+
+// ThreadID returns the "thread" edge ID in the mutation.
+func (m *BookmarkMutation) ThreadID() (id uuid.UUID, exists bool) {
+	if m.thread != nil {
+		return *m.thread, true
+	}
+	return
+}
+
+// ThreadIDs returns the "thread" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ThreadID instead. It exists only for internal usage by the builders.
+func (m *BookmarkMutation) ThreadIDs() (ids []uuid.UUID) {
+	if id := m.thread; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetThread resets all changes to the "thread" edge.
+func (m *BookmarkMutation) ResetThread() {
+	m.thread = nil
+	m.clearedthread = false
+}
+
+// SetMessageID sets the "message" edge to the Message entity by id.
+func (m *BookmarkMutation) SetMessageID(id uuid.UUID) {
+	m.message = &id
+}
+
+// ClearMessage clears the "message" edge to the Message entity.
+func (m *BookmarkMutation) ClearMessage() {
+	m.clearedmessage = true
+}
+
+// MessageCleared reports if the "message" edge to the Message entity was cleared.
+func (m *BookmarkMutation) MessageCleared() bool {
+	return m.clearedmessage
+}
+
+// MessageID returns the "message" edge ID in the mutation.
+func (m *BookmarkMutation) MessageID() (id uuid.UUID, exists bool) {
+	if m.message != nil {
+		return *m.message, true
+	}
+	return
+}
+
+// MessageIDs returns the "message" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// MessageID instead. It exists only for internal usage by the builders.
+func (m *BookmarkMutation) MessageIDs() (ids []uuid.UUID) {
+	if id := m.message; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetMessage resets all changes to the "message" edge.
+func (m *BookmarkMutation) ResetMessage() {
+	m.message = nil
+	m.clearedmessage = false
+}
+
 // Where appends a list predicates to the BookmarkMutation builder.
 func (m *BookmarkMutation) Where(ps ...predicate.Bookmark) {
 	m.predicates = append(m.predicates, ps...)
@@ -870,19 +1060,42 @@ func (m *BookmarkMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BookmarkMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.user != nil {
+		edges = append(edges, bookmark.EdgeUser)
+	}
+	if m.thread != nil {
+		edges = append(edges, bookmark.EdgeThread)
+	}
+	if m.message != nil {
+		edges = append(edges, bookmark.EdgeMessage)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *BookmarkMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case bookmark.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	case bookmark.EdgeThread:
+		if id := m.thread; id != nil {
+			return []ent.Value{*id}
+		}
+	case bookmark.EdgeMessage:
+		if id := m.message; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BookmarkMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -894,41 +1107,87 @@ func (m *BookmarkMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BookmarkMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.cleareduser {
+		edges = append(edges, bookmark.EdgeUser)
+	}
+	if m.clearedthread {
+		edges = append(edges, bookmark.EdgeThread)
+	}
+	if m.clearedmessage {
+		edges = append(edges, bookmark.EdgeMessage)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *BookmarkMutation) EdgeCleared(name string) bool {
+	switch name {
+	case bookmark.EdgeUser:
+		return m.cleareduser
+	case bookmark.EdgeThread:
+		return m.clearedthread
+	case bookmark.EdgeMessage:
+		return m.clearedmessage
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *BookmarkMutation) ClearEdge(name string) error {
+	switch name {
+	case bookmark.EdgeUser:
+		m.ClearUser()
+		return nil
+	case bookmark.EdgeThread:
+		m.ClearThread()
+		return nil
+	case bookmark.EdgeMessage:
+		m.ClearMessage()
+		return nil
+	}
 	return fmt.Errorf("unknown Bookmark unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *BookmarkMutation) ResetEdge(name string) error {
+	switch name {
+	case bookmark.EdgeUser:
+		m.ResetUser()
+		return nil
+	case bookmark.EdgeThread:
+		m.ResetThread()
+		return nil
+	case bookmark.EdgeMessage:
+		m.ResetMessage()
+		return nil
+	}
 	return fmt.Errorf("unknown Bookmark edge %s", name)
 }
 
 // MessageMutation represents an operation that mutates the Message nodes in the graph.
 type MessageMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	content       *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Message, error)
-	predicates    []predicate.Message
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	created_at       *time.Time
+	updated_at       *time.Time
+	content          *string
+	clearedFields    map[string]struct{}
+	sent_by          *uuid.UUID
+	clearedsent_by   bool
+	thread           *uuid.UUID
+	clearedthread    bool
+	bookmarks        map[uuid.UUID]struct{}
+	removedbookmarks map[uuid.UUID]struct{}
+	clearedbookmarks bool
+	done             bool
+	oldValue         func(context.Context) (*Message, error)
+	predicates       []predicate.Message
 }
 
 var _ ent.Mutation = (*MessageMutation)(nil)
@@ -1143,6 +1402,138 @@ func (m *MessageMutation) ResetContent() {
 	m.content = nil
 }
 
+// SetSentByID sets the "sent_by" edge to the User entity by id.
+func (m *MessageMutation) SetSentByID(id uuid.UUID) {
+	m.sent_by = &id
+}
+
+// ClearSentBy clears the "sent_by" edge to the User entity.
+func (m *MessageMutation) ClearSentBy() {
+	m.clearedsent_by = true
+}
+
+// SentByCleared reports if the "sent_by" edge to the User entity was cleared.
+func (m *MessageMutation) SentByCleared() bool {
+	return m.clearedsent_by
+}
+
+// SentByID returns the "sent_by" edge ID in the mutation.
+func (m *MessageMutation) SentByID() (id uuid.UUID, exists bool) {
+	if m.sent_by != nil {
+		return *m.sent_by, true
+	}
+	return
+}
+
+// SentByIDs returns the "sent_by" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SentByID instead. It exists only for internal usage by the builders.
+func (m *MessageMutation) SentByIDs() (ids []uuid.UUID) {
+	if id := m.sent_by; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSentBy resets all changes to the "sent_by" edge.
+func (m *MessageMutation) ResetSentBy() {
+	m.sent_by = nil
+	m.clearedsent_by = false
+}
+
+// SetThreadID sets the "thread" edge to the Thread entity by id.
+func (m *MessageMutation) SetThreadID(id uuid.UUID) {
+	m.thread = &id
+}
+
+// ClearThread clears the "thread" edge to the Thread entity.
+func (m *MessageMutation) ClearThread() {
+	m.clearedthread = true
+}
+
+// ThreadCleared reports if the "thread" edge to the Thread entity was cleared.
+func (m *MessageMutation) ThreadCleared() bool {
+	return m.clearedthread
+}
+
+// ThreadID returns the "thread" edge ID in the mutation.
+func (m *MessageMutation) ThreadID() (id uuid.UUID, exists bool) {
+	if m.thread != nil {
+		return *m.thread, true
+	}
+	return
+}
+
+// ThreadIDs returns the "thread" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ThreadID instead. It exists only for internal usage by the builders.
+func (m *MessageMutation) ThreadIDs() (ids []uuid.UUID) {
+	if id := m.thread; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetThread resets all changes to the "thread" edge.
+func (m *MessageMutation) ResetThread() {
+	m.thread = nil
+	m.clearedthread = false
+}
+
+// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
+func (m *MessageMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+	if m.bookmarks == nil {
+		m.bookmarks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.bookmarks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBookmarks clears the "bookmarks" edge to the Bookmark entity.
+func (m *MessageMutation) ClearBookmarks() {
+	m.clearedbookmarks = true
+}
+
+// BookmarksCleared reports if the "bookmarks" edge to the Bookmark entity was cleared.
+func (m *MessageMutation) BookmarksCleared() bool {
+	return m.clearedbookmarks
+}
+
+// RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
+func (m *MessageMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+	if m.removedbookmarks == nil {
+		m.removedbookmarks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.bookmarks, ids[i])
+		m.removedbookmarks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
+func (m *MessageMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+	for id := range m.removedbookmarks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
+func (m *MessageMutation) BookmarksIDs() (ids []uuid.UUID) {
+	for id := range m.bookmarks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBookmarks resets all changes to the "bookmarks" edge.
+func (m *MessageMutation) ResetBookmarks() {
+	m.bookmarks = nil
+	m.clearedbookmarks = false
+	m.removedbookmarks = nil
+}
+
 // Where appends a list predicates to the MessageMutation builder.
 func (m *MessageMutation) Where(ps ...predicate.Message) {
 	m.predicates = append(m.predicates, ps...)
@@ -1310,65 +1701,149 @@ func (m *MessageMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *MessageMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.sent_by != nil {
+		edges = append(edges, message.EdgeSentBy)
+	}
+	if m.thread != nil {
+		edges = append(edges, message.EdgeThread)
+	}
+	if m.bookmarks != nil {
+		edges = append(edges, message.EdgeBookmarks)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *MessageMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case message.EdgeSentBy:
+		if id := m.sent_by; id != nil {
+			return []ent.Value{*id}
+		}
+	case message.EdgeThread:
+		if id := m.thread; id != nil {
+			return []ent.Value{*id}
+		}
+	case message.EdgeBookmarks:
+		ids := make([]ent.Value, 0, len(m.bookmarks))
+		for id := range m.bookmarks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *MessageMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.removedbookmarks != nil {
+		edges = append(edges, message.EdgeBookmarks)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *MessageMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case message.EdgeBookmarks:
+		ids := make([]ent.Value, 0, len(m.removedbookmarks))
+		for id := range m.removedbookmarks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *MessageMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.clearedsent_by {
+		edges = append(edges, message.EdgeSentBy)
+	}
+	if m.clearedthread {
+		edges = append(edges, message.EdgeThread)
+	}
+	if m.clearedbookmarks {
+		edges = append(edges, message.EdgeBookmarks)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *MessageMutation) EdgeCleared(name string) bool {
+	switch name {
+	case message.EdgeSentBy:
+		return m.clearedsent_by
+	case message.EdgeThread:
+		return m.clearedthread
+	case message.EdgeBookmarks:
+		return m.clearedbookmarks
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *MessageMutation) ClearEdge(name string) error {
+	switch name {
+	case message.EdgeSentBy:
+		m.ClearSentBy()
+		return nil
+	case message.EdgeThread:
+		m.ClearThread()
+		return nil
+	}
 	return fmt.Errorf("unknown Message unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *MessageMutation) ResetEdge(name string) error {
+	switch name {
+	case message.EdgeSentBy:
+		m.ResetSentBy()
+		return nil
+	case message.EdgeThread:
+		m.ResetThread()
+		return nil
+	case message.EdgeBookmarks:
+		m.ResetBookmarks()
+		return nil
+	}
 	return fmt.Errorf("unknown Message edge %s", name)
 }
 
 // ThreadMutation represents an operation that mutates the Thread nodes in the graph.
 type ThreadMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	name          *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Thread, error)
-	predicates    []predicate.Thread
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	name              *string
+	clearedFields     map[string]struct{}
+	created_by        *uuid.UUID
+	clearedcreated_by bool
+	messages          map[uuid.UUID]struct{}
+	removedmessages   map[uuid.UUID]struct{}
+	clearedmessages   bool
+	bookmarks         map[uuid.UUID]struct{}
+	removedbookmarks  map[uuid.UUID]struct{}
+	clearedbookmarks  bool
+	child             *uuid.UUID
+	clearedchild      bool
+	parent            *uuid.UUID
+	clearedparent     bool
+	done              bool
+	oldValue          func(context.Context) (*Thread, error)
+	predicates        []predicate.Thread
 }
 
 var _ ent.Mutation = (*ThreadMutation)(nil)
@@ -1583,6 +2058,231 @@ func (m *ThreadMutation) ResetName() {
 	m.name = nil
 }
 
+// SetCreatedByID sets the "created_by" edge to the User entity by id.
+func (m *ThreadMutation) SetCreatedByID(id uuid.UUID) {
+	m.created_by = &id
+}
+
+// ClearCreatedBy clears the "created_by" edge to the User entity.
+func (m *ThreadMutation) ClearCreatedBy() {
+	m.clearedcreated_by = true
+}
+
+// CreatedByCleared reports if the "created_by" edge to the User entity was cleared.
+func (m *ThreadMutation) CreatedByCleared() bool {
+	return m.clearedcreated_by
+}
+
+// CreatedByID returns the "created_by" edge ID in the mutation.
+func (m *ThreadMutation) CreatedByID() (id uuid.UUID, exists bool) {
+	if m.created_by != nil {
+		return *m.created_by, true
+	}
+	return
+}
+
+// CreatedByIDs returns the "created_by" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatedByID instead. It exists only for internal usage by the builders.
+func (m *ThreadMutation) CreatedByIDs() (ids []uuid.UUID) {
+	if id := m.created_by; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreatedBy resets all changes to the "created_by" edge.
+func (m *ThreadMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.clearedcreated_by = false
+}
+
+// AddMessageIDs adds the "messages" edge to the Message entity by ids.
+func (m *ThreadMutation) AddMessageIDs(ids ...uuid.UUID) {
+	if m.messages == nil {
+		m.messages = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.messages[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMessages clears the "messages" edge to the Message entity.
+func (m *ThreadMutation) ClearMessages() {
+	m.clearedmessages = true
+}
+
+// MessagesCleared reports if the "messages" edge to the Message entity was cleared.
+func (m *ThreadMutation) MessagesCleared() bool {
+	return m.clearedmessages
+}
+
+// RemoveMessageIDs removes the "messages" edge to the Message entity by IDs.
+func (m *ThreadMutation) RemoveMessageIDs(ids ...uuid.UUID) {
+	if m.removedmessages == nil {
+		m.removedmessages = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.messages, ids[i])
+		m.removedmessages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMessages returns the removed IDs of the "messages" edge to the Message entity.
+func (m *ThreadMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
+	for id := range m.removedmessages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MessagesIDs returns the "messages" edge IDs in the mutation.
+func (m *ThreadMutation) MessagesIDs() (ids []uuid.UUID) {
+	for id := range m.messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMessages resets all changes to the "messages" edge.
+func (m *ThreadMutation) ResetMessages() {
+	m.messages = nil
+	m.clearedmessages = false
+	m.removedmessages = nil
+}
+
+// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
+func (m *ThreadMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+	if m.bookmarks == nil {
+		m.bookmarks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.bookmarks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBookmarks clears the "bookmarks" edge to the Bookmark entity.
+func (m *ThreadMutation) ClearBookmarks() {
+	m.clearedbookmarks = true
+}
+
+// BookmarksCleared reports if the "bookmarks" edge to the Bookmark entity was cleared.
+func (m *ThreadMutation) BookmarksCleared() bool {
+	return m.clearedbookmarks
+}
+
+// RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
+func (m *ThreadMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+	if m.removedbookmarks == nil {
+		m.removedbookmarks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.bookmarks, ids[i])
+		m.removedbookmarks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
+func (m *ThreadMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+	for id := range m.removedbookmarks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
+func (m *ThreadMutation) BookmarksIDs() (ids []uuid.UUID) {
+	for id := range m.bookmarks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBookmarks resets all changes to the "bookmarks" edge.
+func (m *ThreadMutation) ResetBookmarks() {
+	m.bookmarks = nil
+	m.clearedbookmarks = false
+	m.removedbookmarks = nil
+}
+
+// SetChildID sets the "child" edge to the Thread entity by id.
+func (m *ThreadMutation) SetChildID(id uuid.UUID) {
+	m.child = &id
+}
+
+// ClearChild clears the "child" edge to the Thread entity.
+func (m *ThreadMutation) ClearChild() {
+	m.clearedchild = true
+}
+
+// ChildCleared reports if the "child" edge to the Thread entity was cleared.
+func (m *ThreadMutation) ChildCleared() bool {
+	return m.clearedchild
+}
+
+// ChildID returns the "child" edge ID in the mutation.
+func (m *ThreadMutation) ChildID() (id uuid.UUID, exists bool) {
+	if m.child != nil {
+		return *m.child, true
+	}
+	return
+}
+
+// ChildIDs returns the "child" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ChildID instead. It exists only for internal usage by the builders.
+func (m *ThreadMutation) ChildIDs() (ids []uuid.UUID) {
+	if id := m.child; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetChild resets all changes to the "child" edge.
+func (m *ThreadMutation) ResetChild() {
+	m.child = nil
+	m.clearedchild = false
+}
+
+// SetParentID sets the "parent" edge to the Thread entity by id.
+func (m *ThreadMutation) SetParentID(id uuid.UUID) {
+	m.parent = &id
+}
+
+// ClearParent clears the "parent" edge to the Thread entity.
+func (m *ThreadMutation) ClearParent() {
+	m.clearedparent = true
+}
+
+// ParentCleared reports if the "parent" edge to the Thread entity was cleared.
+func (m *ThreadMutation) ParentCleared() bool {
+	return m.clearedparent
+}
+
+// ParentID returns the "parent" edge ID in the mutation.
+func (m *ThreadMutation) ParentID() (id uuid.UUID, exists bool) {
+	if m.parent != nil {
+		return *m.parent, true
+	}
+	return
+}
+
+// ParentIDs returns the "parent" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ParentID instead. It exists only for internal usage by the builders.
+func (m *ThreadMutation) ParentIDs() (ids []uuid.UUID) {
+	if id := m.parent; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetParent resets all changes to the "parent" edge.
+func (m *ThreadMutation) ResetParent() {
+	m.parent = nil
+	m.clearedparent = false
+}
+
 // Where appends a list predicates to the ThreadMutation builder.
 func (m *ThreadMutation) Where(ps ...predicate.Thread) {
 	m.predicates = append(m.predicates, ps...)
@@ -1750,65 +2450,192 @@ func (m *ThreadMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ThreadMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 5)
+	if m.created_by != nil {
+		edges = append(edges, thread.EdgeCreatedBy)
+	}
+	if m.messages != nil {
+		edges = append(edges, thread.EdgeMessages)
+	}
+	if m.bookmarks != nil {
+		edges = append(edges, thread.EdgeBookmarks)
+	}
+	if m.child != nil {
+		edges = append(edges, thread.EdgeChild)
+	}
+	if m.parent != nil {
+		edges = append(edges, thread.EdgeParent)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *ThreadMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case thread.EdgeCreatedBy:
+		if id := m.created_by; id != nil {
+			return []ent.Value{*id}
+		}
+	case thread.EdgeMessages:
+		ids := make([]ent.Value, 0, len(m.messages))
+		for id := range m.messages {
+			ids = append(ids, id)
+		}
+		return ids
+	case thread.EdgeBookmarks:
+		ids := make([]ent.Value, 0, len(m.bookmarks))
+		for id := range m.bookmarks {
+			ids = append(ids, id)
+		}
+		return ids
+	case thread.EdgeChild:
+		if id := m.child; id != nil {
+			return []ent.Value{*id}
+		}
+	case thread.EdgeParent:
+		if id := m.parent; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ThreadMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 5)
+	if m.removedmessages != nil {
+		edges = append(edges, thread.EdgeMessages)
+	}
+	if m.removedbookmarks != nil {
+		edges = append(edges, thread.EdgeBookmarks)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *ThreadMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case thread.EdgeMessages:
+		ids := make([]ent.Value, 0, len(m.removedmessages))
+		for id := range m.removedmessages {
+			ids = append(ids, id)
+		}
+		return ids
+	case thread.EdgeBookmarks:
+		ids := make([]ent.Value, 0, len(m.removedbookmarks))
+		for id := range m.removedbookmarks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ThreadMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 5)
+	if m.clearedcreated_by {
+		edges = append(edges, thread.EdgeCreatedBy)
+	}
+	if m.clearedmessages {
+		edges = append(edges, thread.EdgeMessages)
+	}
+	if m.clearedbookmarks {
+		edges = append(edges, thread.EdgeBookmarks)
+	}
+	if m.clearedchild {
+		edges = append(edges, thread.EdgeChild)
+	}
+	if m.clearedparent {
+		edges = append(edges, thread.EdgeParent)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *ThreadMutation) EdgeCleared(name string) bool {
+	switch name {
+	case thread.EdgeCreatedBy:
+		return m.clearedcreated_by
+	case thread.EdgeMessages:
+		return m.clearedmessages
+	case thread.EdgeBookmarks:
+		return m.clearedbookmarks
+	case thread.EdgeChild:
+		return m.clearedchild
+	case thread.EdgeParent:
+		return m.clearedparent
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *ThreadMutation) ClearEdge(name string) error {
+	switch name {
+	case thread.EdgeCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case thread.EdgeChild:
+		m.ClearChild()
+		return nil
+	case thread.EdgeParent:
+		m.ClearParent()
+		return nil
+	}
 	return fmt.Errorf("unknown Thread unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *ThreadMutation) ResetEdge(name string) error {
+	switch name {
+	case thread.EdgeCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case thread.EdgeMessages:
+		m.ResetMessages()
+		return nil
+	case thread.EdgeBookmarks:
+		m.ResetBookmarks()
+		return nil
+	case thread.EdgeChild:
+		m.ResetChild()
+		return nil
+	case thread.EdgeParent:
+		m.ResetParent()
+		return nil
+	}
 	return fmt.Errorf("unknown Thread edge %s", name)
 }
 
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	email         *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	created_at       *time.Time
+	updated_at       *time.Time
+	email            *string
+	clearedFields    map[string]struct{}
+	agent            *uuid.UUID
+	clearedagent     bool
+	bookmarks        map[uuid.UUID]struct{}
+	removedbookmarks map[uuid.UUID]struct{}
+	clearedbookmarks bool
+	threads          map[uuid.UUID]struct{}
+	removedthreads   map[uuid.UUID]struct{}
+	clearedthreads   bool
+	messages         map[uuid.UUID]struct{}
+	removedmessages  map[uuid.UUID]struct{}
+	clearedmessages  bool
+	done             bool
+	oldValue         func(context.Context) (*User, error)
+	predicates       []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -2023,6 +2850,207 @@ func (m *UserMutation) ResetEmail() {
 	m.email = nil
 }
 
+// SetAgentID sets the "agent" edge to the Agent entity by id.
+func (m *UserMutation) SetAgentID(id uuid.UUID) {
+	m.agent = &id
+}
+
+// ClearAgent clears the "agent" edge to the Agent entity.
+func (m *UserMutation) ClearAgent() {
+	m.clearedagent = true
+}
+
+// AgentCleared reports if the "agent" edge to the Agent entity was cleared.
+func (m *UserMutation) AgentCleared() bool {
+	return m.clearedagent
+}
+
+// AgentID returns the "agent" edge ID in the mutation.
+func (m *UserMutation) AgentID() (id uuid.UUID, exists bool) {
+	if m.agent != nil {
+		return *m.agent, true
+	}
+	return
+}
+
+// AgentIDs returns the "agent" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AgentID instead. It exists only for internal usage by the builders.
+func (m *UserMutation) AgentIDs() (ids []uuid.UUID) {
+	if id := m.agent; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAgent resets all changes to the "agent" edge.
+func (m *UserMutation) ResetAgent() {
+	m.agent = nil
+	m.clearedagent = false
+}
+
+// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
+func (m *UserMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+	if m.bookmarks == nil {
+		m.bookmarks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.bookmarks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBookmarks clears the "bookmarks" edge to the Bookmark entity.
+func (m *UserMutation) ClearBookmarks() {
+	m.clearedbookmarks = true
+}
+
+// BookmarksCleared reports if the "bookmarks" edge to the Bookmark entity was cleared.
+func (m *UserMutation) BookmarksCleared() bool {
+	return m.clearedbookmarks
+}
+
+// RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
+func (m *UserMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+	if m.removedbookmarks == nil {
+		m.removedbookmarks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.bookmarks, ids[i])
+		m.removedbookmarks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
+func (m *UserMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+	for id := range m.removedbookmarks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
+func (m *UserMutation) BookmarksIDs() (ids []uuid.UUID) {
+	for id := range m.bookmarks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBookmarks resets all changes to the "bookmarks" edge.
+func (m *UserMutation) ResetBookmarks() {
+	m.bookmarks = nil
+	m.clearedbookmarks = false
+	m.removedbookmarks = nil
+}
+
+// AddThreadIDs adds the "threads" edge to the Thread entity by ids.
+func (m *UserMutation) AddThreadIDs(ids ...uuid.UUID) {
+	if m.threads == nil {
+		m.threads = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.threads[ids[i]] = struct{}{}
+	}
+}
+
+// ClearThreads clears the "threads" edge to the Thread entity.
+func (m *UserMutation) ClearThreads() {
+	m.clearedthreads = true
+}
+
+// ThreadsCleared reports if the "threads" edge to the Thread entity was cleared.
+func (m *UserMutation) ThreadsCleared() bool {
+	return m.clearedthreads
+}
+
+// RemoveThreadIDs removes the "threads" edge to the Thread entity by IDs.
+func (m *UserMutation) RemoveThreadIDs(ids ...uuid.UUID) {
+	if m.removedthreads == nil {
+		m.removedthreads = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.threads, ids[i])
+		m.removedthreads[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedThreads returns the removed IDs of the "threads" edge to the Thread entity.
+func (m *UserMutation) RemovedThreadsIDs() (ids []uuid.UUID) {
+	for id := range m.removedthreads {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ThreadsIDs returns the "threads" edge IDs in the mutation.
+func (m *UserMutation) ThreadsIDs() (ids []uuid.UUID) {
+	for id := range m.threads {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetThreads resets all changes to the "threads" edge.
+func (m *UserMutation) ResetThreads() {
+	m.threads = nil
+	m.clearedthreads = false
+	m.removedthreads = nil
+}
+
+// AddMessageIDs adds the "messages" edge to the Message entity by ids.
+func (m *UserMutation) AddMessageIDs(ids ...uuid.UUID) {
+	if m.messages == nil {
+		m.messages = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.messages[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMessages clears the "messages" edge to the Message entity.
+func (m *UserMutation) ClearMessages() {
+	m.clearedmessages = true
+}
+
+// MessagesCleared reports if the "messages" edge to the Message entity was cleared.
+func (m *UserMutation) MessagesCleared() bool {
+	return m.clearedmessages
+}
+
+// RemoveMessageIDs removes the "messages" edge to the Message entity by IDs.
+func (m *UserMutation) RemoveMessageIDs(ids ...uuid.UUID) {
+	if m.removedmessages == nil {
+		m.removedmessages = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.messages, ids[i])
+		m.removedmessages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMessages returns the removed IDs of the "messages" edge to the Message entity.
+func (m *UserMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
+	for id := range m.removedmessages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MessagesIDs returns the "messages" edge IDs in the mutation.
+func (m *UserMutation) MessagesIDs() (ids []uuid.UUID) {
+	for id := range m.messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMessages resets all changes to the "messages" edge.
+func (m *UserMutation) ResetMessages() {
+	m.messages = nil
+	m.clearedmessages = false
+	m.removedmessages = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -2190,48 +3218,154 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 4)
+	if m.agent != nil {
+		edges = append(edges, user.EdgeAgent)
+	}
+	if m.bookmarks != nil {
+		edges = append(edges, user.EdgeBookmarks)
+	}
+	if m.threads != nil {
+		edges = append(edges, user.EdgeThreads)
+	}
+	if m.messages != nil {
+		edges = append(edges, user.EdgeMessages)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeAgent:
+		if id := m.agent; id != nil {
+			return []ent.Value{*id}
+		}
+	case user.EdgeBookmarks:
+		ids := make([]ent.Value, 0, len(m.bookmarks))
+		for id := range m.bookmarks {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeThreads:
+		ids := make([]ent.Value, 0, len(m.threads))
+		for id := range m.threads {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeMessages:
+		ids := make([]ent.Value, 0, len(m.messages))
+		for id := range m.messages {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 4)
+	if m.removedbookmarks != nil {
+		edges = append(edges, user.EdgeBookmarks)
+	}
+	if m.removedthreads != nil {
+		edges = append(edges, user.EdgeThreads)
+	}
+	if m.removedmessages != nil {
+		edges = append(edges, user.EdgeMessages)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeBookmarks:
+		ids := make([]ent.Value, 0, len(m.removedbookmarks))
+		for id := range m.removedbookmarks {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeThreads:
+		ids := make([]ent.Value, 0, len(m.removedthreads))
+		for id := range m.removedthreads {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeMessages:
+		ids := make([]ent.Value, 0, len(m.removedmessages))
+		for id := range m.removedmessages {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 4)
+	if m.clearedagent {
+		edges = append(edges, user.EdgeAgent)
+	}
+	if m.clearedbookmarks {
+		edges = append(edges, user.EdgeBookmarks)
+	}
+	if m.clearedthreads {
+		edges = append(edges, user.EdgeThreads)
+	}
+	if m.clearedmessages {
+		edges = append(edges, user.EdgeMessages)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
+	switch name {
+	case user.EdgeAgent:
+		return m.clearedagent
+	case user.EdgeBookmarks:
+		return m.clearedbookmarks
+	case user.EdgeThreads:
+		return m.clearedthreads
+	case user.EdgeMessages:
+		return m.clearedmessages
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
+	switch name {
+	case user.EdgeAgent:
+		m.ClearAgent()
+		return nil
+	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
+	switch name {
+	case user.EdgeAgent:
+		m.ResetAgent()
+		return nil
+	case user.EdgeBookmarks:
+		m.ResetBookmarks()
+		return nil
+	case user.EdgeThreads:
+		m.ResetThreads()
+		return nil
+	case user.EdgeMessages:
+		m.ResetMessages()
+		return nil
+	}
 	return fmt.Errorf("unknown User edge %s", name)
 }

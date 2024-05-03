@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
@@ -23,8 +24,70 @@ type User struct {
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Email holds the value of the "email" field.
-	Email        string `json:"email,omitempty"`
+	Email string `json:"email,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges        UserEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// Agent holds the value of the agent edge.
+	Agent *Agent `json:"agent,omitempty"`
+	// Bookmarks holds the value of the bookmarks edge.
+	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
+	// Threads holds the value of the threads edge.
+	Threads []*Thread `json:"threads,omitempty"`
+	// Messages holds the value of the messages edge.
+	Messages []*Message `json:"messages,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [4]bool
+	// totalCount holds the count of the edges above.
+	totalCount [4]map[string]int
+
+	namedBookmarks map[string][]*Bookmark
+	namedThreads   map[string][]*Thread
+	namedMessages  map[string][]*Message
+}
+
+// AgentOrErr returns the Agent value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) AgentOrErr() (*Agent, error) {
+	if e.Agent != nil {
+		return e.Agent, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: agent.Label}
+	}
+	return nil, &NotLoadedError{edge: "agent"}
+}
+
+// BookmarksOrErr returns the Bookmarks value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) BookmarksOrErr() ([]*Bookmark, error) {
+	if e.loadedTypes[1] {
+		return e.Bookmarks, nil
+	}
+	return nil, &NotLoadedError{edge: "bookmarks"}
+}
+
+// ThreadsOrErr returns the Threads value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ThreadsOrErr() ([]*Thread, error) {
+	if e.loadedTypes[2] {
+		return e.Threads, nil
+	}
+	return nil, &NotLoadedError{edge: "threads"}
+}
+
+// MessagesOrErr returns the Messages value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) MessagesOrErr() ([]*Message, error) {
+	if e.loadedTypes[3] {
+		return e.Messages, nil
+	}
+	return nil, &NotLoadedError{edge: "messages"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -90,6 +153,26 @@ func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
 }
 
+// QueryAgent queries the "agent" edge of the User entity.
+func (u *User) QueryAgent() *AgentQuery {
+	return NewUserClient(u.config).QueryAgent(u)
+}
+
+// QueryBookmarks queries the "bookmarks" edge of the User entity.
+func (u *User) QueryBookmarks() *BookmarkQuery {
+	return NewUserClient(u.config).QueryBookmarks(u)
+}
+
+// QueryThreads queries the "threads" edge of the User entity.
+func (u *User) QueryThreads() *ThreadQuery {
+	return NewUserClient(u.config).QueryThreads(u)
+}
+
+// QueryMessages queries the "messages" edge of the User entity.
+func (u *User) QueryMessages() *MessageQuery {
+	return NewUserClient(u.config).QueryMessages(u)
+}
+
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -123,6 +206,78 @@ func (u *User) String() string {
 	builder.WriteString(u.Email)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedBookmarks returns the Bookmarks named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedBookmarks(name string) ([]*Bookmark, error) {
+	if u.Edges.namedBookmarks == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedBookmarks[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedBookmarks(name string, edges ...*Bookmark) {
+	if u.Edges.namedBookmarks == nil {
+		u.Edges.namedBookmarks = make(map[string][]*Bookmark)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedBookmarks[name] = []*Bookmark{}
+	} else {
+		u.Edges.namedBookmarks[name] = append(u.Edges.namedBookmarks[name], edges...)
+	}
+}
+
+// NamedThreads returns the Threads named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedThreads(name string) ([]*Thread, error) {
+	if u.Edges.namedThreads == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedThreads[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedThreads(name string, edges ...*Thread) {
+	if u.Edges.namedThreads == nil {
+		u.Edges.namedThreads = make(map[string][]*Thread)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedThreads[name] = []*Thread{}
+	} else {
+		u.Edges.namedThreads[name] = append(u.Edges.namedThreads[name], edges...)
+	}
+}
+
+// NamedMessages returns the Messages named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedMessages(name string) ([]*Message, error) {
+	if u.Edges.namedMessages == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedMessages[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedMessages(name string, edges ...*Message) {
+	if u.Edges.namedMessages == nil {
+		u.Edges.namedMessages = make(map[string][]*Message)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedMessages[name] = []*Message{}
+	} else {
+		u.Edges.namedMessages[name] = append(u.Edges.namedMessages[name], edges...)
+	}
 }
 
 // Users is a parsable slice of User.

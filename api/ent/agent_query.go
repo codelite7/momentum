@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -22,6 +23,8 @@ type AgentQuery struct {
 	order      []agent.OrderOption
 	inters     []Interceptor
 	predicates []predicate.Agent
+	withUsers  *UserQuery
+	withFKs    bool
 	modifiers  []func(*sql.Selector)
 	loadTotal  []func(context.Context, []*Agent) error
 	// intermediate query (i.e. traversal path).
@@ -58,6 +61,28 @@ func (aq *AgentQuery) Unique(unique bool) *AgentQuery {
 func (aq *AgentQuery) Order(o ...agent.OrderOption) *AgentQuery {
 	aq.order = append(aq.order, o...)
 	return aq
+}
+
+// QueryUsers chains the current query on the "users" edge.
+func (aq *AgentQuery) QueryUsers() *UserQuery {
+	query := (&UserClient{config: aq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(agent.Table, agent.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, agent.UsersTable, agent.UsersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Agent entity from the query.
@@ -252,10 +277,22 @@ func (aq *AgentQuery) Clone() *AgentQuery {
 		order:      append([]agent.OrderOption{}, aq.order...),
 		inters:     append([]Interceptor{}, aq.inters...),
 		predicates: append([]predicate.Agent{}, aq.predicates...),
+		withUsers:  aq.withUsers.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
 	}
+}
+
+// WithUsers tells the query-builder to eager-load the nodes that are connected to
+// the "users" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AgentQuery) WithUsers(opts ...func(*UserQuery)) *AgentQuery {
+	query := (&UserClient{config: aq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withUsers = query
+	return aq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -334,15 +371,26 @@ func (aq *AgentQuery) prepareQuery(ctx context.Context) error {
 
 func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent, error) {
 	var (
-		nodes = []*Agent{}
-		_spec = aq.querySpec()
+		nodes       = []*Agent{}
+		withFKs     = aq.withFKs
+		_spec       = aq.querySpec()
+		loadedTypes = [1]bool{
+			aq.withUsers != nil,
+		}
 	)
+	if aq.withUsers != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, agent.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Agent).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Agent{config: aq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(aq.modifiers) > 0 {
@@ -357,12 +405,51 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := aq.withUsers; query != nil {
+		if err := aq.loadUsers(ctx, query, nodes, nil,
+			func(n *Agent, e *User) { n.Edges.Users = e }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range aq.loadTotal {
 		if err := aq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (aq *AgentQuery) loadUsers(ctx context.Context, query *UserQuery, nodes []*Agent, init func(*Agent), assign func(*Agent, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Agent)
+	for i := range nodes {
+		if nodes[i].user_agent == nil {
+			continue
+		}
+		fk := *nodes[i].user_agent
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_agent" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (aq *AgentQuery) sqlCount(ctx context.Context) (int, error) {

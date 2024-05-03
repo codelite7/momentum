@@ -10,7 +10,10 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/thread"
+	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -67,6 +70,51 @@ func (mc *MessageCreate) SetNillableID(u *uuid.UUID) *MessageCreate {
 		mc.SetID(*u)
 	}
 	return mc
+}
+
+// SetSentByID sets the "sent_by" edge to the User entity by ID.
+func (mc *MessageCreate) SetSentByID(id uuid.UUID) *MessageCreate {
+	mc.mutation.SetSentByID(id)
+	return mc
+}
+
+// SetNillableSentByID sets the "sent_by" edge to the User entity by ID if the given value is not nil.
+func (mc *MessageCreate) SetNillableSentByID(id *uuid.UUID) *MessageCreate {
+	if id != nil {
+		mc = mc.SetSentByID(*id)
+	}
+	return mc
+}
+
+// SetSentBy sets the "sent_by" edge to the User entity.
+func (mc *MessageCreate) SetSentBy(u *User) *MessageCreate {
+	return mc.SetSentByID(u.ID)
+}
+
+// SetThreadID sets the "thread" edge to the Thread entity by ID.
+func (mc *MessageCreate) SetThreadID(id uuid.UUID) *MessageCreate {
+	mc.mutation.SetThreadID(id)
+	return mc
+}
+
+// SetThread sets the "thread" edge to the Thread entity.
+func (mc *MessageCreate) SetThread(t *Thread) *MessageCreate {
+	return mc.SetThreadID(t.ID)
+}
+
+// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
+func (mc *MessageCreate) AddBookmarkIDs(ids ...uuid.UUID) *MessageCreate {
+	mc.mutation.AddBookmarkIDs(ids...)
+	return mc
+}
+
+// AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
+func (mc *MessageCreate) AddBookmarks(b ...*Bookmark) *MessageCreate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return mc.AddBookmarkIDs(ids...)
 }
 
 // Mutation returns the MessageMutation object of the builder.
@@ -129,6 +177,9 @@ func (mc *MessageCreate) check() error {
 	if _, ok := mc.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "Message.content"`)}
 	}
+	if _, ok := mc.mutation.ThreadID(); !ok {
+		return &ValidationError{Name: "thread", err: errors.New(`ent: missing required edge "Message.thread"`)}
+	}
 	return nil
 }
 
@@ -175,6 +226,56 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 	if value, ok := mc.mutation.Content(); ok {
 		_spec.SetField(message.FieldContent, field.TypeString, value)
 		_node.Content = value
+	}
+	if nodes := mc.mutation.SentByIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   message.SentByTable,
+			Columns: []string{message.SentByColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_messages = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.ThreadIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   message.ThreadTable,
+			Columns: []string{message.ThreadColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.thread_messages = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.BookmarksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   message.BookmarksTable,
+			Columns: []string{message.BookmarksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"time"
@@ -23,7 +24,14 @@ func (Message) Fields() []ent.Field {
 }
 
 func (Message) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		// a message is sent by a user
+		edge.From("sent_by", User.Type).Ref("messages").Unique(),
+		// a message belongs to a thread
+		edge.From("thread", Thread.Type).Ref("messages").Unique().Required(),
+		// a message may have many bookmarks
+		edge.To("bookmarks", Bookmark.Type),
+	}
 }
 
 func (Message) Annotations() []schema.Annotation {

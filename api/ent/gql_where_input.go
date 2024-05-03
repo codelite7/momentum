@@ -82,6 +82,10 @@ type AgentWhereInput struct {
 	ModelHasSuffix    *string  `json:"modelHasSuffix,omitempty"`
 	ModelEqualFold    *string  `json:"modelEqualFold,omitempty"`
 	ModelContainsFold *string  `json:"modelContainsFold,omitempty"`
+
+	// "users" edge predicates.
+	HasUsers     *bool             `json:"hasUsers,omitempty"`
+	HasUsersWith []*UserWhereInput `json:"hasUsersWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -306,6 +310,24 @@ func (i *AgentWhereInput) P() (predicate.Agent, error) {
 		predicates = append(predicates, agent.ModelContainsFold(*i.ModelContainsFold))
 	}
 
+	if i.HasUsers != nil {
+		p := agent.HasUsers()
+		if !*i.HasUsers {
+			p = agent.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasUsersWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasUsersWith))
+		for _, w := range i.HasUsersWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasUsersWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, agent.HasUsersWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyAgentWhereInput
@@ -352,6 +374,18 @@ type BookmarkWhereInput struct {
 	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
 	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
 	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+
+	// "user" edge predicates.
+	HasUser     *bool             `json:"hasUser,omitempty"`
+	HasUserWith []*UserWhereInput `json:"hasUserWith,omitempty"`
+
+	// "thread" edge predicates.
+	HasThread     *bool               `json:"hasThread,omitempty"`
+	HasThreadWith []*ThreadWhereInput `json:"hasThreadWith,omitempty"`
+
+	// "message" edge predicates.
+	HasMessage     *bool                `json:"hasMessage,omitempty"`
+	HasMessageWith []*MessageWhereInput `json:"hasMessageWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -498,6 +532,60 @@ func (i *BookmarkWhereInput) P() (predicate.Bookmark, error) {
 		predicates = append(predicates, bookmark.UpdatedAtLTE(*i.UpdatedAtLTE))
 	}
 
+	if i.HasUser != nil {
+		p := bookmark.HasUser()
+		if !*i.HasUser {
+			p = bookmark.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasUserWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasUserWith))
+		for _, w := range i.HasUserWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasUserWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, bookmark.HasUserWith(with...))
+	}
+	if i.HasThread != nil {
+		p := bookmark.HasThread()
+		if !*i.HasThread {
+			p = bookmark.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasThreadWith) > 0 {
+		with := make([]predicate.Thread, 0, len(i.HasThreadWith))
+		for _, w := range i.HasThreadWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasThreadWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, bookmark.HasThreadWith(with...))
+	}
+	if i.HasMessage != nil {
+		p := bookmark.HasMessage()
+		if !*i.HasMessage {
+			p = bookmark.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasMessageWith) > 0 {
+		with := make([]predicate.Message, 0, len(i.HasMessageWith))
+		for _, w := range i.HasMessageWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasMessageWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, bookmark.HasMessageWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyBookmarkWhereInput
@@ -559,6 +647,18 @@ type MessageWhereInput struct {
 	ContentHasSuffix    *string  `json:"contentHasSuffix,omitempty"`
 	ContentEqualFold    *string  `json:"contentEqualFold,omitempty"`
 	ContentContainsFold *string  `json:"contentContainsFold,omitempty"`
+
+	// "sent_by" edge predicates.
+	HasSentBy     *bool             `json:"hasSentBy,omitempty"`
+	HasSentByWith []*UserWhereInput `json:"hasSentByWith,omitempty"`
+
+	// "thread" edge predicates.
+	HasThread     *bool               `json:"hasThread,omitempty"`
+	HasThreadWith []*ThreadWhereInput `json:"hasThreadWith,omitempty"`
+
+	// "bookmarks" edge predicates.
+	HasBookmarks     *bool                 `json:"hasBookmarks,omitempty"`
+	HasBookmarksWith []*BookmarkWhereInput `json:"hasBookmarksWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -744,6 +844,60 @@ func (i *MessageWhereInput) P() (predicate.Message, error) {
 		predicates = append(predicates, message.ContentContainsFold(*i.ContentContainsFold))
 	}
 
+	if i.HasSentBy != nil {
+		p := message.HasSentBy()
+		if !*i.HasSentBy {
+			p = message.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasSentByWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasSentByWith))
+		for _, w := range i.HasSentByWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasSentByWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, message.HasSentByWith(with...))
+	}
+	if i.HasThread != nil {
+		p := message.HasThread()
+		if !*i.HasThread {
+			p = message.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasThreadWith) > 0 {
+		with := make([]predicate.Thread, 0, len(i.HasThreadWith))
+		for _, w := range i.HasThreadWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasThreadWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, message.HasThreadWith(with...))
+	}
+	if i.HasBookmarks != nil {
+		p := message.HasBookmarks()
+		if !*i.HasBookmarks {
+			p = message.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBookmarksWith) > 0 {
+		with := make([]predicate.Bookmark, 0, len(i.HasBookmarksWith))
+		for _, w := range i.HasBookmarksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBookmarksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, message.HasBookmarksWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyMessageWhereInput
@@ -805,6 +959,26 @@ type ThreadWhereInput struct {
 	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "created_by" edge predicates.
+	HasCreatedBy     *bool             `json:"hasCreatedBy,omitempty"`
+	HasCreatedByWith []*UserWhereInput `json:"hasCreatedByWith,omitempty"`
+
+	// "messages" edge predicates.
+	HasMessages     *bool                `json:"hasMessages,omitempty"`
+	HasMessagesWith []*MessageWhereInput `json:"hasMessagesWith,omitempty"`
+
+	// "bookmarks" edge predicates.
+	HasBookmarks     *bool                 `json:"hasBookmarks,omitempty"`
+	HasBookmarksWith []*BookmarkWhereInput `json:"hasBookmarksWith,omitempty"`
+
+	// "child" edge predicates.
+	HasChild     *bool               `json:"hasChild,omitempty"`
+	HasChildWith []*ThreadWhereInput `json:"hasChildWith,omitempty"`
+
+	// "parent" edge predicates.
+	HasParent     *bool               `json:"hasParent,omitempty"`
+	HasParentWith []*ThreadWhereInput `json:"hasParentWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -990,6 +1164,96 @@ func (i *ThreadWhereInput) P() (predicate.Thread, error) {
 		predicates = append(predicates, thread.NameContainsFold(*i.NameContainsFold))
 	}
 
+	if i.HasCreatedBy != nil {
+		p := thread.HasCreatedBy()
+		if !*i.HasCreatedBy {
+			p = thread.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCreatedByWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasCreatedByWith))
+		for _, w := range i.HasCreatedByWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCreatedByWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, thread.HasCreatedByWith(with...))
+	}
+	if i.HasMessages != nil {
+		p := thread.HasMessages()
+		if !*i.HasMessages {
+			p = thread.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasMessagesWith) > 0 {
+		with := make([]predicate.Message, 0, len(i.HasMessagesWith))
+		for _, w := range i.HasMessagesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasMessagesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, thread.HasMessagesWith(with...))
+	}
+	if i.HasBookmarks != nil {
+		p := thread.HasBookmarks()
+		if !*i.HasBookmarks {
+			p = thread.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBookmarksWith) > 0 {
+		with := make([]predicate.Bookmark, 0, len(i.HasBookmarksWith))
+		for _, w := range i.HasBookmarksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBookmarksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, thread.HasBookmarksWith(with...))
+	}
+	if i.HasChild != nil {
+		p := thread.HasChild()
+		if !*i.HasChild {
+			p = thread.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasChildWith) > 0 {
+		with := make([]predicate.Thread, 0, len(i.HasChildWith))
+		for _, w := range i.HasChildWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasChildWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, thread.HasChildWith(with...))
+	}
+	if i.HasParent != nil {
+		p := thread.HasParent()
+		if !*i.HasParent {
+			p = thread.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasParentWith) > 0 {
+		with := make([]predicate.Thread, 0, len(i.HasParentWith))
+		for _, w := range i.HasParentWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasParentWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, thread.HasParentWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyThreadWhereInput
@@ -1051,6 +1315,22 @@ type UserWhereInput struct {
 	EmailHasSuffix    *string  `json:"emailHasSuffix,omitempty"`
 	EmailEqualFold    *string  `json:"emailEqualFold,omitempty"`
 	EmailContainsFold *string  `json:"emailContainsFold,omitempty"`
+
+	// "agent" edge predicates.
+	HasAgent     *bool              `json:"hasAgent,omitempty"`
+	HasAgentWith []*AgentWhereInput `json:"hasAgentWith,omitempty"`
+
+	// "bookmarks" edge predicates.
+	HasBookmarks     *bool                 `json:"hasBookmarks,omitempty"`
+	HasBookmarksWith []*BookmarkWhereInput `json:"hasBookmarksWith,omitempty"`
+
+	// "threads" edge predicates.
+	HasThreads     *bool               `json:"hasThreads,omitempty"`
+	HasThreadsWith []*ThreadWhereInput `json:"hasThreadsWith,omitempty"`
+
+	// "messages" edge predicates.
+	HasMessages     *bool                `json:"hasMessages,omitempty"`
+	HasMessagesWith []*MessageWhereInput `json:"hasMessagesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1236,6 +1516,78 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 		predicates = append(predicates, user.EmailContainsFold(*i.EmailContainsFold))
 	}
 
+	if i.HasAgent != nil {
+		p := user.HasAgent()
+		if !*i.HasAgent {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasAgentWith) > 0 {
+		with := make([]predicate.Agent, 0, len(i.HasAgentWith))
+		for _, w := range i.HasAgentWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasAgentWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasAgentWith(with...))
+	}
+	if i.HasBookmarks != nil {
+		p := user.HasBookmarks()
+		if !*i.HasBookmarks {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBookmarksWith) > 0 {
+		with := make([]predicate.Bookmark, 0, len(i.HasBookmarksWith))
+		for _, w := range i.HasBookmarksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBookmarksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasBookmarksWith(with...))
+	}
+	if i.HasThreads != nil {
+		p := user.HasThreads()
+		if !*i.HasThreads {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasThreadsWith) > 0 {
+		with := make([]predicate.Thread, 0, len(i.HasThreadsWith))
+		for _, w := range i.HasThreadsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasThreadsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasThreadsWith(with...))
+	}
+	if i.HasMessages != nil {
+		p := user.HasMessages()
+		if !*i.HasMessages {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasMessagesWith) > 0 {
+		with := make([]predicate.Message, 0, len(i.HasMessagesWith))
+		for _, w := range i.HasMessagesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasMessagesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasMessagesWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyUserWhereInput

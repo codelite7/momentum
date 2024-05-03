@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
+	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -73,6 +74,17 @@ func (ac *AgentCreate) SetNillableID(u *uuid.UUID) *AgentCreate {
 		ac.SetID(*u)
 	}
 	return ac
+}
+
+// SetUsersID sets the "users" edge to the User entity by ID.
+func (ac *AgentCreate) SetUsersID(id uuid.UUID) *AgentCreate {
+	ac.mutation.SetUsersID(id)
+	return ac
+}
+
+// SetUsers sets the "users" edge to the User entity.
+func (ac *AgentCreate) SetUsers(u *User) *AgentCreate {
+	return ac.SetUsersID(u.ID)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -138,6 +150,9 @@ func (ac *AgentCreate) check() error {
 	if _, ok := ac.mutation.Model(); !ok {
 		return &ValidationError{Name: "model", err: errors.New(`ent: missing required field "Agent.model"`)}
 	}
+	if _, ok := ac.mutation.UsersID(); !ok {
+		return &ValidationError{Name: "users", err: errors.New(`ent: missing required edge "Agent.users"`)}
+	}
 	return nil
 }
 
@@ -188,6 +203,23 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 	if value, ok := ac.mutation.Model(); ok {
 		_spec.SetField(agent.FieldModel, field.TypeString, value)
 		_node.Model = value
+	}
+	if nodes := ac.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   agent.UsersTable,
+			Columns: []string{agent.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_agent = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

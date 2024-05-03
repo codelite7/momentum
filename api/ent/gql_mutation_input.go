@@ -4,6 +4,8 @@ package ent
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // CreateAgentInput represents a mutation input for creating agents.
@@ -12,6 +14,7 @@ type CreateAgentInput struct {
 	UpdatedAt *time.Time
 	Name      string
 	Model     string
+	UsersID   uuid.UUID
 }
 
 // Mutate applies the CreateAgentInput on the AgentMutation builder.
@@ -24,6 +27,7 @@ func (i *CreateAgentInput) Mutate(m *AgentMutation) {
 	}
 	m.SetName(i.Name)
 	m.SetModel(i.Model)
+	m.SetUsersID(i.UsersID)
 }
 
 // SetInput applies the change-set in the CreateAgentInput on the AgentCreate builder.
@@ -37,6 +41,7 @@ type UpdateAgentInput struct {
 	UpdatedAt *time.Time
 	Name      *string
 	Model     *string
+	UsersID   *uuid.UUID
 }
 
 // Mutate applies the UpdateAgentInput on the AgentMutation builder.
@@ -49,6 +54,9 @@ func (i *UpdateAgentInput) Mutate(m *AgentMutation) {
 	}
 	if v := i.Model; v != nil {
 		m.SetModel(*v)
+	}
+	if v := i.UsersID; v != nil {
+		m.SetUsersID(*v)
 	}
 }
 
@@ -68,6 +76,9 @@ func (c *AgentUpdateOne) SetInput(i UpdateAgentInput) *AgentUpdateOne {
 type CreateBookmarkInput struct {
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
+	UserID    uuid.UUID
+	ThreadID  *uuid.UUID
+	MessageID *uuid.UUID
 }
 
 // Mutate applies the CreateBookmarkInput on the BookmarkMutation builder.
@@ -77,6 +88,13 @@ func (i *CreateBookmarkInput) Mutate(m *BookmarkMutation) {
 	}
 	if v := i.UpdatedAt; v != nil {
 		m.SetUpdatedAt(*v)
+	}
+	m.SetUserID(i.UserID)
+	if v := i.ThreadID; v != nil {
+		m.SetThreadID(*v)
+	}
+	if v := i.MessageID; v != nil {
+		m.SetMessageID(*v)
 	}
 }
 
@@ -88,13 +106,33 @@ func (c *BookmarkCreate) SetInput(i CreateBookmarkInput) *BookmarkCreate {
 
 // UpdateBookmarkInput represents a mutation input for updating bookmarks.
 type UpdateBookmarkInput struct {
-	UpdatedAt *time.Time
+	UpdatedAt    *time.Time
+	UserID       *uuid.UUID
+	ClearThread  bool
+	ThreadID     *uuid.UUID
+	ClearMessage bool
+	MessageID    *uuid.UUID
 }
 
 // Mutate applies the UpdateBookmarkInput on the BookmarkMutation builder.
 func (i *UpdateBookmarkInput) Mutate(m *BookmarkMutation) {
 	if v := i.UpdatedAt; v != nil {
 		m.SetUpdatedAt(*v)
+	}
+	if v := i.UserID; v != nil {
+		m.SetUserID(*v)
+	}
+	if i.ClearThread {
+		m.ClearThread()
+	}
+	if v := i.ThreadID; v != nil {
+		m.SetThreadID(*v)
+	}
+	if i.ClearMessage {
+		m.ClearMessage()
+	}
+	if v := i.MessageID; v != nil {
+		m.SetMessageID(*v)
 	}
 }
 
@@ -112,9 +150,12 @@ func (c *BookmarkUpdateOne) SetInput(i UpdateBookmarkInput) *BookmarkUpdateOne {
 
 // CreateMessageInput represents a mutation input for creating messages.
 type CreateMessageInput struct {
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
-	Content   string
+	CreatedAt   *time.Time
+	UpdatedAt   *time.Time
+	Content     string
+	SentByID    *uuid.UUID
+	ThreadID    uuid.UUID
+	BookmarkIDs []uuid.UUID
 }
 
 // Mutate applies the CreateMessageInput on the MessageMutation builder.
@@ -126,6 +167,13 @@ func (i *CreateMessageInput) Mutate(m *MessageMutation) {
 		m.SetUpdatedAt(*v)
 	}
 	m.SetContent(i.Content)
+	if v := i.SentByID; v != nil {
+		m.SetSentByID(*v)
+	}
+	m.SetThreadID(i.ThreadID)
+	if v := i.BookmarkIDs; len(v) > 0 {
+		m.AddBookmarkIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the CreateMessageInput on the MessageCreate builder.
@@ -136,8 +184,14 @@ func (c *MessageCreate) SetInput(i CreateMessageInput) *MessageCreate {
 
 // UpdateMessageInput represents a mutation input for updating messages.
 type UpdateMessageInput struct {
-	UpdatedAt *time.Time
-	Content   *string
+	UpdatedAt         *time.Time
+	Content           *string
+	ClearSentBy       bool
+	SentByID          *uuid.UUID
+	ThreadID          *uuid.UUID
+	ClearBookmarks    bool
+	AddBookmarkIDs    []uuid.UUID
+	RemoveBookmarkIDs []uuid.UUID
 }
 
 // Mutate applies the UpdateMessageInput on the MessageMutation builder.
@@ -147,6 +201,24 @@ func (i *UpdateMessageInput) Mutate(m *MessageMutation) {
 	}
 	if v := i.Content; v != nil {
 		m.SetContent(*v)
+	}
+	if i.ClearSentBy {
+		m.ClearSentBy()
+	}
+	if v := i.SentByID; v != nil {
+		m.SetSentByID(*v)
+	}
+	if v := i.ThreadID; v != nil {
+		m.SetThreadID(*v)
+	}
+	if i.ClearBookmarks {
+		m.ClearBookmarks()
+	}
+	if v := i.AddBookmarkIDs; len(v) > 0 {
+		m.AddBookmarkIDs(v...)
+	}
+	if v := i.RemoveBookmarkIDs; len(v) > 0 {
+		m.RemoveBookmarkIDs(v...)
 	}
 }
 
@@ -164,9 +236,14 @@ func (c *MessageUpdateOne) SetInput(i UpdateMessageInput) *MessageUpdateOne {
 
 // CreateThreadInput represents a mutation input for creating threads.
 type CreateThreadInput struct {
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
-	Name      string
+	CreatedAt   *time.Time
+	UpdatedAt   *time.Time
+	Name        string
+	CreatedByID uuid.UUID
+	MessageIDs  []uuid.UUID
+	BookmarkIDs []uuid.UUID
+	ChildID     *uuid.UUID
+	ParentID    *uuid.UUID
 }
 
 // Mutate applies the CreateThreadInput on the ThreadMutation builder.
@@ -178,6 +255,19 @@ func (i *CreateThreadInput) Mutate(m *ThreadMutation) {
 		m.SetUpdatedAt(*v)
 	}
 	m.SetName(i.Name)
+	m.SetCreatedByID(i.CreatedByID)
+	if v := i.MessageIDs; len(v) > 0 {
+		m.AddMessageIDs(v...)
+	}
+	if v := i.BookmarkIDs; len(v) > 0 {
+		m.AddBookmarkIDs(v...)
+	}
+	if v := i.ChildID; v != nil {
+		m.SetChildID(*v)
+	}
+	if v := i.ParentID; v != nil {
+		m.SetParentID(*v)
+	}
 }
 
 // SetInput applies the change-set in the CreateThreadInput on the ThreadCreate builder.
@@ -188,8 +278,19 @@ func (c *ThreadCreate) SetInput(i CreateThreadInput) *ThreadCreate {
 
 // UpdateThreadInput represents a mutation input for updating threads.
 type UpdateThreadInput struct {
-	UpdatedAt *time.Time
-	Name      *string
+	UpdatedAt         *time.Time
+	Name              *string
+	CreatedByID       *uuid.UUID
+	ClearMessages     bool
+	AddMessageIDs     []uuid.UUID
+	RemoveMessageIDs  []uuid.UUID
+	ClearBookmarks    bool
+	AddBookmarkIDs    []uuid.UUID
+	RemoveBookmarkIDs []uuid.UUID
+	ClearChild        bool
+	ChildID           *uuid.UUID
+	ClearParent       bool
+	ParentID          *uuid.UUID
 }
 
 // Mutate applies the UpdateThreadInput on the ThreadMutation builder.
@@ -199,6 +300,39 @@ func (i *UpdateThreadInput) Mutate(m *ThreadMutation) {
 	}
 	if v := i.Name; v != nil {
 		m.SetName(*v)
+	}
+	if v := i.CreatedByID; v != nil {
+		m.SetCreatedByID(*v)
+	}
+	if i.ClearMessages {
+		m.ClearMessages()
+	}
+	if v := i.AddMessageIDs; len(v) > 0 {
+		m.AddMessageIDs(v...)
+	}
+	if v := i.RemoveMessageIDs; len(v) > 0 {
+		m.RemoveMessageIDs(v...)
+	}
+	if i.ClearBookmarks {
+		m.ClearBookmarks()
+	}
+	if v := i.AddBookmarkIDs; len(v) > 0 {
+		m.AddBookmarkIDs(v...)
+	}
+	if v := i.RemoveBookmarkIDs; len(v) > 0 {
+		m.RemoveBookmarkIDs(v...)
+	}
+	if i.ClearChild {
+		m.ClearChild()
+	}
+	if v := i.ChildID; v != nil {
+		m.SetChildID(*v)
+	}
+	if i.ClearParent {
+		m.ClearParent()
+	}
+	if v := i.ParentID; v != nil {
+		m.SetParentID(*v)
 	}
 }
 
@@ -216,9 +350,13 @@ func (c *ThreadUpdateOne) SetInput(i UpdateThreadInput) *ThreadUpdateOne {
 
 // CreateUserInput represents a mutation input for creating users.
 type CreateUserInput struct {
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
-	Email     string
+	CreatedAt   *time.Time
+	UpdatedAt   *time.Time
+	Email       string
+	AgentID     *uuid.UUID
+	BookmarkIDs []uuid.UUID
+	ThreadIDs   []uuid.UUID
+	MessageIDs  []uuid.UUID
 }
 
 // Mutate applies the CreateUserInput on the UserMutation builder.
@@ -230,6 +368,18 @@ func (i *CreateUserInput) Mutate(m *UserMutation) {
 		m.SetUpdatedAt(*v)
 	}
 	m.SetEmail(i.Email)
+	if v := i.AgentID; v != nil {
+		m.SetAgentID(*v)
+	}
+	if v := i.BookmarkIDs; len(v) > 0 {
+		m.AddBookmarkIDs(v...)
+	}
+	if v := i.ThreadIDs; len(v) > 0 {
+		m.AddThreadIDs(v...)
+	}
+	if v := i.MessageIDs; len(v) > 0 {
+		m.AddMessageIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the CreateUserInput on the UserCreate builder.
@@ -240,8 +390,19 @@ func (c *UserCreate) SetInput(i CreateUserInput) *UserCreate {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	UpdatedAt *time.Time
-	Email     *string
+	UpdatedAt         *time.Time
+	Email             *string
+	ClearAgent        bool
+	AgentID           *uuid.UUID
+	ClearBookmarks    bool
+	AddBookmarkIDs    []uuid.UUID
+	RemoveBookmarkIDs []uuid.UUID
+	ClearThreads      bool
+	AddThreadIDs      []uuid.UUID
+	RemoveThreadIDs   []uuid.UUID
+	ClearMessages     bool
+	AddMessageIDs     []uuid.UUID
+	RemoveMessageIDs  []uuid.UUID
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -251,6 +412,39 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.Email; v != nil {
 		m.SetEmail(*v)
+	}
+	if i.ClearAgent {
+		m.ClearAgent()
+	}
+	if v := i.AgentID; v != nil {
+		m.SetAgentID(*v)
+	}
+	if i.ClearBookmarks {
+		m.ClearBookmarks()
+	}
+	if v := i.AddBookmarkIDs; len(v) > 0 {
+		m.AddBookmarkIDs(v...)
+	}
+	if v := i.RemoveBookmarkIDs; len(v) > 0 {
+		m.RemoveBookmarkIDs(v...)
+	}
+	if i.ClearThreads {
+		m.ClearThreads()
+	}
+	if v := i.AddThreadIDs; len(v) > 0 {
+		m.AddThreadIDs(v...)
+	}
+	if v := i.RemoveThreadIDs; len(v) > 0 {
+		m.RemoveThreadIDs(v...)
+	}
+	if i.ClearMessages {
+		m.ClearMessages()
+	}
+	if v := i.AddMessageIDs; len(v) > 0 {
+		m.AddMessageIDs(v...)
+	}
+	if v := i.RemoveMessageIDs; len(v) > 0 {
+		m.RemoveMessageIDs(v...)
 	}
 }
 

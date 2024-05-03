@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"time"
@@ -25,7 +26,11 @@ func (Agent) Fields() []ent.Field {
 }
 
 func (Agent) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		// required means an agent can't be created without its user, users can be created without agents however, because
+		// users can be human or ai users
+		edge.From("users", User.Type).Ref("agent").Unique().Required(),
+	}
 }
 
 func (Agent) Annotations() []schema.Annotation {

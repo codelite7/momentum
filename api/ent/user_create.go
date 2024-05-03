@@ -10,6 +10,10 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/agent"
+	"github.com/codelite7/momentum/api/ent/bookmark"
+	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
@@ -67,6 +71,70 @@ func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
 		uc.SetID(*u)
 	}
 	return uc
+}
+
+// SetAgentID sets the "agent" edge to the Agent entity by ID.
+func (uc *UserCreate) SetAgentID(id uuid.UUID) *UserCreate {
+	uc.mutation.SetAgentID(id)
+	return uc
+}
+
+// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
+func (uc *UserCreate) SetNillableAgentID(id *uuid.UUID) *UserCreate {
+	if id != nil {
+		uc = uc.SetAgentID(*id)
+	}
+	return uc
+}
+
+// SetAgent sets the "agent" edge to the Agent entity.
+func (uc *UserCreate) SetAgent(a *Agent) *UserCreate {
+	return uc.SetAgentID(a.ID)
+}
+
+// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
+func (uc *UserCreate) AddBookmarkIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddBookmarkIDs(ids...)
+	return uc
+}
+
+// AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
+func (uc *UserCreate) AddBookmarks(b ...*Bookmark) *UserCreate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return uc.AddBookmarkIDs(ids...)
+}
+
+// AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
+func (uc *UserCreate) AddThreadIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddThreadIDs(ids...)
+	return uc
+}
+
+// AddThreads adds the "threads" edges to the Thread entity.
+func (uc *UserCreate) AddThreads(t ...*Thread) *UserCreate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uc.AddThreadIDs(ids...)
+}
+
+// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
+func (uc *UserCreate) AddMessageIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddMessageIDs(ids...)
+	return uc
+}
+
+// AddMessages adds the "messages" edges to the Message entity.
+func (uc *UserCreate) AddMessages(m ...*Message) *UserCreate {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uc.AddMessageIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -175,6 +243,70 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 		_node.Email = value
+	}
+	if nodes := uc.mutation.AgentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.AgentTable,
+			Columns: []string{user.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.BookmarksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.BookmarksTable,
+			Columns: []string{user.BookmarksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ThreadsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ThreadsTable,
+			Columns: []string{user.ThreadsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.MessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.MessagesTable,
+			Columns: []string{user.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

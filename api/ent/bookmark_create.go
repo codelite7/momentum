@@ -11,6 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
+	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/thread"
+	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -61,6 +64,55 @@ func (bc *BookmarkCreate) SetNillableID(u *uuid.UUID) *BookmarkCreate {
 		bc.SetID(*u)
 	}
 	return bc
+}
+
+// SetUserID sets the "user" edge to the User entity by ID.
+func (bc *BookmarkCreate) SetUserID(id uuid.UUID) *BookmarkCreate {
+	bc.mutation.SetUserID(id)
+	return bc
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (bc *BookmarkCreate) SetUser(u *User) *BookmarkCreate {
+	return bc.SetUserID(u.ID)
+}
+
+// SetThreadID sets the "thread" edge to the Thread entity by ID.
+func (bc *BookmarkCreate) SetThreadID(id uuid.UUID) *BookmarkCreate {
+	bc.mutation.SetThreadID(id)
+	return bc
+}
+
+// SetNillableThreadID sets the "thread" edge to the Thread entity by ID if the given value is not nil.
+func (bc *BookmarkCreate) SetNillableThreadID(id *uuid.UUID) *BookmarkCreate {
+	if id != nil {
+		bc = bc.SetThreadID(*id)
+	}
+	return bc
+}
+
+// SetThread sets the "thread" edge to the Thread entity.
+func (bc *BookmarkCreate) SetThread(t *Thread) *BookmarkCreate {
+	return bc.SetThreadID(t.ID)
+}
+
+// SetMessageID sets the "message" edge to the Message entity by ID.
+func (bc *BookmarkCreate) SetMessageID(id uuid.UUID) *BookmarkCreate {
+	bc.mutation.SetMessageID(id)
+	return bc
+}
+
+// SetNillableMessageID sets the "message" edge to the Message entity by ID if the given value is not nil.
+func (bc *BookmarkCreate) SetNillableMessageID(id *uuid.UUID) *BookmarkCreate {
+	if id != nil {
+		bc = bc.SetMessageID(*id)
+	}
+	return bc
+}
+
+// SetMessage sets the "message" edge to the Message entity.
+func (bc *BookmarkCreate) SetMessage(m *Message) *BookmarkCreate {
+	return bc.SetMessageID(m.ID)
 }
 
 // Mutation returns the BookmarkMutation object of the builder.
@@ -120,6 +172,9 @@ func (bc *BookmarkCreate) check() error {
 	if _, ok := bc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Bookmark.updated_at"`)}
 	}
+	if _, ok := bc.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Bookmark.user"`)}
+	}
 	return nil
 }
 
@@ -162,6 +217,57 @@ func (bc *BookmarkCreate) createSpec() (*Bookmark, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.UpdatedAt(); ok {
 		_spec.SetField(bookmark.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if nodes := bc.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   bookmark.UserTable,
+			Columns: []string{bookmark.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_bookmarks = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.ThreadIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   bookmark.ThreadTable,
+			Columns: []string{bookmark.ThreadColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.thread_bookmarks = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.MessageIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   bookmark.MessageTable,
+			Columns: []string{bookmark.MessageColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.message_bookmarks = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

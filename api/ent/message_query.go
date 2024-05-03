@@ -4,26 +4,35 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/thread"
+	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
 
 // MessageQuery is the builder for querying Message entities.
 type MessageQuery struct {
 	config
-	ctx        *QueryContext
-	order      []message.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Message
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Message) error
+	ctx                *QueryContext
+	order              []message.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Message
+	withSentBy         *UserQuery
+	withThread         *ThreadQuery
+	withBookmarks      *BookmarkQuery
+	withFKs            bool
+	modifiers          []func(*sql.Selector)
+	loadTotal          []func(context.Context, []*Message) error
+	withNamedBookmarks map[string]*BookmarkQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +67,72 @@ func (mq *MessageQuery) Unique(unique bool) *MessageQuery {
 func (mq *MessageQuery) Order(o ...message.OrderOption) *MessageQuery {
 	mq.order = append(mq.order, o...)
 	return mq
+}
+
+// QuerySentBy chains the current query on the "sent_by" edge.
+func (mq *MessageQuery) QuerySentBy() *UserQuery {
+	query := (&UserClient{config: mq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, message.SentByTable, message.SentByColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryThread chains the current query on the "thread" edge.
+func (mq *MessageQuery) QueryThread() *ThreadQuery {
+	query := (&ThreadClient{config: mq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, selector),
+			sqlgraph.To(thread.Table, thread.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, message.ThreadTable, message.ThreadColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBookmarks chains the current query on the "bookmarks" edge.
+func (mq *MessageQuery) QueryBookmarks() *BookmarkQuery {
+	query := (&BookmarkClient{config: mq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, selector),
+			sqlgraph.To(bookmark.Table, bookmark.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, message.BookmarksTable, message.BookmarksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Message entity from the query.
@@ -247,15 +322,51 @@ func (mq *MessageQuery) Clone() *MessageQuery {
 		return nil
 	}
 	return &MessageQuery{
-		config:     mq.config,
-		ctx:        mq.ctx.Clone(),
-		order:      append([]message.OrderOption{}, mq.order...),
-		inters:     append([]Interceptor{}, mq.inters...),
-		predicates: append([]predicate.Message{}, mq.predicates...),
+		config:        mq.config,
+		ctx:           mq.ctx.Clone(),
+		order:         append([]message.OrderOption{}, mq.order...),
+		inters:        append([]Interceptor{}, mq.inters...),
+		predicates:    append([]predicate.Message{}, mq.predicates...),
+		withSentBy:    mq.withSentBy.Clone(),
+		withThread:    mq.withThread.Clone(),
+		withBookmarks: mq.withBookmarks.Clone(),
 		// clone intermediate query.
 		sql:  mq.sql.Clone(),
 		path: mq.path,
 	}
+}
+
+// WithSentBy tells the query-builder to eager-load the nodes that are connected to
+// the "sent_by" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithSentBy(opts ...func(*UserQuery)) *MessageQuery {
+	query := (&UserClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withSentBy = query
+	return mq
+}
+
+// WithThread tells the query-builder to eager-load the nodes that are connected to
+// the "thread" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithThread(opts ...func(*ThreadQuery)) *MessageQuery {
+	query := (&ThreadClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withThread = query
+	return mq
+}
+
+// WithBookmarks tells the query-builder to eager-load the nodes that are connected to
+// the "bookmarks" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithBookmarks(opts ...func(*BookmarkQuery)) *MessageQuery {
+	query := (&BookmarkClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withBookmarks = query
+	return mq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -334,15 +445,28 @@ func (mq *MessageQuery) prepareQuery(ctx context.Context) error {
 
 func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Message, error) {
 	var (
-		nodes = []*Message{}
-		_spec = mq.querySpec()
+		nodes       = []*Message{}
+		withFKs     = mq.withFKs
+		_spec       = mq.querySpec()
+		loadedTypes = [3]bool{
+			mq.withSentBy != nil,
+			mq.withThread != nil,
+			mq.withBookmarks != nil,
+		}
 	)
+	if mq.withSentBy != nil || mq.withThread != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, message.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Message).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Message{config: mq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(mq.modifiers) > 0 {
@@ -357,12 +481,134 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := mq.withSentBy; query != nil {
+		if err := mq.loadSentBy(ctx, query, nodes, nil,
+			func(n *Message, e *User) { n.Edges.SentBy = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := mq.withThread; query != nil {
+		if err := mq.loadThread(ctx, query, nodes, nil,
+			func(n *Message, e *Thread) { n.Edges.Thread = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := mq.withBookmarks; query != nil {
+		if err := mq.loadBookmarks(ctx, query, nodes,
+			func(n *Message) { n.Edges.Bookmarks = []*Bookmark{} },
+			func(n *Message, e *Bookmark) { n.Edges.Bookmarks = append(n.Edges.Bookmarks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range mq.withNamedBookmarks {
+		if err := mq.loadBookmarks(ctx, query, nodes,
+			func(n *Message) { n.appendNamedBookmarks(name) },
+			func(n *Message, e *Bookmark) { n.appendNamedBookmarks(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range mq.loadTotal {
 		if err := mq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (mq *MessageQuery) loadSentBy(ctx context.Context, query *UserQuery, nodes []*Message, init func(*Message), assign func(*Message, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Message)
+	for i := range nodes {
+		if nodes[i].user_messages == nil {
+			continue
+		}
+		fk := *nodes[i].user_messages
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_messages" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (mq *MessageQuery) loadThread(ctx context.Context, query *ThreadQuery, nodes []*Message, init func(*Message), assign func(*Message, *Thread)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Message)
+	for i := range nodes {
+		if nodes[i].thread_messages == nil {
+			continue
+		}
+		fk := *nodes[i].thread_messages
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(thread.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "thread_messages" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (mq *MessageQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*Message, init func(*Message), assign func(*Message, *Bookmark)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Message)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Bookmark(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(message.BookmarksColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.message_bookmarks
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "message_bookmarks" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "message_bookmarks" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (mq *MessageQuery) sqlCount(ctx context.Context) (int, error) {
@@ -447,6 +693,20 @@ func (mq *MessageQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedBookmarks tells the query-builder to eager-load the nodes that are connected to the "bookmarks"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithNamedBookmarks(name string, opts ...func(*BookmarkQuery)) *MessageQuery {
+	query := (&BookmarkClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if mq.withNamedBookmarks == nil {
+		mq.withNamedBookmarks = make(map[string]*BookmarkQuery)
+	}
+	mq.withNamedBookmarks[name] = query
+	return mq
 }
 
 // MessageGroupBy is the group-by builder for Message entities.
