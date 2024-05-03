@@ -6,8 +6,6 @@ package api
 
 import (
 	"context"
-	"fmt"
-
 	"entgo.io/contrib/entgql"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/google/uuid"
@@ -25,22 +23,22 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []uuid.UUID) ([]ent.Noder
 
 // Agents is the resolver for the agents field.
 func (r *queryResolver) Agents(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.AgentOrder, where *ent.AgentWhereInput) (*ent.AgentConnection, error) {
-	panic(fmt.Errorf("not implemented: Agents - agents"))
+	return r.client.Agent.Query().Paginate(ctx, after, first, before, last, ent.WithAgentOrder(orderBy), ent.WithAgentFilter(where.Filter))
 }
 
 // Bookmarks is the resolver for the bookmarks field.
 func (r *queryResolver) Bookmarks(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.BookmarkWhereInput) (*ent.BookmarkConnection, error) {
-	panic(fmt.Errorf("not implemented: Bookmarks - bookmarks"))
+	return r.client.Bookmark.Query().Paginate(ctx, after, first, before, last, ent.WithBookmarkFilter(where.Filter))
 }
 
 // Messages is the resolver for the messages field.
 func (r *queryResolver) Messages(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.MessageWhereInput) (*ent.MessageConnection, error) {
-	panic(fmt.Errorf("not implemented: Messages - messages"))
+	return r.client.Message.Query().Paginate(ctx, after, first, before, last, ent.WithMessageFilter(where.Filter))
 }
 
 // Threads is the resolver for the threads field.
 func (r *queryResolver) Threads(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) (*ent.ThreadConnection, error) {
-	panic(fmt.Errorf("not implemented: Threads - threads"))
+	return r.client.Thread.Query().Paginate(ctx, after, first, before, last, ent.WithThreadOrder(orderBy), ent.WithThreadFilter(where.Filter))
 }
 
 // Users is the resolver for the users field.
