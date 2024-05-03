@@ -2,6 +2,10 @@
 schema:
   - ent.graphql
   - user.graphql
+  - agent.graphql
+  - thread.graphql
+  - message.graphql
+  - bookmark.graphql
 
 # resolver reports where the resolver implementations go.
 resolver:
@@ -16,6 +20,10 @@ resolver:
 autobind:
   - github.com/codelite7/momentum/api/ent
   - github.com/codelite7/momentum/api/ent/user
+  - github.com/codelite7/momentum/api/ent/agent
+  - github.com/codelite7/momentum/api/ent/thread
+  - github.com/codelite7/momentum/api/ent/message
+  - github.com/codelite7/momentum/api/ent/bookmark
 
 # This section declares type mapping between the GraphQL and Go type systems.
 models:

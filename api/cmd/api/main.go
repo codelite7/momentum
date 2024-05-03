@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/codelite7/momentum/api"
 	"github.com/codelite7/momentum/api/ent"
-	"github.com/codelite7/momentum/api/ent/migrate"
 	"log"
 	"net/http"
 
@@ -23,7 +22,6 @@ func main() {
 	}
 	if err := client.Schema.Create(
 		context.Background(),
-		migrate.WithGlobalUniqueID(true),
 	); err != nil {
 		log.Fatal("opening ent client", err)
 	}

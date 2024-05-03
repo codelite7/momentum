@@ -1,0 +1,3 @@
+extend type Mutation {
+    createMessage(input: CreateMessageInput!): Message
+}
