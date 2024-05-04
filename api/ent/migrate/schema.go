@@ -15,21 +15,12 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
 		{Name: "model", Type: field.TypeString},
-		{Name: "user_agent", Type: field.TypeUUID, Unique: true},
 	}
 	// AgentsTable holds the schema information for the "agents" table.
 	AgentsTable = &schema.Table{
 		Name:       "agents",
 		Columns:    AgentsColumns,
 		PrimaryKey: []*schema.Column{AgentsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "agents_users_agent",
-				Columns:    []*schema.Column{AgentsColumns[5]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
 	}
 	// BookmarksColumns holds the columns for the "bookmarks" table.
 	BookmarksColumns = []*schema.Column{
@@ -72,6 +63,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "content", Type: field.TypeString},
+		{Name: "agent_messages", Type: field.TypeUUID, Nullable: true},
 		{Name: "thread_messages", Type: field.TypeUUID},
 		{Name: "user_messages", Type: field.TypeUUID, Nullable: true},
 	}
@@ -82,14 +74,20 @@ var (
 		PrimaryKey: []*schema.Column{MessagesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "messages_threads_messages",
+				Symbol:     "messages_agents_messages",
 				Columns:    []*schema.Column{MessagesColumns[4]},
+				RefColumns: []*schema.Column{AgentsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "messages_threads_messages",
+				Columns:    []*schema.Column{MessagesColumns[5]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "messages_users_messages",
-				Columns:    []*schema.Column{MessagesColumns[5]},
+				Columns:    []*schema.Column{MessagesColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -148,12 +146,12 @@ var (
 )
 
 func init() {
-	AgentsTable.ForeignKeys[0].RefTable = UsersTable
 	BookmarksTable.ForeignKeys[0].RefTable = MessagesTable
 	BookmarksTable.ForeignKeys[1].RefTable = ThreadsTable
 	BookmarksTable.ForeignKeys[2].RefTable = UsersTable
-	MessagesTable.ForeignKeys[0].RefTable = ThreadsTable
-	MessagesTable.ForeignKeys[1].RefTable = UsersTable
+	MessagesTable.ForeignKeys[0].RefTable = AgentsTable
+	MessagesTable.ForeignKeys[1].RefTable = ThreadsTable
+	MessagesTable.ForeignKeys[2].RefTable = UsersTable
 	ThreadsTable.ForeignKeys[0].RefTable = ThreadsTable
 	ThreadsTable.ForeignKeys[1].RefTable = UsersTable
 }

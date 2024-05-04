@@ -21,21 +21,30 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
-	// EdgeSentBy holds the string denoting the sent_by edge name in mutations.
-	EdgeSentBy = "sent_by"
+	// EdgeSentByAgent holds the string denoting the sent_by_agent edge name in mutations.
+	EdgeSentByAgent = "sent_by_agent"
+	// EdgeSentByUser holds the string denoting the sent_by_user edge name in mutations.
+	EdgeSentByUser = "sent_by_user"
 	// EdgeThread holds the string denoting the thread edge name in mutations.
 	EdgeThread = "thread"
 	// EdgeBookmarks holds the string denoting the bookmarks edge name in mutations.
 	EdgeBookmarks = "bookmarks"
 	// Table holds the table name of the message in the database.
 	Table = "messages"
-	// SentByTable is the table that holds the sent_by relation/edge.
-	SentByTable = "messages"
-	// SentByInverseTable is the table name for the User entity.
+	// SentByAgentTable is the table that holds the sent_by_agent relation/edge.
+	SentByAgentTable = "messages"
+	// SentByAgentInverseTable is the table name for the Agent entity.
+	// It exists in this package in order to avoid circular dependency with the "agent" package.
+	SentByAgentInverseTable = "agents"
+	// SentByAgentColumn is the table column denoting the sent_by_agent relation/edge.
+	SentByAgentColumn = "agent_messages"
+	// SentByUserTable is the table that holds the sent_by_user relation/edge.
+	SentByUserTable = "messages"
+	// SentByUserInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
-	SentByInverseTable = "users"
-	// SentByColumn is the table column denoting the sent_by relation/edge.
-	SentByColumn = "user_messages"
+	SentByUserInverseTable = "users"
+	// SentByUserColumn is the table column denoting the sent_by_user relation/edge.
+	SentByUserColumn = "user_messages"
 	// ThreadTable is the table that holds the thread relation/edge.
 	ThreadTable = "messages"
 	// ThreadInverseTable is the table name for the Thread entity.
@@ -63,6 +72,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "messages"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"agent_messages",
 	"thread_messages",
 	"user_messages",
 }
@@ -114,10 +124,17 @@ func ByContent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContent, opts...).ToFunc()
 }
 
-// BySentByField orders the results by sent_by field.
-func BySentByField(field string, opts ...sql.OrderTermOption) OrderOption {
+// BySentByAgentField orders the results by sent_by_agent field.
+func BySentByAgentField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newSentByStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newSentByAgentStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// BySentByUserField orders the results by sent_by_user field.
+func BySentByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSentByUserStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -141,11 +158,18 @@ func ByBookmarks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newBookmarksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newSentByStep() *sqlgraph.Step {
+func newSentByAgentStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(SentByInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, SentByTable, SentByColumn),
+		sqlgraph.To(SentByAgentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, SentByAgentTable, SentByAgentColumn),
+	)
+}
+func newSentByUserStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SentByUserInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, SentByUserTable, SentByUserColumn),
 	)
 }
 func newThreadStep() *sqlgraph.Step {

@@ -25,8 +25,6 @@ func (User) Fields() []ent.Field {
 
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		// a user can have an agent, a user with an agent is an ai user
-		edge.To("agent", Agent.Type).Unique(),
 		// a user can have many bookmarks
 		edge.To("bookmarks", Bookmark.Type),
 		// a user can have many threads

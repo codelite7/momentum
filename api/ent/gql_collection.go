@@ -36,16 +36,18 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 
-		case "users":
+		case "messages":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&UserClient{config: a.config}).Query()
+				query = (&MessageClient{config: a.config}).Query()
 			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, messageImplementors)...); err != nil {
 				return err
 			}
-			a.withUsers = query
+			a.WithNamedMessages(alias, func(wq *MessageQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[agent.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, agent.FieldCreatedAt)
@@ -262,7 +264,18 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 
-		case "sentBy":
+		case "sentByAgent":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AgentClient{config: m.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, agentImplementors)...); err != nil {
+				return err
+			}
+			m.withSentByAgent = query
+
+		case "sentByUser":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
@@ -271,7 +284,7 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
 				return err
 			}
-			m.withSentBy = query
+			m.withSentByUser = query
 
 		case "thread":
 			var (
@@ -537,17 +550,6 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
-
-		case "agent":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&AgentClient{config: u.config}).Query()
-			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, agentImplementors)...); err != nil {
-				return err
-			}
-			u.withAgent = query
 
 		case "bookmarks":
 			var (

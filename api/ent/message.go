@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
@@ -29,6 +30,7 @@ type Message struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MessageQuery when eager-loading is set.
 	Edges           MessageEdges `json:"edges"`
+	agent_messages  *uuid.UUID
 	thread_messages *uuid.UUID
 	user_messages   *uuid.UUID
 	selectValues    sql.SelectValues
@@ -36,30 +38,43 @@ type Message struct {
 
 // MessageEdges holds the relations/edges for other nodes in the graph.
 type MessageEdges struct {
-	// SentBy holds the value of the sent_by edge.
-	SentBy *User `json:"sent_by,omitempty"`
+	// SentByAgent holds the value of the sent_by_agent edge.
+	SentByAgent *Agent `json:"sent_by_agent,omitempty"`
+	// SentByUser holds the value of the sent_by_user edge.
+	SentByUser *User `json:"sent_by_user,omitempty"`
 	// Thread holds the value of the thread edge.
 	Thread *Thread `json:"thread,omitempty"`
 	// Bookmarks holds the value of the bookmarks edge.
 	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedBookmarks map[string][]*Bookmark
 }
 
-// SentByOrErr returns the SentBy value or an error if the edge
+// SentByAgentOrErr returns the SentByAgent value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e MessageEdges) SentByOrErr() (*User, error) {
-	if e.SentBy != nil {
-		return e.SentBy, nil
+func (e MessageEdges) SentByAgentOrErr() (*Agent, error) {
+	if e.SentByAgent != nil {
+		return e.SentByAgent, nil
 	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: agent.Label}
+	}
+	return nil, &NotLoadedError{edge: "sent_by_agent"}
+}
+
+// SentByUserOrErr returns the SentByUser value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e MessageEdges) SentByUserOrErr() (*User, error) {
+	if e.SentByUser != nil {
+		return e.SentByUser, nil
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: user.Label}
 	}
-	return nil, &NotLoadedError{edge: "sent_by"}
+	return nil, &NotLoadedError{edge: "sent_by_user"}
 }
 
 // ThreadOrErr returns the Thread value or an error if the edge
@@ -67,7 +82,7 @@ func (e MessageEdges) SentByOrErr() (*User, error) {
 func (e MessageEdges) ThreadOrErr() (*Thread, error) {
 	if e.Thread != nil {
 		return e.Thread, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: thread.Label}
 	}
 	return nil, &NotLoadedError{edge: "thread"}
@@ -76,7 +91,7 @@ func (e MessageEdges) ThreadOrErr() (*Thread, error) {
 // BookmarksOrErr returns the Bookmarks value or an error if the edge
 // was not loaded in eager-loading.
 func (e MessageEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
@@ -93,9 +108,11 @@ func (*Message) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case message.FieldID:
 			values[i] = new(uuid.UUID)
-		case message.ForeignKeys[0]: // thread_messages
+		case message.ForeignKeys[0]: // agent_messages
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case message.ForeignKeys[1]: // user_messages
+		case message.ForeignKeys[1]: // thread_messages
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case message.ForeignKeys[2]: // user_messages
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
@@ -138,12 +155,19 @@ func (m *Message) assignValues(columns []string, values []any) error {
 			}
 		case message.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field agent_messages", values[i])
+			} else if value.Valid {
+				m.agent_messages = new(uuid.UUID)
+				*m.agent_messages = *value.S.(*uuid.UUID)
+			}
+		case message.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field thread_messages", values[i])
 			} else if value.Valid {
 				m.thread_messages = new(uuid.UUID)
 				*m.thread_messages = *value.S.(*uuid.UUID)
 			}
-		case message.ForeignKeys[1]:
+		case message.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_messages", values[i])
 			} else if value.Valid {
@@ -163,9 +187,14 @@ func (m *Message) Value(name string) (ent.Value, error) {
 	return m.selectValues.Get(name)
 }
 
-// QuerySentBy queries the "sent_by" edge of the Message entity.
-func (m *Message) QuerySentBy() *UserQuery {
-	return NewMessageClient(m.config).QuerySentBy(m)
+// QuerySentByAgent queries the "sent_by_agent" edge of the Message entity.
+func (m *Message) QuerySentByAgent() *AgentQuery {
+	return NewMessageClient(m.config).QuerySentByAgent(m)
+}
+
+// QuerySentByUser queries the "sent_by_user" edge of the Message entity.
+func (m *Message) QuerySentByUser() *UserQuery {
+	return NewMessageClient(m.config).QuerySentByUser(m)
 }
 
 // QueryThread queries the "thread" edge of the Message entity.

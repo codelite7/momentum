@@ -21,8 +21,6 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
-	// EdgeAgent holds the string denoting the agent edge name in mutations.
-	EdgeAgent = "agent"
 	// EdgeBookmarks holds the string denoting the bookmarks edge name in mutations.
 	EdgeBookmarks = "bookmarks"
 	// EdgeThreads holds the string denoting the threads edge name in mutations.
@@ -31,13 +29,6 @@ const (
 	EdgeMessages = "messages"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// AgentTable is the table that holds the agent relation/edge.
-	AgentTable = "agents"
-	// AgentInverseTable is the table name for the Agent entity.
-	// It exists in this package in order to avoid circular dependency with the "agent" package.
-	AgentInverseTable = "agents"
-	// AgentColumn is the table column denoting the agent relation/edge.
-	AgentColumn = "user_agent"
 	// BookmarksTable is the table that holds the bookmarks relation/edge.
 	BookmarksTable = "bookmarks"
 	// BookmarksInverseTable is the table name for the Bookmark entity.
@@ -111,13 +102,6 @@ func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEmail, opts...).ToFunc()
 }
 
-// ByAgentField orders the results by agent field.
-func ByAgentField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newAgentStep(), sql.OrderByField(field, opts...))
-	}
-}
-
 // ByBookmarksCount orders the results by bookmarks count.
 func ByBookmarksCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -158,13 +142,6 @@ func ByMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
-}
-func newAgentStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(AgentInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, false, AgentTable, AgentColumn),
-	)
 }
 func newBookmarksStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

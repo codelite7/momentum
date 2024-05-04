@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
@@ -27,7 +26,6 @@ type UserQuery struct {
 	order              []user.OrderOption
 	inters             []Interceptor
 	predicates         []predicate.User
-	withAgent          *AgentQuery
 	withBookmarks      *BookmarkQuery
 	withThreads        *ThreadQuery
 	withMessages       *MessageQuery
@@ -70,28 +68,6 @@ func (uq *UserQuery) Unique(unique bool) *UserQuery {
 func (uq *UserQuery) Order(o ...user.OrderOption) *UserQuery {
 	uq.order = append(uq.order, o...)
 	return uq
-}
-
-// QueryAgent chains the current query on the "agent" edge.
-func (uq *UserQuery) QueryAgent() *AgentQuery {
-	query := (&AgentClient{config: uq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := uq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := uq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(agent.Table, agent.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, user.AgentTable, user.AgentColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
 }
 
 // QueryBookmarks chains the current query on the "bookmarks" edge.
@@ -352,7 +328,6 @@ func (uq *UserQuery) Clone() *UserQuery {
 		order:         append([]user.OrderOption{}, uq.order...),
 		inters:        append([]Interceptor{}, uq.inters...),
 		predicates:    append([]predicate.User{}, uq.predicates...),
-		withAgent:     uq.withAgent.Clone(),
 		withBookmarks: uq.withBookmarks.Clone(),
 		withThreads:   uq.withThreads.Clone(),
 		withMessages:  uq.withMessages.Clone(),
@@ -360,17 +335,6 @@ func (uq *UserQuery) Clone() *UserQuery {
 		sql:  uq.sql.Clone(),
 		path: uq.path,
 	}
-}
-
-// WithAgent tells the query-builder to eager-load the nodes that are connected to
-// the "agent" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithAgent(opts ...func(*AgentQuery)) *UserQuery {
-	query := (&AgentClient{config: uq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	uq.withAgent = query
-	return uq
 }
 
 // WithBookmarks tells the query-builder to eager-load the nodes that are connected to
@@ -484,8 +448,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [4]bool{
-			uq.withAgent != nil,
+		loadedTypes = [3]bool{
 			uq.withBookmarks != nil,
 			uq.withThreads != nil,
 			uq.withMessages != nil,
@@ -511,12 +474,6 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
-	}
-	if query := uq.withAgent; query != nil {
-		if err := uq.loadAgent(ctx, query, nodes, nil,
-			func(n *User, e *Agent) { n.Edges.Agent = e }); err != nil {
-			return nil, err
-		}
 	}
 	if query := uq.withBookmarks; query != nil {
 		if err := uq.loadBookmarks(ctx, query, nodes,
@@ -568,34 +525,6 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	return nodes, nil
 }
 
-func (uq *UserQuery) loadAgent(ctx context.Context, query *AgentQuery, nodes []*User, init func(*User), assign func(*User, *Agent)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*User)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-	}
-	query.withFKs = true
-	query.Where(predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(user.AgentColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.user_agent
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_agent" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_agent" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
 func (uq *UserQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*User, init func(*User), assign func(*User, *Bookmark)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)

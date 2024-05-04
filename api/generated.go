@@ -53,10 +53,10 @@ type ComplexityRoot struct {
 	Agent struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Messages  func(childComplexity int) int
 		Model     func(childComplexity int) int
 		Name      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
-		Users     func(childComplexity int) int
 	}
 
 	AgentConnection struct {
@@ -91,13 +91,14 @@ type ComplexityRoot struct {
 	}
 
 	Message struct {
-		Bookmarks func(childComplexity int) int
-		Content   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		SentBy    func(childComplexity int) int
-		Thread    func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		Bookmarks   func(childComplexity int) int
+		Content     func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		ID          func(childComplexity int) int
+		SentByAgent func(childComplexity int) int
+		SentByUser  func(childComplexity int) int
+		Thread      func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
 	}
 
 	MessageConnection struct {
@@ -160,7 +161,6 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Agent     func(childComplexity int) int
 		Bookmarks func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		Email     func(childComplexity int) int
@@ -232,6 +232,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Agent.ID(childComplexity), true
 
+	case "Agent.messages":
+		if e.complexity.Agent.Messages == nil {
+			break
+		}
+
+		return e.complexity.Agent.Messages(childComplexity), true
+
 	case "Agent.model":
 		if e.complexity.Agent.Model == nil {
 			break
@@ -252,13 +259,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Agent.UpdatedAt(childComplexity), true
-
-	case "Agent.users":
-		if e.complexity.Agent.Users == nil {
-			break
-		}
-
-		return e.complexity.Agent.Users(childComplexity), true
 
 	case "AgentConnection.edges":
 		if e.complexity.AgentConnection.Edges == nil {
@@ -400,12 +400,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.ID(childComplexity), true
 
-	case "Message.sentBy":
-		if e.complexity.Message.SentBy == nil {
+	case "Message.sentByAgent":
+		if e.complexity.Message.SentByAgent == nil {
 			break
 		}
 
-		return e.complexity.Message.SentBy(childComplexity), true
+		return e.complexity.Message.SentByAgent(childComplexity), true
+
+	case "Message.sentByUser":
+		if e.complexity.Message.SentByUser == nil {
+			break
+		}
+
+		return e.complexity.Message.SentByUser(childComplexity), true
 
 	case "Message.thread":
 		if e.complexity.Message.Thread == nil {
@@ -725,13 +732,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ThreadEdge.Node(childComplexity), true
-
-	case "User.agent":
-		if e.complexity.User.Agent == nil {
-			break
-		}
-
-		return e.complexity.User.Agent(childComplexity), true
 
 	case "User.bookmarks":
 		if e.complexity.User.Bookmarks == nil {
@@ -1624,8 +1624,8 @@ func (ec *executionContext) fieldContext_Agent_model(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Agent_users(ctx context.Context, field graphql.CollectedField, obj *ent.Agent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Agent_users(ctx, field)
+func (ec *executionContext) _Agent_messages(ctx context.Context, field graphql.CollectedField, obj *ent.Agent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Agent_messages(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1638,24 +1638,21 @@ func (ec *executionContext) _Agent_users(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Users(ctx)
+		return obj.Messages(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*ent.User)
+	res := resTmp.([]*ent.Message)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalOMessage2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Agent_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Agent_messages(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Agent",
 		Field:      field,
@@ -1664,23 +1661,23 @@ func (ec *executionContext) fieldContext_Agent_users(ctx context.Context, field 
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_User_id(ctx, field)
+				return ec.fieldContext_Message_id(ctx, field)
 			case "createdAt":
-				return ec.fieldContext_User_createdAt(ctx, field)
+				return ec.fieldContext_Message_createdAt(ctx, field)
 			case "updatedAt":
-				return ec.fieldContext_User_updatedAt(ctx, field)
-			case "email":
-				return ec.fieldContext_User_email(ctx, field)
-			case "agent":
-				return ec.fieldContext_User_agent(ctx, field)
+				return ec.fieldContext_Message_updatedAt(ctx, field)
+			case "content":
+				return ec.fieldContext_Message_content(ctx, field)
+			case "sentByAgent":
+				return ec.fieldContext_Message_sentByAgent(ctx, field)
+			case "sentByUser":
+				return ec.fieldContext_Message_sentByUser(ctx, field)
+			case "thread":
+				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
-				return ec.fieldContext_User_bookmarks(ctx, field)
-			case "threads":
-				return ec.fieldContext_User_threads(ctx, field)
-			case "messages":
-				return ec.fieldContext_User_messages(ctx, field)
+				return ec.fieldContext_Message_bookmarks(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
 	}
 	return fc, nil
@@ -1877,8 +1874,8 @@ func (ec *executionContext) fieldContext_AgentEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Agent_name(ctx, field)
 			case "model":
 				return ec.fieldContext_Agent_model(ctx, field)
-			case "users":
-				return ec.fieldContext_Agent_users(ctx, field)
+			case "messages":
+				return ec.fieldContext_Agent_messages(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -2109,8 +2106,6 @@ func (ec *executionContext) fieldContext_Bookmark_user(ctx context.Context, fiel
 				return ec.fieldContext_User_updatedAt(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
-			case "agent":
-				return ec.fieldContext_User_agent(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_User_bookmarks(ctx, field)
 			case "threads":
@@ -2229,8 +2224,10 @@ func (ec *executionContext) fieldContext_Bookmark_message(ctx context.Context, f
 				return ec.fieldContext_Message_updatedAt(ctx, field)
 			case "content":
 				return ec.fieldContext_Message_content(ctx, field)
-			case "sentBy":
-				return ec.fieldContext_Message_sentBy(ctx, field)
+			case "sentByAgent":
+				return ec.fieldContext_Message_sentByAgent(ctx, field)
+			case "sentByUser":
+				return ec.fieldContext_Message_sentByUser(ctx, field)
 			case "thread":
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
@@ -2662,8 +2659,8 @@ func (ec *executionContext) fieldContext_Message_content(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Message_sentBy(ctx context.Context, field graphql.CollectedField, obj *ent.Message) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Message_sentBy(ctx, field)
+func (ec *executionContext) _Message_sentByAgent(ctx context.Context, field graphql.CollectedField, obj *ent.Message) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Message_sentByAgent(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2676,7 +2673,62 @@ func (ec *executionContext) _Message_sentBy(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SentBy(ctx)
+		return obj.SentByAgent(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Agent)
+	fc.Result = res
+	return ec.marshalOAgent2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐAgent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Message_sentByAgent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Message",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Agent_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Agent_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Agent_updatedAt(ctx, field)
+			case "name":
+				return ec.fieldContext_Agent_name(ctx, field)
+			case "model":
+				return ec.fieldContext_Agent_model(ctx, field)
+			case "messages":
+				return ec.fieldContext_Agent_messages(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Message_sentByUser(ctx context.Context, field graphql.CollectedField, obj *ent.Message) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Message_sentByUser(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SentByUser(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2690,7 +2742,7 @@ func (ec *executionContext) _Message_sentBy(ctx context.Context, field graphql.C
 	return ec.marshalOUser2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Message_sentBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Message_sentByUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Message",
 		Field:      field,
@@ -2706,8 +2758,6 @@ func (ec *executionContext) fieldContext_Message_sentBy(ctx context.Context, fie
 				return ec.fieldContext_User_updatedAt(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
-			case "agent":
-				return ec.fieldContext_User_agent(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_User_bookmarks(ctx, field)
 			case "threads":
@@ -3029,8 +3079,10 @@ func (ec *executionContext) fieldContext_MessageEdge_node(ctx context.Context, f
 				return ec.fieldContext_Message_updatedAt(ctx, field)
 			case "content":
 				return ec.fieldContext_Message_content(ctx, field)
-			case "sentBy":
-				return ec.fieldContext_Message_sentBy(ctx, field)
+			case "sentByAgent":
+				return ec.fieldContext_Message_sentByAgent(ctx, field)
+			case "sentByUser":
+				return ec.fieldContext_Message_sentByUser(ctx, field)
 			case "thread":
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
@@ -3130,8 +3182,6 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 				return ec.fieldContext_User_updatedAt(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
-			case "agent":
-				return ec.fieldContext_User_agent(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_User_bookmarks(ctx, field)
 			case "threads":
@@ -3202,8 +3252,8 @@ func (ec *executionContext) fieldContext_Mutation_createAgent(ctx context.Contex
 				return ec.fieldContext_Agent_name(ctx, field)
 			case "model":
 				return ec.fieldContext_Agent_model(ctx, field)
-			case "users":
-				return ec.fieldContext_Agent_users(ctx, field)
+			case "messages":
+				return ec.fieldContext_Agent_messages(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -3338,8 +3388,10 @@ func (ec *executionContext) fieldContext_Mutation_createMessage(ctx context.Cont
 				return ec.fieldContext_Message_updatedAt(ctx, field)
 			case "content":
 				return ec.fieldContext_Message_content(ctx, field)
-			case "sentBy":
-				return ec.fieldContext_Message_sentBy(ctx, field)
+			case "sentByAgent":
+				return ec.fieldContext_Message_sentByAgent(ctx, field)
+			case "sentByUser":
+				return ec.fieldContext_Message_sentByUser(ctx, field)
 			case "thread":
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
@@ -4372,8 +4424,6 @@ func (ec *executionContext) fieldContext_Thread_createdBy(ctx context.Context, f
 				return ec.fieldContext_User_updatedAt(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
-			case "agent":
-				return ec.fieldContext_User_agent(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_User_bookmarks(ctx, field)
 			case "threads":
@@ -4431,8 +4481,10 @@ func (ec *executionContext) fieldContext_Thread_messages(ctx context.Context, fi
 				return ec.fieldContext_Message_updatedAt(ctx, field)
 			case "content":
 				return ec.fieldContext_Message_content(ctx, field)
-			case "sentBy":
-				return ec.fieldContext_Message_sentBy(ctx, field)
+			case "sentByAgent":
+				return ec.fieldContext_Message_sentByAgent(ctx, field)
+			case "sentByUser":
+				return ec.fieldContext_Message_sentByUser(ctx, field)
 			case "thread":
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
@@ -5047,61 +5099,6 @@ func (ec *executionContext) fieldContext_User_email(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _User_agent(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_agent(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Agent(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Agent)
-	fc.Result = res
-	return ec.marshalOAgent2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐAgent(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_User_agent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "User",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Agent_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Agent_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Agent_updatedAt(ctx, field)
-			case "name":
-				return ec.fieldContext_Agent_name(ctx, field)
-			case "model":
-				return ec.fieldContext_Agent_model(ctx, field)
-			case "users":
-				return ec.fieldContext_Agent_users(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _User_bookmarks(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_bookmarks(ctx, field)
 	if err != nil {
@@ -5262,8 +5259,10 @@ func (ec *executionContext) fieldContext_User_messages(ctx context.Context, fiel
 				return ec.fieldContext_Message_updatedAt(ctx, field)
 			case "content":
 				return ec.fieldContext_Message_content(ctx, field)
-			case "sentBy":
-				return ec.fieldContext_Message_sentBy(ctx, field)
+			case "sentByAgent":
+				return ec.fieldContext_Message_sentByAgent(ctx, field)
+			case "sentByUser":
+				return ec.fieldContext_Message_sentByUser(ctx, field)
 			case "thread":
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
@@ -5464,8 +5463,6 @@ func (ec *executionContext) fieldContext_UserEdge_node(ctx context.Context, fiel
 				return ec.fieldContext_User_updatedAt(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
-			case "agent":
-				return ec.fieldContext_User_agent(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_User_bookmarks(ctx, field)
 			case "threads":
@@ -7341,7 +7338,7 @@ func (ec *executionContext) unmarshalInputAgentWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "model", "modelNEQ", "modelIn", "modelNotIn", "modelGT", "modelGTE", "modelLT", "modelLTE", "modelContains", "modelHasPrefix", "modelHasSuffix", "modelEqualFold", "modelContainsFold", "hasUsers", "hasUsersWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "model", "modelNEQ", "modelIn", "modelNotIn", "modelGT", "modelGTE", "modelLT", "modelLTE", "modelContains", "modelHasPrefix", "modelHasSuffix", "modelEqualFold", "modelContainsFold", "hasMessages", "hasMessagesWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7719,20 +7716,20 @@ func (ec *executionContext) unmarshalInputAgentWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.ModelContainsFold = data
-		case "hasUsers":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUsers"))
+		case "hasMessages":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasMessages"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.HasUsers = data
-		case "hasUsersWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUsersWith"))
-			data, err := ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUserWhereInputᚄ(ctx, v)
+			it.HasMessages = data
+		case "hasMessagesWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasMessagesWith"))
+			data, err := ec.unmarshalOMessageWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.HasUsersWith = data
+			it.HasMessagesWith = data
 		}
 	}
 
@@ -7997,7 +7994,7 @@ func (ec *executionContext) unmarshalInputCreateAgentInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"createdAt", "updatedAt", "name", "model", "usersID"}
+	fieldsInOrder := [...]string{"createdAt", "updatedAt", "name", "model", "messageIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8032,13 +8029,13 @@ func (ec *executionContext) unmarshalInputCreateAgentInput(ctx context.Context, 
 				return it, err
 			}
 			it.Model = data
-		case "usersID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("usersID"))
-			data, err := ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+		case "messageIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageIDs"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.UsersID = data
+			it.MessageIDs = data
 		}
 	}
 
@@ -8107,7 +8104,7 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"createdAt", "updatedAt", "content", "sentByID", "threadID", "bookmarkIDs"}
+	fieldsInOrder := [...]string{"createdAt", "updatedAt", "content", "sentByAgentID", "sentByUserID", "threadID", "bookmarkIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8135,13 +8132,20 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 				return it, err
 			}
 			it.Content = data
-		case "sentByID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentByID"))
+		case "sentByAgentID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentByAgentID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SentByID = data
+			it.SentByAgentID = data
+		case "sentByUserID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentByUserID"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SentByUserID = data
 		case "threadID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("threadID"))
 			data, err := ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
@@ -8245,7 +8249,7 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"createdAt", "updatedAt", "email", "agentID", "bookmarkIDs", "threadIDs", "messageIDs"}
+	fieldsInOrder := [...]string{"createdAt", "updatedAt", "email", "bookmarkIDs", "threadIDs", "messageIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8273,13 +8277,6 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.Email = data
-		case "agentID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentID"))
-			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AgentID = data
 		case "bookmarkIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bookmarkIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
@@ -8314,7 +8311,7 @@ func (ec *executionContext) unmarshalInputMessageWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "content", "contentNEQ", "contentIn", "contentNotIn", "contentGT", "contentGTE", "contentLT", "contentLTE", "contentContains", "contentHasPrefix", "contentHasSuffix", "contentEqualFold", "contentContainsFold", "hasSentBy", "hasSentByWith", "hasThread", "hasThreadWith", "hasBookmarks", "hasBookmarksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "content", "contentNEQ", "contentIn", "contentNotIn", "contentGT", "contentGTE", "contentLT", "contentLTE", "contentContains", "contentHasPrefix", "contentHasSuffix", "contentEqualFold", "contentContainsFold", "hasSentByAgent", "hasSentByAgentWith", "hasSentByUser", "hasSentByUserWith", "hasThread", "hasThreadWith", "hasBookmarks", "hasBookmarksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8601,20 +8598,34 @@ func (ec *executionContext) unmarshalInputMessageWhereInput(ctx context.Context,
 				return it, err
 			}
 			it.ContentContainsFold = data
-		case "hasSentBy":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSentBy"))
+		case "hasSentByAgent":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSentByAgent"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.HasSentBy = data
-		case "hasSentByWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSentByWith"))
+			it.HasSentByAgent = data
+		case "hasSentByAgentWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSentByAgentWith"))
+			data, err := ec.unmarshalOAgentWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐAgentWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasSentByAgentWith = data
+		case "hasSentByUser":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSentByUser"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasSentByUser = data
+		case "hasSentByUserWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasSentByUserWith"))
 			data, err := ec.unmarshalOUserWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.HasSentByWith = data
+			it.HasSentByUserWith = data
 		case "hasThread":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasThread"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -9064,7 +9075,7 @@ func (ec *executionContext) unmarshalInputUpdateAgentInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"updatedAt", "name", "model", "usersID"}
+	fieldsInOrder := [...]string{"updatedAt", "name", "model", "addMessageIDs", "removeMessageIDs", "clearMessages"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9092,13 +9103,27 @@ func (ec *executionContext) unmarshalInputUpdateAgentInput(ctx context.Context, 
 				return it, err
 			}
 			it.Model = data
-		case "usersID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("usersID"))
-			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+		case "addMessageIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addMessageIDs"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.UsersID = data
+			it.AddMessageIDs = data
+		case "removeMessageIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeMessageIDs"))
+			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemoveMessageIDs = data
+		case "clearMessages":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearMessages"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearMessages = data
 		}
 	}
 
@@ -9174,7 +9199,7 @@ func (ec *executionContext) unmarshalInputUpdateMessageInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"updatedAt", "content", "sentByID", "clearSentBy", "threadID", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks"}
+	fieldsInOrder := [...]string{"updatedAt", "content", "sentByAgentID", "clearSentByAgent", "sentByUserID", "clearSentByUser", "threadID", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9195,20 +9220,34 @@ func (ec *executionContext) unmarshalInputUpdateMessageInput(ctx context.Context
 				return it, err
 			}
 			it.Content = data
-		case "sentByID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentByID"))
+		case "sentByAgentID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentByAgentID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SentByID = data
-		case "clearSentBy":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearSentBy"))
+			it.SentByAgentID = data
+		case "clearSentByAgent":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearSentByAgent"))
 			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ClearSentBy = data
+			it.ClearSentByAgent = data
+		case "sentByUserID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentByUserID"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SentByUserID = data
+		case "clearSentByUser":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearSentByUser"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearSentByUser = data
 		case "threadID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("threadID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
@@ -9361,7 +9400,7 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"updatedAt", "email", "agentID", "clearAgent", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "addThreadIDs", "removeThreadIDs", "clearThreads", "addMessageIDs", "removeMessageIDs", "clearMessages"}
+	fieldsInOrder := [...]string{"updatedAt", "email", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "addThreadIDs", "removeThreadIDs", "clearThreads", "addMessageIDs", "removeMessageIDs", "clearMessages"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9382,20 +9421,6 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.Email = data
-		case "agentID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentID"))
-			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AgentID = data
-		case "clearAgent":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearAgent"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearAgent = data
 		case "addBookmarkIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addBookmarkIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
@@ -9510,7 +9535,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "email", "emailNEQ", "emailIn", "emailNotIn", "emailGT", "emailGTE", "emailLT", "emailLTE", "emailContains", "emailHasPrefix", "emailHasSuffix", "emailEqualFold", "emailContainsFold", "hasAgent", "hasAgentWith", "hasBookmarks", "hasBookmarksWith", "hasThreads", "hasThreadsWith", "hasMessages", "hasMessagesWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "email", "emailNEQ", "emailIn", "emailNotIn", "emailGT", "emailGTE", "emailLT", "emailLTE", "emailContains", "emailHasPrefix", "emailHasSuffix", "emailEqualFold", "emailContainsFold", "hasBookmarks", "hasBookmarksWith", "hasThreads", "hasThreadsWith", "hasMessages", "hasMessagesWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9797,20 +9822,6 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.EmailContainsFold = data
-		case "hasAgent":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAgent"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasAgent = data
-		case "hasAgentWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAgentWith"))
-			data, err := ec.unmarshalOAgentWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐAgentWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasAgentWith = data
 		case "hasBookmarks":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBookmarks"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -9937,7 +9948,7 @@ func (ec *executionContext) _Agent(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "users":
+		case "messages":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -9946,10 +9957,7 @@ func (ec *executionContext) _Agent(ctx context.Context, sel ast.SelectionSet, ob
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Agent_users(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
+				res = ec._Agent_messages(ctx, field, obj)
 				return res
 			}
 
@@ -10352,7 +10360,7 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "sentBy":
+		case "sentByAgent":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -10361,7 +10369,40 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Message_sentBy(ctx, field, obj)
+				res = ec._Message_sentByAgent(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "sentByUser":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Message_sentByUser(ctx, field, obj)
 				return res
 			}
 
@@ -11215,39 +11256,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "agent":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._User_agent(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "bookmarks":
 			field := field
 

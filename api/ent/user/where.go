@@ -216,29 +216,6 @@ func EmailContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldEmail, v))
 }
 
-// HasAgent applies the HasEdge predicate on the "agent" edge.
-func HasAgent() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, AgentTable, AgentColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasAgentWith applies the HasEdge predicate on the "agent" edge with a given conditions (other predicates).
-func HasAgentWith(preds ...predicate.Agent) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := newAgentStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasBookmarks applies the HasEdge predicate on the "bookmarks" edge.
 func HasBookmarks() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

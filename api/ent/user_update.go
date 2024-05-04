@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
@@ -59,25 +58,6 @@ func (uu *UserUpdate) SetNillableEmail(s *string) *UserUpdate {
 		uu.SetEmail(*s)
 	}
 	return uu
-}
-
-// SetAgentID sets the "agent" edge to the Agent entity by ID.
-func (uu *UserUpdate) SetAgentID(id uuid.UUID) *UserUpdate {
-	uu.mutation.SetAgentID(id)
-	return uu
-}
-
-// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
-func (uu *UserUpdate) SetNillableAgentID(id *uuid.UUID) *UserUpdate {
-	if id != nil {
-		uu = uu.SetAgentID(*id)
-	}
-	return uu
-}
-
-// SetAgent sets the "agent" edge to the Agent entity.
-func (uu *UserUpdate) SetAgent(a *Agent) *UserUpdate {
-	return uu.SetAgentID(a.ID)
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
@@ -128,12 +108,6 @@ func (uu *UserUpdate) AddMessages(m ...*Message) *UserUpdate {
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
-}
-
-// ClearAgent clears the "agent" edge to the Agent entity.
-func (uu *UserUpdate) ClearAgent() *UserUpdate {
-	uu.mutation.ClearAgent()
-	return uu
 }
 
 // ClearBookmarks clears all "bookmarks" edges to the Bookmark entity.
@@ -240,35 +214,6 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
-	}
-	if uu.mutation.AgentCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   user.AgentTable,
-			Columns: []string{user.AgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := uu.mutation.AgentIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   user.AgentTable,
-			Columns: []string{user.AgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if uu.mutation.BookmarksCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -453,25 +398,6 @@ func (uuo *UserUpdateOne) SetNillableEmail(s *string) *UserUpdateOne {
 	return uuo
 }
 
-// SetAgentID sets the "agent" edge to the Agent entity by ID.
-func (uuo *UserUpdateOne) SetAgentID(id uuid.UUID) *UserUpdateOne {
-	uuo.mutation.SetAgentID(id)
-	return uuo
-}
-
-// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableAgentID(id *uuid.UUID) *UserUpdateOne {
-	if id != nil {
-		uuo = uuo.SetAgentID(*id)
-	}
-	return uuo
-}
-
-// SetAgent sets the "agent" edge to the Agent entity.
-func (uuo *UserUpdateOne) SetAgent(a *Agent) *UserUpdateOne {
-	return uuo.SetAgentID(a.ID)
-}
-
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
 func (uuo *UserUpdateOne) AddBookmarkIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddBookmarkIDs(ids...)
@@ -520,12 +446,6 @@ func (uuo *UserUpdateOne) AddMessages(m ...*Message) *UserUpdateOne {
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
-}
-
-// ClearAgent clears the "agent" edge to the Agent entity.
-func (uuo *UserUpdateOne) ClearAgent() *UserUpdateOne {
-	uuo.mutation.ClearAgent()
-	return uuo
 }
 
 // ClearBookmarks clears all "bookmarks" edges to the Bookmark entity.
@@ -662,35 +582,6 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
-	}
-	if uuo.mutation.AgentCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   user.AgentTable,
-			Columns: []string{user.AgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := uuo.mutation.AgentIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   user.AgentTable,
-			Columns: []string{user.AgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if uuo.mutation.BookmarksCleared() {
 		edge := &sqlgraph.EdgeSpec{

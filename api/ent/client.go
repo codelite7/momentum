@@ -346,15 +346,15 @@ func (c *AgentClient) GetX(ctx context.Context, id uuid.UUID) *Agent {
 	return obj
 }
 
-// QueryUsers queries the users edge of a Agent.
-func (c *AgentClient) QueryUsers(a *Agent) *UserQuery {
-	query := (&UserClient{config: c.config}).Query()
+// QueryMessages queries the messages edge of a Agent.
+func (c *AgentClient) QueryMessages(a *Agent) *MessageQuery {
+	query := (&MessageClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := a.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(agent.Table, agent.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, agent.UsersTable, agent.UsersColumn),
+			sqlgraph.To(message.Table, message.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, agent.MessagesTable, agent.MessagesColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -676,15 +676,31 @@ func (c *MessageClient) GetX(ctx context.Context, id uuid.UUID) *Message {
 	return obj
 }
 
-// QuerySentBy queries the sent_by edge of a Message.
-func (c *MessageClient) QuerySentBy(m *Message) *UserQuery {
+// QuerySentByAgent queries the sent_by_agent edge of a Message.
+func (c *MessageClient) QuerySentByAgent(m *Message) *AgentQuery {
+	query := (&AgentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, id),
+			sqlgraph.To(agent.Table, agent.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, message.SentByAgentTable, message.SentByAgentColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySentByUser queries the sent_by_user edge of a Message.
+func (c *MessageClient) QuerySentByUser(m *Message) *UserQuery {
 	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(message.Table, message.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, message.SentByTable, message.SentByColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, message.SentByUserTable, message.SentByUserColumn),
 		)
 		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
 		return fromV, nil
@@ -1068,22 +1084,6 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 		panic(err)
 	}
 	return obj
-}
-
-// QueryAgent queries the agent edge of a User.
-func (c *UserClient) QueryAgent(u *User) *AgentQuery {
-	query := (&AgentClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := u.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(agent.Table, agent.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, user.AgentTable, user.AgentColumn),
-		)
-		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
 }
 
 // QueryBookmarks queries the bookmarks edge of a User.

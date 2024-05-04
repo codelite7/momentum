@@ -8,10 +8,14 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (a *Agent) Users(ctx context.Context) (*User, error) {
-	result, err := a.Edges.UsersOrErr()
+func (a *Agent) Messages(ctx context.Context) (result []*Message, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = a.NamedMessages(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = a.Edges.MessagesOrErr()
+	}
 	if IsNotLoaded(err) {
-		result, err = a.QueryUsers().Only(ctx)
+		result, err = a.QueryMessages().All(ctx)
 	}
 	return result, err
 }
@@ -40,10 +44,18 @@ func (b *Bookmark) Message(ctx context.Context) (*Message, error) {
 	return result, MaskNotFound(err)
 }
 
-func (m *Message) SentBy(ctx context.Context) (*User, error) {
-	result, err := m.Edges.SentByOrErr()
+func (m *Message) SentByAgent(ctx context.Context) (*Agent, error) {
+	result, err := m.Edges.SentByAgentOrErr()
 	if IsNotLoaded(err) {
-		result, err = m.QuerySentBy().Only(ctx)
+		result, err = m.QuerySentByAgent().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (m *Message) SentByUser(ctx context.Context) (*User, error) {
+	result, err := m.Edges.SentByUserOrErr()
+	if IsNotLoaded(err) {
+		result, err = m.QuerySentByUser().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
@@ -112,14 +124,6 @@ func (t *Thread) Parent(ctx context.Context) (*Thread, error) {
 	result, err := t.Edges.ParentOrErr()
 	if IsNotLoaded(err) {
 		result, err = t.QueryParent().Only(ctx)
-	}
-	return result, MaskNotFound(err)
-}
-
-func (u *User) Agent(ctx context.Context) (*Agent, error) {
-	result, err := u.Edges.AgentOrErr()
-	if IsNotLoaded(err) {
-		result, err = u.QueryAgent().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }

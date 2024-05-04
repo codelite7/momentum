@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
-	"github.com/codelite7/momentum/api/ent/user"
+	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/google/uuid"
 )
 
@@ -76,15 +76,19 @@ func (ac *AgentCreate) SetNillableID(u *uuid.UUID) *AgentCreate {
 	return ac
 }
 
-// SetUsersID sets the "users" edge to the User entity by ID.
-func (ac *AgentCreate) SetUsersID(id uuid.UUID) *AgentCreate {
-	ac.mutation.SetUsersID(id)
+// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
+func (ac *AgentCreate) AddMessageIDs(ids ...uuid.UUID) *AgentCreate {
+	ac.mutation.AddMessageIDs(ids...)
 	return ac
 }
 
-// SetUsers sets the "users" edge to the User entity.
-func (ac *AgentCreate) SetUsers(u *User) *AgentCreate {
-	return ac.SetUsersID(u.ID)
+// AddMessages adds the "messages" edges to the Message entity.
+func (ac *AgentCreate) AddMessages(m ...*Message) *AgentCreate {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return ac.AddMessageIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -150,9 +154,6 @@ func (ac *AgentCreate) check() error {
 	if _, ok := ac.mutation.Model(); !ok {
 		return &ValidationError{Name: "model", err: errors.New(`ent: missing required field "Agent.model"`)}
 	}
-	if _, ok := ac.mutation.UsersID(); !ok {
-		return &ValidationError{Name: "users", err: errors.New(`ent: missing required edge "Agent.users"`)}
-	}
 	return nil
 }
 
@@ -204,21 +205,20 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 		_spec.SetField(agent.FieldModel, field.TypeString, value)
 		_node.Model = value
 	}
-	if nodes := ac.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := ac.mutation.MessagesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   agent.UsersTable,
-			Columns: []string{agent.UsersColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.MessagesTable,
+			Columns: []string{agent.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_agent = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

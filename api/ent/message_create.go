@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -72,23 +73,42 @@ func (mc *MessageCreate) SetNillableID(u *uuid.UUID) *MessageCreate {
 	return mc
 }
 
-// SetSentByID sets the "sent_by" edge to the User entity by ID.
-func (mc *MessageCreate) SetSentByID(id uuid.UUID) *MessageCreate {
-	mc.mutation.SetSentByID(id)
+// SetSentByAgentID sets the "sent_by_agent" edge to the Agent entity by ID.
+func (mc *MessageCreate) SetSentByAgentID(id uuid.UUID) *MessageCreate {
+	mc.mutation.SetSentByAgentID(id)
 	return mc
 }
 
-// SetNillableSentByID sets the "sent_by" edge to the User entity by ID if the given value is not nil.
-func (mc *MessageCreate) SetNillableSentByID(id *uuid.UUID) *MessageCreate {
+// SetNillableSentByAgentID sets the "sent_by_agent" edge to the Agent entity by ID if the given value is not nil.
+func (mc *MessageCreate) SetNillableSentByAgentID(id *uuid.UUID) *MessageCreate {
 	if id != nil {
-		mc = mc.SetSentByID(*id)
+		mc = mc.SetSentByAgentID(*id)
 	}
 	return mc
 }
 
-// SetSentBy sets the "sent_by" edge to the User entity.
-func (mc *MessageCreate) SetSentBy(u *User) *MessageCreate {
-	return mc.SetSentByID(u.ID)
+// SetSentByAgent sets the "sent_by_agent" edge to the Agent entity.
+func (mc *MessageCreate) SetSentByAgent(a *Agent) *MessageCreate {
+	return mc.SetSentByAgentID(a.ID)
+}
+
+// SetSentByUserID sets the "sent_by_user" edge to the User entity by ID.
+func (mc *MessageCreate) SetSentByUserID(id uuid.UUID) *MessageCreate {
+	mc.mutation.SetSentByUserID(id)
+	return mc
+}
+
+// SetNillableSentByUserID sets the "sent_by_user" edge to the User entity by ID if the given value is not nil.
+func (mc *MessageCreate) SetNillableSentByUserID(id *uuid.UUID) *MessageCreate {
+	if id != nil {
+		mc = mc.SetSentByUserID(*id)
+	}
+	return mc
+}
+
+// SetSentByUser sets the "sent_by_user" edge to the User entity.
+func (mc *MessageCreate) SetSentByUser(u *User) *MessageCreate {
+	return mc.SetSentByUserID(u.ID)
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by ID.
@@ -227,12 +247,29 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 		_spec.SetField(message.FieldContent, field.TypeString, value)
 		_node.Content = value
 	}
-	if nodes := mc.mutation.SentByIDs(); len(nodes) > 0 {
+	if nodes := mc.mutation.SentByAgentIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   message.SentByTable,
-			Columns: []string{message.SentByColumn},
+			Table:   message.SentByAgentTable,
+			Columns: []string{message.SentByAgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.agent_messages = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.SentByUserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   message.SentByUserTable,
+			Columns: []string{message.SentByUserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),

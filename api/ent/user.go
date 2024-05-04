@@ -9,7 +9,6 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
@@ -33,8 +32,6 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
-	// Agent holds the value of the agent edge.
-	Agent *Agent `json:"agent,omitempty"`
 	// Bookmarks holds the value of the bookmarks edge.
 	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
 	// Threads holds the value of the threads edge.
@@ -43,30 +40,19 @@ type UserEdges struct {
 	Messages []*Message `json:"messages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [3]map[string]int
 
 	namedBookmarks map[string][]*Bookmark
 	namedThreads   map[string][]*Thread
 	namedMessages  map[string][]*Message
 }
 
-// AgentOrErr returns the Agent value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e UserEdges) AgentOrErr() (*Agent, error) {
-	if e.Agent != nil {
-		return e.Agent, nil
-	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: agent.Label}
-	}
-	return nil, &NotLoadedError{edge: "agent"}
-}
-
 // BookmarksOrErr returns the Bookmarks value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[0] {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
@@ -75,7 +61,7 @@ func (e UserEdges) BookmarksOrErr() ([]*Bookmark, error) {
 // ThreadsOrErr returns the Threads value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ThreadsOrErr() ([]*Thread, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		return e.Threads, nil
 	}
 	return nil, &NotLoadedError{edge: "threads"}
@@ -84,7 +70,7 @@ func (e UserEdges) ThreadsOrErr() ([]*Thread, error) {
 // MessagesOrErr returns the Messages value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) MessagesOrErr() ([]*Message, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[2] {
 		return e.Messages, nil
 	}
 	return nil, &NotLoadedError{edge: "messages"}
@@ -151,11 +137,6 @@ func (u *User) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
-}
-
-// QueryAgent queries the "agent" edge of the User entity.
-func (u *User) QueryAgent() *AgentQuery {
-	return NewUserClient(u.config).QueryAgent(u)
 }
 
 // QueryBookmarks queries the "bookmarks" edge of the User entity.

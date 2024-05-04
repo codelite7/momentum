@@ -27,9 +27,8 @@ func (Agent) Fields() []ent.Field {
 
 func (Agent) Edges() []ent.Edge {
 	return []ent.Edge{
-		// required means an agent can't be created without its user, users can be created without agents however, because
-		// users can be human or ai users
-		edge.From("users", User.Type).Ref("agent").Unique().Required(),
+		// an agent can send many messages
+		edge.To("messages", Message.Type),
 	}
 }
 

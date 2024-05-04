@@ -10,7 +10,6 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -71,25 +70,6 @@ func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
 		uc.SetID(*u)
 	}
 	return uc
-}
-
-// SetAgentID sets the "agent" edge to the Agent entity by ID.
-func (uc *UserCreate) SetAgentID(id uuid.UUID) *UserCreate {
-	uc.mutation.SetAgentID(id)
-	return uc
-}
-
-// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
-func (uc *UserCreate) SetNillableAgentID(id *uuid.UUID) *UserCreate {
-	if id != nil {
-		uc = uc.SetAgentID(*id)
-	}
-	return uc
-}
-
-// SetAgent sets the "agent" edge to the Agent entity.
-func (uc *UserCreate) SetAgent(a *Agent) *UserCreate {
-	return uc.SetAgentID(a.ID)
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
@@ -243,22 +223,6 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 		_node.Email = value
-	}
-	if nodes := uc.mutation.AgentIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   user.AgentTable,
-			Columns: []string{user.AgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := uc.mutation.BookmarksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

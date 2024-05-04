@@ -10,7 +10,6 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/agent"
-	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -30,30 +29,29 @@ type Agent struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AgentQuery when eager-loading is set.
 	Edges        AgentEdges `json:"edges"`
-	user_agent   *uuid.UUID
 	selectValues sql.SelectValues
 }
 
 // AgentEdges holds the relations/edges for other nodes in the graph.
 type AgentEdges struct {
-	// Users holds the value of the users edge.
-	Users *User `json:"users,omitempty"`
+	// Messages holds the value of the messages edge.
+	Messages []*Message `json:"messages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
 	totalCount [1]map[string]int
+
+	namedMessages map[string][]*Message
 }
 
-// UsersOrErr returns the Users value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e AgentEdges) UsersOrErr() (*User, error) {
-	if e.Users != nil {
-		return e.Users, nil
-	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: user.Label}
+// MessagesOrErr returns the Messages value or an error if the edge
+// was not loaded in eager-loading.
+func (e AgentEdges) MessagesOrErr() ([]*Message, error) {
+	if e.loadedTypes[0] {
+		return e.Messages, nil
 	}
-	return nil, &NotLoadedError{edge: "users"}
+	return nil, &NotLoadedError{edge: "messages"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -67,8 +65,6 @@ func (*Agent) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case agent.FieldID:
 			values[i] = new(uuid.UUID)
-		case agent.ForeignKeys[0]: // user_agent
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -114,13 +110,6 @@ func (a *Agent) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				a.Model = value.String
 			}
-		case agent.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field user_agent", values[i])
-			} else if value.Valid {
-				a.user_agent = new(uuid.UUID)
-				*a.user_agent = *value.S.(*uuid.UUID)
-			}
 		default:
 			a.selectValues.Set(columns[i], values[i])
 		}
@@ -134,9 +123,9 @@ func (a *Agent) Value(name string) (ent.Value, error) {
 	return a.selectValues.Get(name)
 }
 
-// QueryUsers queries the "users" edge of the Agent entity.
-func (a *Agent) QueryUsers() *UserQuery {
-	return NewAgentClient(a.config).QueryUsers(a)
+// QueryMessages queries the "messages" edge of the Agent entity.
+func (a *Agent) QueryMessages() *MessageQuery {
+	return NewAgentClient(a.config).QueryMessages(a)
 }
 
 // Update returns a builder for updating this Agent.
@@ -175,6 +164,30 @@ func (a *Agent) String() string {
 	builder.WriteString(a.Model)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedMessages returns the Messages named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (a *Agent) NamedMessages(name string) ([]*Message, error) {
+	if a.Edges.namedMessages == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := a.Edges.namedMessages[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (a *Agent) appendNamedMessages(name string, edges ...*Message) {
+	if a.Edges.namedMessages == nil {
+		a.Edges.namedMessages = make(map[string][]*Message)
+	}
+	if len(edges) == 0 {
+		a.Edges.namedMessages[name] = []*Message{}
+	} else {
+		a.Edges.namedMessages[name] = append(a.Edges.namedMessages[name], edges...)
+	}
 }
 
 // Agents is a parsable slice of Agent.

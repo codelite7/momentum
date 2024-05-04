@@ -83,9 +83,9 @@ type AgentWhereInput struct {
 	ModelEqualFold    *string  `json:"modelEqualFold,omitempty"`
 	ModelContainsFold *string  `json:"modelContainsFold,omitempty"`
 
-	// "users" edge predicates.
-	HasUsers     *bool             `json:"hasUsers,omitempty"`
-	HasUsersWith []*UserWhereInput `json:"hasUsersWith,omitempty"`
+	// "messages" edge predicates.
+	HasMessages     *bool                `json:"hasMessages,omitempty"`
+	HasMessagesWith []*MessageWhereInput `json:"hasMessagesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -310,23 +310,23 @@ func (i *AgentWhereInput) P() (predicate.Agent, error) {
 		predicates = append(predicates, agent.ModelContainsFold(*i.ModelContainsFold))
 	}
 
-	if i.HasUsers != nil {
-		p := agent.HasUsers()
-		if !*i.HasUsers {
+	if i.HasMessages != nil {
+		p := agent.HasMessages()
+		if !*i.HasMessages {
 			p = agent.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasUsersWith) > 0 {
-		with := make([]predicate.User, 0, len(i.HasUsersWith))
-		for _, w := range i.HasUsersWith {
+	if len(i.HasMessagesWith) > 0 {
+		with := make([]predicate.Message, 0, len(i.HasMessagesWith))
+		for _, w := range i.HasMessagesWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasUsersWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasMessagesWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, agent.HasUsersWith(with...))
+		predicates = append(predicates, agent.HasMessagesWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -648,9 +648,13 @@ type MessageWhereInput struct {
 	ContentEqualFold    *string  `json:"contentEqualFold,omitempty"`
 	ContentContainsFold *string  `json:"contentContainsFold,omitempty"`
 
-	// "sent_by" edge predicates.
-	HasSentBy     *bool             `json:"hasSentBy,omitempty"`
-	HasSentByWith []*UserWhereInput `json:"hasSentByWith,omitempty"`
+	// "sent_by_agent" edge predicates.
+	HasSentByAgent     *bool              `json:"hasSentByAgent,omitempty"`
+	HasSentByAgentWith []*AgentWhereInput `json:"hasSentByAgentWith,omitempty"`
+
+	// "sent_by_user" edge predicates.
+	HasSentByUser     *bool             `json:"hasSentByUser,omitempty"`
+	HasSentByUserWith []*UserWhereInput `json:"hasSentByUserWith,omitempty"`
 
 	// "thread" edge predicates.
 	HasThread     *bool               `json:"hasThread,omitempty"`
@@ -844,23 +848,41 @@ func (i *MessageWhereInput) P() (predicate.Message, error) {
 		predicates = append(predicates, message.ContentContainsFold(*i.ContentContainsFold))
 	}
 
-	if i.HasSentBy != nil {
-		p := message.HasSentBy()
-		if !*i.HasSentBy {
+	if i.HasSentByAgent != nil {
+		p := message.HasSentByAgent()
+		if !*i.HasSentByAgent {
 			p = message.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasSentByWith) > 0 {
-		with := make([]predicate.User, 0, len(i.HasSentByWith))
-		for _, w := range i.HasSentByWith {
+	if len(i.HasSentByAgentWith) > 0 {
+		with := make([]predicate.Agent, 0, len(i.HasSentByAgentWith))
+		for _, w := range i.HasSentByAgentWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasSentByWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasSentByAgentWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, message.HasSentByWith(with...))
+		predicates = append(predicates, message.HasSentByAgentWith(with...))
+	}
+	if i.HasSentByUser != nil {
+		p := message.HasSentByUser()
+		if !*i.HasSentByUser {
+			p = message.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasSentByUserWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasSentByUserWith))
+		for _, w := range i.HasSentByUserWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasSentByUserWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, message.HasSentByUserWith(with...))
 	}
 	if i.HasThread != nil {
 		p := message.HasThread()
@@ -1316,10 +1338,6 @@ type UserWhereInput struct {
 	EmailEqualFold    *string  `json:"emailEqualFold,omitempty"`
 	EmailContainsFold *string  `json:"emailContainsFold,omitempty"`
 
-	// "agent" edge predicates.
-	HasAgent     *bool              `json:"hasAgent,omitempty"`
-	HasAgentWith []*AgentWhereInput `json:"hasAgentWith,omitempty"`
-
 	// "bookmarks" edge predicates.
 	HasBookmarks     *bool                 `json:"hasBookmarks,omitempty"`
 	HasBookmarksWith []*BookmarkWhereInput `json:"hasBookmarksWith,omitempty"`
@@ -1516,24 +1534,6 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 		predicates = append(predicates, user.EmailContainsFold(*i.EmailContainsFold))
 	}
 
-	if i.HasAgent != nil {
-		p := user.HasAgent()
-		if !*i.HasAgent {
-			p = user.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasAgentWith) > 0 {
-		with := make([]predicate.Agent, 0, len(i.HasAgentWith))
-		for _, w := range i.HasAgentWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasAgentWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, user.HasAgentWith(with...))
-	}
 	if i.HasBookmarks != nil {
 		p := user.HasBookmarks()
 		if !*i.HasBookmarks {

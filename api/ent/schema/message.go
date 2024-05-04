@@ -25,8 +25,10 @@ func (Message) Fields() []ent.Field {
 
 func (Message) Edges() []ent.Edge {
 	return []ent.Edge{
-		// a message is sent by a user
-		edge.From("sent_by", User.Type).Ref("messages").Unique(),
+		// a message can be sent by a user
+		edge.From("sent_by_agent", Agent.Type).Ref("messages").Unique(),
+		// a message can be sent by an agent
+		edge.From("sent_by_user", User.Type).Ref("messages").Unique(),
 		// a message belongs to a thread
 		edge.From("thread", Thread.Type).Ref("messages").Unique().Required(),
 		// a message may have many bookmarks

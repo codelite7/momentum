@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
+	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
 )
 
@@ -72,15 +72,19 @@ func (au *AgentUpdate) SetNillableModel(s *string) *AgentUpdate {
 	return au
 }
 
-// SetUsersID sets the "users" edge to the User entity by ID.
-func (au *AgentUpdate) SetUsersID(id uuid.UUID) *AgentUpdate {
-	au.mutation.SetUsersID(id)
+// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
+func (au *AgentUpdate) AddMessageIDs(ids ...uuid.UUID) *AgentUpdate {
+	au.mutation.AddMessageIDs(ids...)
 	return au
 }
 
-// SetUsers sets the "users" edge to the User entity.
-func (au *AgentUpdate) SetUsers(u *User) *AgentUpdate {
-	return au.SetUsersID(u.ID)
+// AddMessages adds the "messages" edges to the Message entity.
+func (au *AgentUpdate) AddMessages(m ...*Message) *AgentUpdate {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return au.AddMessageIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -88,10 +92,25 @@ func (au *AgentUpdate) Mutation() *AgentMutation {
 	return au.mutation
 }
 
-// ClearUsers clears the "users" edge to the User entity.
-func (au *AgentUpdate) ClearUsers() *AgentUpdate {
-	au.mutation.ClearUsers()
+// ClearMessages clears all "messages" edges to the Message entity.
+func (au *AgentUpdate) ClearMessages() *AgentUpdate {
+	au.mutation.ClearMessages()
 	return au
+}
+
+// RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
+func (au *AgentUpdate) RemoveMessageIDs(ids ...uuid.UUID) *AgentUpdate {
+	au.mutation.RemoveMessageIDs(ids...)
+	return au
+}
+
+// RemoveMessages removes "messages" edges to Message entities.
+func (au *AgentUpdate) RemoveMessages(m ...*Message) *AgentUpdate {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return au.RemoveMessageIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -121,18 +140,7 @@ func (au *AgentUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (au *AgentUpdate) check() error {
-	if _, ok := au.mutation.UsersID(); au.mutation.UsersCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Agent.users"`)
-	}
-	return nil
-}
-
 func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := au.check(); err != nil {
-		return n, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -150,28 +158,44 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := au.mutation.Model(); ok {
 		_spec.SetField(agent.FieldModel, field.TypeString, value)
 	}
-	if au.mutation.UsersCleared() {
+	if au.mutation.MessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   agent.UsersTable,
-			Columns: []string{agent.UsersColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.MessagesTable,
+			Columns: []string{agent.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := au.mutation.RemovedMessagesIDs(); len(nodes) > 0 && !au.mutation.MessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   agent.UsersTable,
-			Columns: []string{agent.UsersColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.MessagesTable,
+			Columns: []string{agent.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.MessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.MessagesTable,
+			Columns: []string{agent.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -241,15 +265,19 @@ func (auo *AgentUpdateOne) SetNillableModel(s *string) *AgentUpdateOne {
 	return auo
 }
 
-// SetUsersID sets the "users" edge to the User entity by ID.
-func (auo *AgentUpdateOne) SetUsersID(id uuid.UUID) *AgentUpdateOne {
-	auo.mutation.SetUsersID(id)
+// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
+func (auo *AgentUpdateOne) AddMessageIDs(ids ...uuid.UUID) *AgentUpdateOne {
+	auo.mutation.AddMessageIDs(ids...)
 	return auo
 }
 
-// SetUsers sets the "users" edge to the User entity.
-func (auo *AgentUpdateOne) SetUsers(u *User) *AgentUpdateOne {
-	return auo.SetUsersID(u.ID)
+// AddMessages adds the "messages" edges to the Message entity.
+func (auo *AgentUpdateOne) AddMessages(m ...*Message) *AgentUpdateOne {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return auo.AddMessageIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -257,10 +285,25 @@ func (auo *AgentUpdateOne) Mutation() *AgentMutation {
 	return auo.mutation
 }
 
-// ClearUsers clears the "users" edge to the User entity.
-func (auo *AgentUpdateOne) ClearUsers() *AgentUpdateOne {
-	auo.mutation.ClearUsers()
+// ClearMessages clears all "messages" edges to the Message entity.
+func (auo *AgentUpdateOne) ClearMessages() *AgentUpdateOne {
+	auo.mutation.ClearMessages()
 	return auo
+}
+
+// RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
+func (auo *AgentUpdateOne) RemoveMessageIDs(ids ...uuid.UUID) *AgentUpdateOne {
+	auo.mutation.RemoveMessageIDs(ids...)
+	return auo
+}
+
+// RemoveMessages removes "messages" edges to Message entities.
+func (auo *AgentUpdateOne) RemoveMessages(m ...*Message) *AgentUpdateOne {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return auo.RemoveMessageIDs(ids...)
 }
 
 // Where appends a list predicates to the AgentUpdate builder.
@@ -303,18 +346,7 @@ func (auo *AgentUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (auo *AgentUpdateOne) check() error {
-	if _, ok := auo.mutation.UsersID(); auo.mutation.UsersCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Agent.users"`)
-	}
-	return nil
-}
-
 func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error) {
-	if err := auo.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID))
 	id, ok := auo.mutation.ID()
 	if !ok {
@@ -349,28 +381,44 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 	if value, ok := auo.mutation.Model(); ok {
 		_spec.SetField(agent.FieldModel, field.TypeString, value)
 	}
-	if auo.mutation.UsersCleared() {
+	if auo.mutation.MessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   agent.UsersTable,
-			Columns: []string{agent.UsersColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.MessagesTable,
+			Columns: []string{agent.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := auo.mutation.RemovedMessagesIDs(); len(nodes) > 0 && !auo.mutation.MessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   agent.UsersTable,
-			Columns: []string{agent.UsersColumn},
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.MessagesTable,
+			Columns: []string{agent.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.MessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.MessagesTable,
+			Columns: []string{agent.MessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
