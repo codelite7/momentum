@@ -1,16 +1,15 @@
 # schema tells gqlgen where the GraphQL schema is located.
-schema:
-  - ent.graphql
-  - user.graphql
-  - agent.graphql
-  - thread.graphql
-  - message.graphql
-  - bookmark.graphql
-
-# resolver reports where the resolver implementations go.
+schema: "graphql_schema/*.graphql"
+# Where should the generated server code go?
+exec:
+  layout: follow-schema
+  dir: resolvers
+  package: resolvers
+# Where should the resolver implementations go?
 resolver:
   layout: follow-schema
-  dir: .
+  dir: resolvers
+  package: resolvers
 
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.

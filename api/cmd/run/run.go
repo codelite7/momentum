@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/codelite7/momentum/api"
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/codelite7/momentum/api/resolvers"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -36,7 +36,7 @@ func run() error {
 	}
 
 	// Configure the server and start listening
-	srv := handler.NewDefaultServer(api.NewSchema(client))
+	srv := handler.NewDefaultServer(resolvers.NewSchema(client))
 	// health endpoint
 	http.Handle("/health", healthHandler{})
 	http.Handle("/",

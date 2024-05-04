@@ -1,4 +1,4 @@
-package api
+package resolvers
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -10,7 +10,7 @@ import (
 	"github.com/codelite7/momentum/api/ent"
 )
 
-// CreateMessage is the resolver for the createMessage field.
-func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
-	return r.client.Message.Create().SetInput(input).Save(ctx)
+// CreateThread is the resolver for the createThread field.
+func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error) {
+	return r.client.Thread.Create().SetInput(input).Save(ctx)
 }
