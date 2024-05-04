@@ -12,9 +12,10 @@ import (
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/resolvers"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/urfave/cli/v2"
 	"log"
-	"net/http"
 )
 
 var RunCommand = &cli.Command{
@@ -27,28 +28,50 @@ var RunCommand = &cli.Command{
 }
 
 func run() error {
-	// Create ent.Client and run the schema migration.
-	client := Open(PostgresUri)
-	err := client.Schema.Create(
-		context.Background(),
-	)
+	client := initEntClient()
+	err := createSchema(client)
 	if err != nil {
 		return err
 	}
+	graphqlServer := initGraphqlServer(client)
+	return runHttpServer(graphqlServer)
 
-	// Configure the server and start listening
+}
+
+func runHttpServer(graphqlServer *handler.Server) error {
+	httpServer := initHttpServer(graphqlServer)
+	port := fmt.Sprintf(":%s", Port)
+	return httpServer.Start(port)
+}
+
+func initEntClient() *ent.Client {
+	return Open(PostgresUri)
+}
+
+func createSchema(client *ent.Client) error {
+	return client.Schema.Create(
+		context.Background(),
+	)
+}
+
+func initGraphqlServer(client *ent.Client) *handler.Server {
 	srv := handler.NewDefaultServer(resolvers.NewSchema(client))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
-	// health endpoint
-	http.Handle("/health", healthHandler{})
-	http.Handle("/",
-		playground.Handler("Todo", "/query"),
-	)
-	http.Handle("/query", srv)
-	port := fmt.Sprintf(":%s", Port)
-	log.Println(fmt.Sprintf("listening on %s", port))
-	return http.ListenAndServe(port, nil)
+	return srv
+}
+
+func initHttpServer(graphqlServer *handler.Server) *echo.Echo {
+	e := echo.New()
+	//e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.GET("/health", func(c echo.Context) error {
+		return nil
+	})
+	e.GET("/", echo.WrapHandler(playground.Handler("Todo", "/query")))
+	e.POST("/query", echo.WrapHandler(graphqlServer))
+
+	return e
 }
 
 // Open new connection
@@ -80,10 +103,4 @@ var flags = []cli.Flag{
 		EnvVars:     []string{"PORT"},
 		Destination: &Port,
 	},
-}
-
-type healthHandler struct{}
-
-func (h healthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Write(nil)
 }
