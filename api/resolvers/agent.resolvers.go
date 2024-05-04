@@ -12,7 +12,7 @@ import (
 
 // CreateAgent is the resolver for the createAgent field.
 func (r *mutationResolver) CreateAgent(ctx context.Context, input ent.CreateAgentInput) (*ent.Agent, error) {
-	return r.client.Agent.Create().SetInput(input).Save(ctx)
+	return ent.FromContext(ctx).Agent.Create().SetInput(input).Save(ctx)
 }
 
 // Mutation returns MutationResolver implementation.

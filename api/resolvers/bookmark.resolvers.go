@@ -12,5 +12,5 @@ import (
 
 // CreateBookmark is the resolver for the createBookmark field.
 func (r *mutationResolver) CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.Bookmark, error) {
-	return r.client.Bookmark.Create().SetInput(input).Save(ctx)
+	return ent.FromContext(ctx).Bookmark.Create().SetInput(input).Save(ctx)
 }

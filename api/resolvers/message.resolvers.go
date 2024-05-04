@@ -12,5 +12,5 @@ import (
 
 // CreateMessage is the resolver for the createMessage field.
 func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
-	return r.client.Message.Create().SetInput(input).Save(ctx)
+	return ent.FromContext(ctx).Message.Create().SetInput(input).Save(ctx)
 }

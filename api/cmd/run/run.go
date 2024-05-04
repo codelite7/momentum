@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"database/sql"
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"fmt"
@@ -37,6 +38,8 @@ func run() error {
 
 	// Configure the server and start listening
 	srv := handler.NewDefaultServer(resolvers.NewSchema(client))
+	srv.Use(entgql.Transactioner{TxOpener: client})
+
 	// health endpoint
 	http.Handle("/health", healthHandler{})
 	http.Handle("/",

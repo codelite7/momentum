@@ -12,5 +12,5 @@ import (
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error) {
-	return r.client.User.Create().SetInput(input).Save(ctx)
+	return ent.FromContext(ctx).User.Create().SetInput(input).Save(ctx)
 }
