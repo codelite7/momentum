@@ -1,0 +1,19 @@
+.header {
+  border-bottom: 1px solid var(--surface-100);
+}
+
+.left-sidebar {
+  border-right: 1px solid var(--surface-100);
+}
+
+.right-sidebar {
+  border-left: 1px solid var(--surface-100);
+}
+
+.breadcrumb {
+  border-bottom: 1px solid var(--surface-100);
+}
+
+::ng-deep .p-breadcrumb {
+  background-color: transparent;
+}

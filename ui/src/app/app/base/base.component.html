@@ -1,0 +1,21 @@
+<div class="grid">
+  <div class="col-12 header">
+    <app-header />
+  </div>
+  <div class="col-2 min-h-screen left-sidebar p-3">
+    <app-left-sidebar></app-left-sidebar>
+  </div>
+  <div class="col-8 min-h-screen">
+    <div class="grid">
+      <div class="col-12 breadcrumb">
+        <p-breadcrumb class="max-w-full" [model]="items" [home]="home" />
+      </div>
+      <div class="col-12">
+        <ng-content></ng-content>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 min-h-screen right-sidebar">
+    <app-right-sidebar></app-right-sidebar>
+  </div>
+</div>

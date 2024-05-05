@@ -1,0 +1,17 @@
+.search-input {
+  height: 2rem;
+  width: 40%;
+}
+
+.profile-icon {
+  border-radius: 0.25rem;
+  background: #4600B7;
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
