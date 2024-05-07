@@ -29,7 +29,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "message_bookmarks", Type: field.TypeUUID, Nullable: true},
 		{Name: "thread_bookmarks", Type: field.TypeUUID, Nullable: true},
-		{Name: "user_bookmarks", Type: field.TypeUUID},
+		{Name: "user_bookmarks", Type: field.TypeUUID, Nullable: true},
 	}
 	// BookmarksTable holds the schema information for the "bookmarks" table.
 	BookmarksTable = &schema.Table{
@@ -53,7 +53,7 @@ var (
 				Symbol:     "bookmarks_users_bookmarks",
 				Columns:    []*schema.Column{BookmarksColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -100,7 +100,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
 		{Name: "thread_parent", Type: field.TypeUUID, Unique: true, Nullable: true},
-		{Name: "user_threads", Type: field.TypeUUID},
+		{Name: "user_threads", Type: field.TypeUUID, Nullable: true},
 	}
 	// ThreadsTable holds the schema information for the "threads" table.
 	ThreadsTable = &schema.Table{
@@ -118,7 +118,7 @@ var (
 				Symbol:     "threads_users_threads",
 				Columns:    []*schema.Column{ThreadsColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}

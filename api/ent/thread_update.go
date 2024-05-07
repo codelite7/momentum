@@ -66,6 +66,14 @@ func (tu *ThreadUpdate) SetCreatedByID(id uuid.UUID) *ThreadUpdate {
 	return tu
 }
 
+// SetNillableCreatedByID sets the "created_by" edge to the User entity by ID if the given value is not nil.
+func (tu *ThreadUpdate) SetNillableCreatedByID(id *uuid.UUID) *ThreadUpdate {
+	if id != nil {
+		tu = tu.SetCreatedByID(*id)
+	}
+	return tu
+}
+
 // SetCreatedBy sets the "created_by" edge to the User entity.
 func (tu *ThreadUpdate) SetCreatedBy(u *User) *ThreadUpdate {
 	return tu.SetCreatedByID(u.ID)
@@ -231,18 +239,7 @@ func (tu *ThreadUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (tu *ThreadUpdate) check() error {
-	if _, ok := tu.mutation.CreatedByID(); tu.mutation.CreatedByCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Thread.created_by"`)
-	}
-	return nil
-}
-
 func (tu *ThreadUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := tu.check(); err != nil {
-		return n, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(thread.Table, thread.Columns, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID))
 	if ps := tu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -488,6 +485,14 @@ func (tuo *ThreadUpdateOne) SetCreatedByID(id uuid.UUID) *ThreadUpdateOne {
 	return tuo
 }
 
+// SetNillableCreatedByID sets the "created_by" edge to the User entity by ID if the given value is not nil.
+func (tuo *ThreadUpdateOne) SetNillableCreatedByID(id *uuid.UUID) *ThreadUpdateOne {
+	if id != nil {
+		tuo = tuo.SetCreatedByID(*id)
+	}
+	return tuo
+}
+
 // SetCreatedBy sets the "created_by" edge to the User entity.
 func (tuo *ThreadUpdateOne) SetCreatedBy(u *User) *ThreadUpdateOne {
 	return tuo.SetCreatedByID(u.ID)
@@ -666,18 +671,7 @@ func (tuo *ThreadUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (tuo *ThreadUpdateOne) check() error {
-	if _, ok := tuo.mutation.CreatedByID(); tuo.mutation.CreatedByCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Thread.created_by"`)
-	}
-	return nil
-}
-
 func (tuo *ThreadUpdateOne) sqlSave(ctx context.Context) (_node *Thread, err error) {
-	if err := tuo.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(thread.Table, thread.Columns, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID))
 	id, ok := tuo.mutation.ID()
 	if !ok {

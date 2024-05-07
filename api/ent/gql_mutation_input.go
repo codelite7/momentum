@@ -86,7 +86,7 @@ func (c *AgentUpdateOne) SetInput(i UpdateAgentInput) *AgentUpdateOne {
 type CreateBookmarkInput struct {
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
-	UserID    uuid.UUID
+	UserID    *uuid.UUID
 	ThreadID  *uuid.UUID
 	MessageID *uuid.UUID
 }
@@ -99,7 +99,9 @@ func (i *CreateBookmarkInput) Mutate(m *BookmarkMutation) {
 	if v := i.UpdatedAt; v != nil {
 		m.SetUpdatedAt(*v)
 	}
-	m.SetUserID(i.UserID)
+	if v := i.UserID; v != nil {
+		m.SetUserID(*v)
+	}
 	if v := i.ThreadID; v != nil {
 		m.SetThreadID(*v)
 	}
@@ -117,6 +119,7 @@ func (c *BookmarkCreate) SetInput(i CreateBookmarkInput) *BookmarkCreate {
 // UpdateBookmarkInput represents a mutation input for updating bookmarks.
 type UpdateBookmarkInput struct {
 	UpdatedAt    *time.Time
+	ClearUser    bool
 	UserID       *uuid.UUID
 	ClearThread  bool
 	ThreadID     *uuid.UUID
@@ -128,6 +131,9 @@ type UpdateBookmarkInput struct {
 func (i *UpdateBookmarkInput) Mutate(m *BookmarkMutation) {
 	if v := i.UpdatedAt; v != nil {
 		m.SetUpdatedAt(*v)
+	}
+	if i.ClearUser {
+		m.ClearUser()
 	}
 	if v := i.UserID; v != nil {
 		m.SetUserID(*v)
@@ -261,7 +267,7 @@ type CreateThreadInput struct {
 	CreatedAt   *time.Time
 	UpdatedAt   *time.Time
 	Name        string
-	CreatedByID uuid.UUID
+	CreatedByID *uuid.UUID
 	MessageIDs  []uuid.UUID
 	BookmarkIDs []uuid.UUID
 	ChildID     *uuid.UUID
@@ -277,7 +283,9 @@ func (i *CreateThreadInput) Mutate(m *ThreadMutation) {
 		m.SetUpdatedAt(*v)
 	}
 	m.SetName(i.Name)
-	m.SetCreatedByID(i.CreatedByID)
+	if v := i.CreatedByID; v != nil {
+		m.SetCreatedByID(*v)
+	}
 	if v := i.MessageIDs; len(v) > 0 {
 		m.AddMessageIDs(v...)
 	}
@@ -302,6 +310,7 @@ func (c *ThreadCreate) SetInput(i CreateThreadInput) *ThreadCreate {
 type UpdateThreadInput struct {
 	UpdatedAt         *time.Time
 	Name              *string
+	ClearCreatedBy    bool
 	CreatedByID       *uuid.UUID
 	ClearMessages     bool
 	AddMessageIDs     []uuid.UUID
@@ -322,6 +331,9 @@ func (i *UpdateThreadInput) Mutate(m *ThreadMutation) {
 	}
 	if v := i.Name; v != nil {
 		m.SetName(*v)
+	}
+	if i.ClearCreatedBy {
+		m.ClearCreatedBy()
 	}
 	if v := i.CreatedByID; v != nil {
 		m.SetCreatedByID(*v)

@@ -8,6 +8,7 @@ import { NotFoundComponent } from './not-found/not-found.component'
 import { canActivateSignOutGuard } from './guards/can-activate-sign-out.guard'
 import { canActivateSignInGuard } from './guards/can-activate-sign-in.guard'
 import { HomeComponent } from './app/home/home.component'
+import { ThreadComponent } from './app/thread/thread.component'
 
 export const routes: Routes = [
   {
@@ -39,6 +40,7 @@ export const routes: Routes = [
     children: [
       {path: '', pathMatch: 'full', redirectTo: 'home'},
       {path: 'home', component: HomeComponent},
+      {path: 'thread/:id', component: ThreadComponent}
     ]
   },
   {path: '**', redirectTo: 'notfound'},

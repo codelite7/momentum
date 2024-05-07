@@ -25,7 +25,7 @@ func (b *Bookmark) User(ctx context.Context) (*User, error) {
 	if IsNotLoaded(err) {
 		result, err = b.QueryUser().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
 }
 
 func (b *Bookmark) Thread(ctx context.Context) (*Thread, error) {
@@ -85,7 +85,7 @@ func (t *Thread) CreatedBy(ctx context.Context) (*User, error) {
 	if IsNotLoaded(err) {
 		result, err = t.QueryCreatedBy().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
 }
 
 func (t *Thread) Messages(ctx context.Context) (result []*Message, err error) {

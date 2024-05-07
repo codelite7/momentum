@@ -1,0 +1,3 @@
+<div *ngIf="threads">
+  <app-thread-button *ngFor="let thread of threads" [thread]="thread.node"/>
+</div>

@@ -1,1 +1,20 @@
-<p>right-sidebar works!</p>
+<div class="flex-column">
+  <div class="flex align-items-center mb-3">
+    <i class="pi pi-bookmark mr-2"></i>
+    Bookmarks
+  </div>
+  <div class="mb-3">
+    <p-iconField iconPosition="left" class="search-input mt-3" >
+      <p-inputIcon styleClass="pi pi-search" />
+      <input type="text" pInputText placeholder="Search bookmarks" [(ngModel)]="query" class="w-full" />
+    </p-iconField>
+  </div>
+  <div class="bookmark-stub p-2 border">
+    <div class="inner">
+      <div class="flex justify-content-center">
+        <i class="pi pi-bookmark mr-2 icon"></i>
+      </div>
+      Bookmark important pieces of your conversation to collect them here
+    </div>
+  </div>
+</div>

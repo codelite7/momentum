@@ -78,6 +78,14 @@ func (tc *ThreadCreate) SetCreatedByID(id uuid.UUID) *ThreadCreate {
 	return tc
 }
 
+// SetNillableCreatedByID sets the "created_by" edge to the User entity by ID if the given value is not nil.
+func (tc *ThreadCreate) SetNillableCreatedByID(id *uuid.UUID) *ThreadCreate {
+	if id != nil {
+		tc = tc.SetCreatedByID(*id)
+	}
+	return tc
+}
+
 // SetCreatedBy sets the "created_by" edge to the User entity.
 func (tc *ThreadCreate) SetCreatedBy(u *User) *ThreadCreate {
 	return tc.SetCreatedByID(u.ID)
@@ -210,9 +218,6 @@ func (tc *ThreadCreate) check() error {
 	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Thread.name"`)}
-	}
-	if _, ok := tc.mutation.CreatedByID(); !ok {
-		return &ValidationError{Name: "created_by", err: errors.New(`ent: missing required edge "Thread.created_by"`)}
 	}
 	return nil
 }

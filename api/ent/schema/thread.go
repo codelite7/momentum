@@ -26,7 +26,9 @@ func (Thread) Fields() []ent.Field {
 func (Thread) Edges() []ent.Edge {
 	return []ent.Edge{
 		// a thread is created by a user
-		edge.From("created_by", User.Type).Ref("threads").Unique().Required(),
+		//edge.From("created_by", User.Type).Ref("threads").Unique().Required(),
+		// todo make this required when we have better user stuff
+		edge.From("created_by", User.Type).Ref("threads").Unique(),
 		// a thread may have many messages
 		edge.To("messages", Message.Type),
 		// a thread may be bookmarked many times
