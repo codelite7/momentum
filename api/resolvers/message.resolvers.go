@@ -8,9 +8,16 @@ import (
 	"context"
 
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/samber/lo"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateMessage is the resolver for the createMessage field.
 func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
+	userUuid, err := getUserUuid(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf(err.Error())
+	}
+	input.SentByUserID = lo.ToPtr(userUuid)
 	return ent.FromContext(ctx).Message.Create().SetInput(input).Save(ctx)
 }

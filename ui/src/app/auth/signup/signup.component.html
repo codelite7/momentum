@@ -1,0 +1,26 @@
+<div class="grid">
+  <div class="col-12">
+    <div>
+      <form [formGroup]="signUpForm" (ngSubmit)="signUp()">
+        <div class="flex flex-column justify-content-center align-content-center align-items-center min-h-screen">
+          <img ngSrc="assets/logo.svg" alt="manifold q" height="26" width="119" class="mb-5">
+          <div class="field mb-5">
+            <p-floatLabel>
+              <input pInputText id="email" formControlName="email" />
+              <label for="email">Email</label>
+            </p-floatLabel>
+          </div>
+          <div class="field mb-5">
+            <p-floatLabel>
+              <p-password id="password" formControlName="password" [feedback]="false" />
+              <label for="password">Password</label>
+            </p-floatLabel>
+          </div>
+          <div class="field">
+            <p-button type="submit" label="Sign Up" [disabled]="!signUpForm.valid" [loading]="loading" ></p-button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

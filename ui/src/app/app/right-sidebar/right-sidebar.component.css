@@ -1,3 +1,7 @@
+.title {
+  height: 44px;
+}
+
 .border {
   width: 100%;
   position: relative;
@@ -23,13 +27,3 @@
     font-size: 1.5rem;
   }
 }
-/*.bookmark-stub {*/
-/*  border-radius: 2rem;*/
-/*  border: 2px solid transparent;*/
-/*  border-image: linear-gradient(to right, #5D00BA, #1C5CFC, #75A5FD);*/
-/*  border-image-slice: 1;*/
-/*  .icon {*/
-/*    color: #4280FC;*/
-/*    font-size: 1.5rem;*/
-/*  }*/
-/*}*/

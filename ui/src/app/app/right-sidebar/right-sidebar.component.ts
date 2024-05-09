@@ -18,4 +18,5 @@ import { InputTextModule } from 'primeng/inputtext'
 })
 export class RightSidebarComponent {
   query: string = ''
+  bookmarks: any = []
 }

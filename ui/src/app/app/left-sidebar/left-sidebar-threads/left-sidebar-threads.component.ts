@@ -20,7 +20,7 @@ export class LeftSidebarThreadsComponent {
   threadService: ThreadService = inject(ThreadService)
   toastService: ToastService = inject(ToastService)
   leftSidebarThreadsService: LeftSidebarThreadsService = inject(LeftSidebarThreadsService)
-  threads: any[] = []
+  threads: any = []
   async ngOnInit(): Promise<void> {
     // on load refresh the threads
     this.refreshThreads()
@@ -42,9 +42,8 @@ export class LeftSidebarThreadsComponent {
       `
       )
       if (response.threads) {
-        this.threads = response.threads.edges
+        this.threads = response.threads
       }
-      console.log(this.threads)
     } catch (e) {
       this.toastService.error(`${e}`)
     }

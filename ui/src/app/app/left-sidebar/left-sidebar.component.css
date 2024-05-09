@@ -1,7 +1,3 @@
-:host ::ng-deep .p-button {
-  width: 100%; !important;
-}
-
-:host ::ng-deep .p-element {
-  width: 100%; !important;
+.new-thread-button ::ng-deep .p-button {
+  width: 100%;
 }

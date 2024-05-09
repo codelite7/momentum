@@ -9,6 +9,7 @@ import { canActivateSignOutGuard } from './guards/can-activate-sign-out.guard'
 import { canActivateSignInGuard } from './guards/can-activate-sign-in.guard'
 import { HomeComponent } from './app/home/home.component'
 import { ThreadComponent } from './app/thread/thread.component'
+import { SignupComponent } from './auth/signup/signup.component'
 
 export const routes: Routes = [
   {
@@ -22,6 +23,11 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
+    path: 'signup',
+    redirectTo: '/auth/signup',
+    pathMatch: 'full',
+  },
+  {
     path: 'signout',
     redirectTo: '/auth/signout',
     pathMatch: 'full',
@@ -31,6 +37,7 @@ export const routes: Routes = [
     children: [
       {path: '', pathMatch: 'full', redirectTo: 'signin'},
       {path: 'signin', component: SigninComponent, canActivate: [canActivateSignInGuard]},
+      {path: 'signup', component: SignupComponent, canActivate: [canActivateSignInGuard]},
       {path: 'signout', component: SignoutComponent, canActivate: [canActivateSignOutGuard]},
     ]
   },

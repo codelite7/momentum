@@ -1,3 +1,42 @@
 <app-base>
-  {{ JSON.stringify(thread) }}
+  <!-- layout -->
+  <div class="grid grid-nogutter">
+    <!-- breadcrumbs -->
+    <div class="col-12">
+      <app-breadcrumb [thread]="thread"></app-breadcrumb>
+    </div>
+    <!-- messages container -->
+  </div>
+
+
+
+  <div class="flex flex-column w-full h-full p-3 align-items-center justify-content-center">
+    <div class="w-full">
+      @for (message of messages?.edges; track message.node.id) {
+        @if (message.node.sentByUser) {
+          <app-message [message]="message"></app-message>
+        }
+      }
+    </div>
+    @if (messages?.edges?.length == 0) {
+      <div class="flex w-full justify-content-center mb-3">
+        <span class="explore">What do you want to explore?</span>
+      </div>
+    }
+    <form [formGroup]="promptForm" (ngSubmit)="sendMessage()" class="w-full">
+      <textarea
+        #promptInput
+        formControlName="prompt"
+        class="w-full prompt-textarea mb-2"
+        rows="5"
+        pInputTextarea
+        (keydown)="keyPressed($event)"
+      >
+    </textarea>
+    <div class="flex justify-content-end">
+      <p-button label="Enter" icon="pi pi-arrow-down" [disabled]="!promptForm.valid" [loading]="loading"></p-button>
+    </div>
+    </form>
+
+  </div>
 </app-base>

@@ -14,14 +14,18 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/samber/lo"
 	"github.com/supertokens/supertokens-golang/recipe/dashboard"
 	"github.com/supertokens/supertokens-golang/recipe/session"
+	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
 	"github.com/supertokens/supertokens-golang/recipe/thirdparty/tpmodels"
 	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword"
 	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword/tpepmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
 	"github.com/urfave/cli/v2"
 	"log"
+	"net/http"
+	"time"
 )
 
 var RunCommand = &cli.Command{
@@ -33,13 +37,15 @@ var RunCommand = &cli.Command{
 	},
 }
 
+var Client *ent.Client
+
 func run() error {
-	client := initEntClient()
-	err := createSchema(client)
+	Client = initEntClient()
+	err := createSchema(Client)
 	if err != nil {
 		return err
 	}
-	graphqlServer := initGraphqlServer(client)
+	graphqlServer := initGraphqlServer(Client)
 	return runHttpServer(graphqlServer)
 
 }
@@ -85,6 +91,7 @@ func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
 		AllowCredentials:                         true,
 		UnsafeWildcardOriginWithAllowCredentials: true,
 	}))
+	e.Use(echo.WrapMiddleware(sessionMiddleware))
 	e.Use(echo.WrapMiddleware(supertokens.Middleware))
 	e.GET("/health", func(c echo.Context) error {
 		return nil
@@ -136,8 +143,76 @@ func initSuperTokens() error {
 						},
 					},
 				},
+				Override: &tpepmodels.OverrideStruct{
+					Functions: func(originalImplementation tpepmodels.RecipeInterface) tpepmodels.RecipeInterface {
+						original := *originalImplementation.EmailPasswordSignUp
+						*originalImplementation.EmailPasswordSignUp = func(email string, password string, tenantId string, userContext supertokens.UserContext) (tpepmodels.SignUpResponse, error) {
+							input := ent.CreateUserInput{
+								CreatedAt: lo.ToPtr(time.Now()),
+								UpdatedAt: lo.ToPtr(time.Now()),
+								Email:     email,
+							}
+							var response tpepmodels.SignUpResponse
+							tx, err := Client.Tx(context.Background())
+							if err != nil {
+								return response, err
+							}
+							defer tx.Rollback()
+							user, err := tx.User.Create().SetInput(input).Save(context.Background())
+							if err != nil {
+								return response, err
+							}
+							response, err = original(email, password, tenantId, userContext)
+							if err != nil {
+								return response, err
+							}
+
+							if response.OK != nil {
+								if response.OK.User.ID != "" {
+									externalUserId := user.ID.String()
+									_, err := supertokens.CreateUserIdMapping(response.OK.User.ID, externalUserId, nil, nil)
+									if err != nil {
+										return response, err
+									}
+									response.OK.User.ID = externalUserId
+								}
+
+							}
+							err = tx.Commit()
+							if err != nil {
+								return response, err
+							}
+							return response, nil
+						}
+						return originalImplementation
+					},
+				},
 			}),
-			session.Init(nil), // initializes session features
+			session.Init(&sessmodels.TypeInput{
+				Override: &sessmodels.OverrideStruct{
+					Functions: func(originalImplementation sessmodels.RecipeInterface) sessmodels.RecipeInterface {
+						// First we copy the original implementation func
+						originalCreateNewSession := *originalImplementation.CreateNewSession
+
+						// Now we override the CreateNewSession function
+						*originalImplementation.CreateNewSession = func(userID string, accessTokenPayload, sessionDataInDatabase map[string]interface{}, disableAntiCsrf *bool, tenantId string, userContext supertokens.UserContext) (sessmodels.SessionContainer, error) {
+							// This goes in the access token, and is available to read on the frontend.
+							if accessTokenPayload == nil {
+								accessTokenPayload = map[string]interface{}{}
+							}
+							user, err := thirdpartyemailpassword.GetUserById(userID)
+							if err != nil {
+								return &sessmodels.TypeSessionContainer{}, err
+							}
+							accessTokenPayload["email"] = user.Email
+
+							return originalCreateNewSession(userID, accessTokenPayload, sessionDataInDatabase, disableAntiCsrf, tenantId, userContext)
+						}
+
+						return originalImplementation
+					},
+				},
+			}),
 			dashboard.Init(nil),
 		},
 	})
@@ -231,4 +306,8 @@ var flags = []cli.Flag{
 		EnvVars:     []string{"SUPERTOKENS_GOOGLE_CLIENT_SECRET"},
 		Destination: &SuperTokensConfig.GoogleClientSecret,
 	},
+}
+
+func sessionMiddleware(next http.Handler) http.Handler {
+	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(false)}, next.ServeHTTP)
 }

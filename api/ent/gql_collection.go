@@ -236,6 +236,34 @@ func newBookmarkPaginateArgs(rv map[string]any) *bookmarkPaginateArgs {
 	if v := rv[beforeField]; v != nil {
 		args.before = v.(*Cursor)
 	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*BookmarkOrder:
+			args.opts = append(args.opts, WithBookmarkOrder(v))
+		case []any:
+			var orders []*BookmarkOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &BookmarkOrder{Field: &BookmarkOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithBookmarkOrder(orders))
+		}
+	}
 	if v, ok := rv[whereField].(*BookmarkWhereInput); ok {
 		args.opts = append(args.opts, WithBookmarkFilter(v.Filter))
 	}
@@ -358,6 +386,34 @@ func newMessagePaginateArgs(rv map[string]any) *messagePaginateArgs {
 	}
 	if v := rv[beforeField]; v != nil {
 		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*MessageOrder:
+			args.opts = append(args.opts, WithMessageOrder(v))
+		case []any:
+			var orders []*MessageOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &MessageOrder{Field: &MessageOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithMessageOrder(orders))
+		}
 	}
 	if v, ok := rv[whereField].(*MessageWhereInput); ok {
 		args.opts = append(args.opts, WithMessageFilter(v.Filter))

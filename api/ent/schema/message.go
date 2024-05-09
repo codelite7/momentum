@@ -25,6 +25,7 @@ func (Message) Fields() []ent.Field {
 func (Message) Edges() []ent.Edge {
 	return []ent.Edge{
 		// a message can be sent by a user
+		// todo: constraint on one or the other
 		edge.From("sent_by_agent", Agent.Type).Ref("messages").Unique(),
 		// a message can be sent by an agent
 		edge.From("sent_by_user", User.Type).Ref("messages").Unique(),

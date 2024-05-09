@@ -1,17 +1,19 @@
 import { inject, Injectable } from '@angular/core'
 import { GraphqlService, OrderBy } from './graphql.service'
 import { gql } from 'graphql-request'
+import { AuthService } from '../auth.service'
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThreadService {
   graphqlService: GraphqlService = inject(GraphqlService)
-
+  authService: AuthService = inject(AuthService)
   constructor() {
   }
 
   async createThread(name: string) {
+    let userId = await this.authService.userId()
     let doc = gql`
     mutation createThread($input:CreateThreadInput!) {
       createThread(input:$input){
@@ -21,7 +23,7 @@ export class ThreadService {
     }
     `
 
-    return await this.graphqlService.request(doc, {input: {name: name}})
+    return await this.graphqlService.request(doc, {input: {name: name, createdByID: userId}})
   }
 
   async listThreads(first: number, returnFields: string, last?: number, after?: string, before?: string, orderBy?: OrderBy[], where?: any) {
@@ -58,7 +60,7 @@ export class ThreadService {
     `
     let response = await this.graphqlService.request(doc, {id: id})
     if (response.threads?.edges?.length > 0) {
-      return response.threads.edges[0].node
+      return response.threads.edges[0]
     }
     return undefined
   }

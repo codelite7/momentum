@@ -23,8 +23,7 @@ func (Bookmark) Edges() []ent.Edge {
 	return []ent.Edge{
 		// a bookmark is created by a user
 		//edge.From("user", User.Type).Ref("bookmarks").Unique().Required(),
-		// todo: make this required when we have better user stuff
-		edge.From("user", User.Type).Ref("bookmarks").Unique(),
+		edge.From("user", User.Type).Ref("bookmarks").Unique().Required(),
 		// a bookmark may be associated with a thread
 		edge.From("thread", Thread.Type).Ref("bookmarks").Unique(),
 		// a bookmark may be associated with a message

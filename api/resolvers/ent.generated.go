@@ -25,8 +25,8 @@ type QueryResolver interface {
 	Node(ctx context.Context, id uuid.UUID) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []uuid.UUID) ([]ent.Noder, error)
 	Agents(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.AgentOrder, where *ent.AgentWhereInput) (*ent.AgentConnection, error)
-	Bookmarks(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.BookmarkWhereInput) (*ent.BookmarkConnection, error)
-	Messages(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.MessageWhereInput) (*ent.MessageConnection, error)
+	Bookmarks(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) (*ent.BookmarkConnection, error)
+	Messages(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.MessageOrder, where *ent.MessageWhereInput) (*ent.MessageConnection, error)
 	Threads(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) (*ent.ThreadConnection, error)
 	Users(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error)
 }
@@ -149,15 +149,24 @@ func (ec *executionContext) field_Query_bookmarks_args(ctx context.Context, rawA
 		}
 	}
 	args["last"] = arg3
-	var arg4 *ent.BookmarkWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg4, err = ec.unmarshalOBookmarkWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkWhereInput(ctx, tmp)
+	var arg4 []*ent.BookmarkOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg4, err = ec.unmarshalOBookmarkOrder2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkOrderᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	var arg5 *ent.BookmarkWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg5, err = ec.unmarshalOBookmarkWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg5
 	return args, nil
 }
 
@@ -200,15 +209,24 @@ func (ec *executionContext) field_Query_messages_args(ctx context.Context, rawAr
 		}
 	}
 	args["last"] = arg3
-	var arg4 *ent.MessageWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg4, err = ec.unmarshalOMessageWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageWhereInput(ctx, tmp)
+	var arg4 []*ent.MessageOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg4, err = ec.unmarshalOMessageOrder2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageOrderᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	var arg5 *ent.MessageWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg5, err = ec.unmarshalOMessageWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg5
 	return args, nil
 }
 
@@ -1046,11 +1064,14 @@ func (ec *executionContext) _Bookmark_user(ctx context.Context, field graphql.Co
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Bookmark_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2455,7 +2476,7 @@ func (ec *executionContext) _Query_bookmarks(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Bookmarks(rctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["where"].(*ent.BookmarkWhereInput))
+		return ec.resolvers.Query().Bookmarks(rctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BookmarkOrder), fc.Args["where"].(*ent.BookmarkWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2518,7 +2539,7 @@ func (ec *executionContext) _Query_messages(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Messages(rctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["where"].(*ent.MessageWhereInput))
+		return ec.resolvers.Query().Messages(rctx, fc.Args["after"].(*entgql.Cursor[uuid.UUID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[uuid.UUID]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.MessageOrder), fc.Args["where"].(*ent.MessageWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3019,11 +3040,14 @@ func (ec *executionContext) _Thread_createdBy(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Thread_createdBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4585,6 +4609,44 @@ func (ec *executionContext) unmarshalInputAgentWhereInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputBookmarkOrder(ctx context.Context, obj interface{}) (ent.BookmarkOrder, error) {
+	var it ent.BookmarkOrder
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNBookmarkOrderField2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputBookmarkWhereInput(ctx context.Context, obj interface{}) (ent.BookmarkWhereInput, error) {
 	var it ent.BookmarkWhereInput
 	asMap := map[string]interface{}{}
@@ -4921,7 +4983,7 @@ func (ec *executionContext) unmarshalInputCreateBookmarkInput(ctx context.Contex
 			it.UpdatedAt = data
 		case "userID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
-			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			data, err := ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5052,7 +5114,7 @@ func (ec *executionContext) unmarshalInputCreateThreadInput(ctx context.Context,
 			it.Name = data
 		case "createdByID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdByID"))
-			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			data, err := ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5147,6 +5209,44 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.MessageIDs = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMessageOrder(ctx context.Context, obj interface{}) (ent.MessageOrder, error) {
+	var it ent.MessageOrder
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNMessageOrderField2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
 		}
 	}
 
@@ -5986,7 +6086,7 @@ func (ec *executionContext) unmarshalInputUpdateBookmarkInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"updatedAt", "userID", "clearUser", "threadID", "clearThread", "messageID", "clearMessage"}
+	fieldsInOrder := [...]string{"updatedAt", "userID", "threadID", "clearThread", "messageID", "clearMessage"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6007,13 +6107,6 @@ func (ec *executionContext) unmarshalInputUpdateBookmarkInput(ctx context.Contex
 				return it, err
 			}
 			it.UserID = data
-		case "clearUser":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearUser"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearUser = data
 		case "threadID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("threadID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
@@ -6145,7 +6238,7 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"updatedAt", "name", "createdByID", "clearCreatedBy", "addMessageIDs", "removeMessageIDs", "clearMessages", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "childID", "clearChild", "parentID", "clearParent"}
+	fieldsInOrder := [...]string{"updatedAt", "name", "createdByID", "addMessageIDs", "removeMessageIDs", "clearMessages", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "childID", "clearChild", "parentID", "clearParent"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6173,13 +6266,6 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.CreatedByID = data
-		case "clearCreatedBy":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearCreatedBy"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearCreatedBy = data
 		case "addMessageIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addMessageIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋgoogleᚋuuidᚐUUIDᚄ(ctx, v)
@@ -6990,6 +7076,9 @@ func (ec *executionContext) _Bookmark(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Bookmark_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -7755,6 +7844,9 @@ func (ec *executionContext) _Thread(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Thread_createdBy(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -8328,6 +8420,27 @@ func (ec *executionContext) marshalNBookmarkConnection2ᚖgithubᚗcomᚋcodelit
 	return ec._BookmarkConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNBookmarkOrder2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkOrder(ctx context.Context, v interface{}) (*ent.BookmarkOrder, error) {
+	res, err := ec.unmarshalInputBookmarkOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNBookmarkOrderField2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkOrderField(ctx context.Context, v interface{}) (*ent.BookmarkOrderField, error) {
+	var res = new(ent.BookmarkOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBookmarkOrderField2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.BookmarkOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalNBookmarkWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkWhereInput(ctx context.Context, v interface{}) (*ent.BookmarkWhereInput, error) {
 	res, err := ec.unmarshalInputBookmarkWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -8390,6 +8503,27 @@ func (ec *executionContext) marshalNMessageConnection2ᚖgithubᚗcomᚋcodelite
 		return graphql.Null
 	}
 	return ec._MessageConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMessageOrder2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageOrder(ctx context.Context, v interface{}) (*ent.MessageOrder, error) {
+	res, err := ec.unmarshalInputMessageOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMessageOrderField2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageOrderField(ctx context.Context, v interface{}) (*ent.MessageOrderField, error) {
+	var res = new(ent.MessageOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMessageOrderField2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.MessageOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalNMessageWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageWhereInput(ctx context.Context, v interface{}) (*ent.MessageWhereInput, error) {
@@ -8512,6 +8646,16 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUserConnection2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v ent.UserConnection) graphql.Marshaler {
@@ -8759,6 +8903,26 @@ func (ec *executionContext) marshalOBookmarkEdge2ᚖgithubᚗcomᚋcodelite7ᚋm
 	return ec._BookmarkEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOBookmarkOrder2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkOrderᚄ(ctx context.Context, v interface{}) ([]*ent.BookmarkOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.BookmarkOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNBookmarkOrder2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalOBookmarkWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.BookmarkWhereInput, error) {
 	if v == nil {
 		return nil, nil
@@ -8903,6 +9067,26 @@ func (ec *executionContext) marshalOMessageEdge2ᚖgithubᚗcomᚋcodelite7ᚋmo
 		return graphql.Null
 	}
 	return ec._MessageEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMessageOrder2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageOrderᚄ(ctx context.Context, v interface{}) ([]*ent.MessageOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.MessageOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMessageOrder2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOMessageWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.MessageWhereInput, error) {

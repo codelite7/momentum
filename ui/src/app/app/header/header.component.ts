@@ -5,6 +5,9 @@ import { InputTextModule } from 'primeng/inputtext'
 import { FormsModule } from '@angular/forms'
 import { IconFieldModule } from 'primeng/iconfield'
 import { InputIconModule } from 'primeng/inputicon'
+import { UserAvatarComponent } from '../common/user-avatar/user-avatar.component'
+import { ThreadSearchComponent } from './thread-search/thread-search.component'
+import { LogoComponent } from './logo/logo.component'
 
 @Component({
   selector: 'app-header',
@@ -15,11 +18,13 @@ import { InputIconModule } from 'primeng/inputicon'
     InputTextModule,
     FormsModule,
     IconFieldModule,
-    InputIconModule
+    InputIconModule,
+    UserAvatarComponent,
+    ThreadSearchComponent,
+    LogoComponent
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css'
 })
 export class HeaderComponent {
-  query: string = ''
 }

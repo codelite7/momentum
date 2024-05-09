@@ -1,0 +1,13 @@
+.explore {
+  font-size: 1.375rem;
+  font-weight: 500;
+  letter-spacing: 0.01375rem;
+}
+
+textarea {
+  resize: none;
+}
+
+::ng-deep .p-breadcrumb {
+  background-color: transparent;
+}

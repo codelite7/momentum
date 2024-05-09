@@ -52,14 +52,6 @@ func (bu *BookmarkUpdate) SetUserID(id uuid.UUID) *BookmarkUpdate {
 	return bu
 }
 
-// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
-func (bu *BookmarkUpdate) SetNillableUserID(id *uuid.UUID) *BookmarkUpdate {
-	if id != nil {
-		bu = bu.SetUserID(*id)
-	}
-	return bu
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (bu *BookmarkUpdate) SetUser(u *User) *BookmarkUpdate {
 	return bu.SetUserID(u.ID)
@@ -153,7 +145,18 @@ func (bu *BookmarkUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (bu *BookmarkUpdate) check() error {
+	if _, ok := bu.mutation.UserID(); bu.mutation.UserCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Bookmark.user"`)
+	}
+	return nil
+}
+
 func (bu *BookmarkUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := bu.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID))
 	if ps := bu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -292,14 +295,6 @@ func (buo *BookmarkUpdateOne) SetUserID(id uuid.UUID) *BookmarkUpdateOne {
 	return buo
 }
 
-// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
-func (buo *BookmarkUpdateOne) SetNillableUserID(id *uuid.UUID) *BookmarkUpdateOne {
-	if id != nil {
-		buo = buo.SetUserID(*id)
-	}
-	return buo
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (buo *BookmarkUpdateOne) SetUser(u *User) *BookmarkUpdateOne {
 	return buo.SetUserID(u.ID)
@@ -406,7 +401,18 @@ func (buo *BookmarkUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (buo *BookmarkUpdateOne) check() error {
+	if _, ok := buo.mutation.UserID(); buo.mutation.UserCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Bookmark.user"`)
+	}
+	return nil
+}
+
 func (buo *BookmarkUpdateOne) sqlSave(ctx context.Context) (_node *Bookmark, err error) {
+	if err := buo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID))
 	id, ok := buo.mutation.ID()
 	if !ok {

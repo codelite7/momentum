@@ -72,14 +72,6 @@ func (bc *BookmarkCreate) SetUserID(id uuid.UUID) *BookmarkCreate {
 	return bc
 }
 
-// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
-func (bc *BookmarkCreate) SetNillableUserID(id *uuid.UUID) *BookmarkCreate {
-	if id != nil {
-		bc = bc.SetUserID(*id)
-	}
-	return bc
-}
-
 // SetUser sets the "user" edge to the User entity.
 func (bc *BookmarkCreate) SetUser(u *User) *BookmarkCreate {
 	return bc.SetUserID(u.ID)
@@ -179,6 +171,9 @@ func (bc *BookmarkCreate) check() error {
 	}
 	if _, ok := bc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Bookmark.updated_at"`)}
+	}
+	if _, ok := bc.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Bookmark.user"`)}
 	}
 	return nil
 }

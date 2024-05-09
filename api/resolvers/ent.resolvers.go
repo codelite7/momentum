@@ -28,13 +28,13 @@ func (r *queryResolver) Agents(ctx context.Context, after *entgql.Cursor[uuid.UU
 }
 
 // Bookmarks is the resolver for the bookmarks field.
-func (r *queryResolver) Bookmarks(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.BookmarkWhereInput) (*ent.BookmarkConnection, error) {
-	return r.client.Bookmark.Query().Paginate(ctx, after, first, before, last, ent.WithBookmarkFilter(where.Filter))
+func (r *queryResolver) Bookmarks(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) (*ent.BookmarkConnection, error) {
+	return r.client.Bookmark.Query().Paginate(ctx, after, first, before, last, ent.WithBookmarkOrder(orderBy), ent.WithBookmarkFilter(where.Filter))
 }
 
 // Messages is the resolver for the messages field.
-func (r *queryResolver) Messages(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, where *ent.MessageWhereInput) (*ent.MessageConnection, error) {
-	return r.client.Message.Query().Paginate(ctx, after, first, before, last, ent.WithMessageFilter(where.Filter))
+func (r *queryResolver) Messages(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.MessageOrder, where *ent.MessageWhereInput) (*ent.MessageConnection, error) {
+	return r.client.Message.Query().Paginate(ctx, after, first, before, last, ent.WithMessageOrder(orderBy), ent.WithMessageFilter(where.Filter))
 }
 
 // Threads is the resolver for the threads field.
