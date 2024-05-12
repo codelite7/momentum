@@ -1,0 +1,17 @@
+:host {
+  ::ng-deep .p-card .p-card-body {
+    padding:  8px;
+  }
+}
+
+.container ::ng-deep p-card {
+  width: 100%;
+}
+.actions-container {
+  position: relative;
+  .actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+}

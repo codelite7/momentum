@@ -2,6 +2,15 @@
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.6.
 
+## Design principals
+### API Interaction
+All api interactions go through services, there is one service for each graphql type. There is a base graphl service that makes the requests.
+### Emitters
+Mutations don't return values, instead they emit the id of the thing that was mutated. This is because various components have different requirements 
+for fields and child objects that they care about. Each component that cares about mutations listens to the emitter it cares about and fetches the data
+it needs to render. This reduces bugs and brittle code by allowing each component to only care about the fields it needs without tyring to modify
+objects to make them look the way the component wants.
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.

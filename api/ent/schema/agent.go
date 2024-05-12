@@ -28,6 +28,6 @@ func (Agent) Fields() []ent.Field {
 func (Agent) Edges() []ent.Edge {
 	return []ent.Edge{
 		// an agent can send many messages
-		edge.To("messages", Message.Type),
+		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection()),
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/google/uuid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -19,4 +20,10 @@ func (r *mutationResolver) CreateBookmark(ctx context.Context, input ent.CreateB
 	}
 	input.UserID = userUuid
 	return ent.FromContext(ctx).Bookmark.Create().SetInput(input).Save(ctx)
+}
+
+// DeleteBookmark is the resolver for the deleteBookmark field.
+func (r *mutationResolver) DeleteBookmark(ctx context.Context, id uuid.UUID) (bool, error) {
+	err := ent.FromContext(ctx).Bookmark.DeleteOneID(id).Exec(ctx)
+	return err == nil, err
 }

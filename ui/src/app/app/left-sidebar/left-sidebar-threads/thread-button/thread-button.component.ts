@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core'
 import { ButtonModule } from 'primeng/button'
 import { RouterLink } from '@angular/router'
+import { ThreadFragment } from '../../../../../../graphql/generated'
 
 @Component({
   selector: 'app-thread-button',
@@ -13,10 +14,10 @@ import { RouterLink } from '@angular/router'
   styleUrl: './thread-button.component.css'
 })
 export class ThreadButtonComponent {
-  @Input() thread: any
+  @Input() thread: ThreadFragment | undefined
 
   getLinkUrl(): string {
-    let url = `/app/thread/${this.thread.id}`
+    let url = `/app/thread/${this.thread?.id}`
     return url
   }
 }

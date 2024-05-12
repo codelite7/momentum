@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { GraphQLClient } from 'graphql-request'
+import { getSdk } from '../../../graphql/generated'
 
 export interface listArgs {
   after?: string
@@ -8,6 +9,15 @@ export interface listArgs {
   last?: number
   orderBy?: string[]
   where?: any
+}
+
+export interface ListArgs {
+  after?: string
+  first?: number
+  before?: string
+  last?: number
+  orderBy?: OrderBy[]
+  where?: {}
 }
 
 export enum OrderByDirection {
@@ -25,6 +35,7 @@ export interface OrderBy {
 })
 export class GraphqlService {
   client: GraphQLClient = new GraphQLClient('http://localhost:3000/query');
+  sdk = getSdk(this.client)
   constructor() { }
 
   async request(document: any, variables?: any): Promise<any> {
@@ -37,7 +48,7 @@ export class GraphqlService {
     return response
   }
 
-  getListReturnFields(returnFields: string): string {
+  getQueryReturnFields(returnFields: string): string {
     return `
     {
       edges {
@@ -52,33 +63,5 @@ export class GraphqlService {
       }
       totalCount
     }`
-  }
-
-  getListArgs(first?: number, last?: number, after?: string, before?: string, orderBy?: OrderBy[], where?: any): string {
-    let argsString = ''
-    if (first || last || after || before || orderBy || where) {
-      let args: string[] = []
-      if (first) {
-        args.push(`first:${first}`)
-      }
-      if (last) {
-        args.push(`last:${last}`)
-      }
-      if (after) {
-        args.push(`after:"${after}"`)
-      }
-      if (before) {
-        args.push(`before:"${before}"`)
-      }
-      if (orderBy) {
-        args.push(`orderBy:${orderBy}`)
-      }
-      if (where) {
-        args.push(`where:${where}`)
-      }
-      argsString = `(${args.join(',')})`
-    }
-
-    return argsString
   }
 }

@@ -46,7 +46,7 @@ type ComplexityRoot struct {
 	Agent struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
-		Messages  func(childComplexity int) int
+		Messages  func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.MessageOrder, where *ent.MessageWhereInput) int
 		Model     func(childComplexity int) int
 		Name      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
@@ -84,7 +84,7 @@ type ComplexityRoot struct {
 	}
 
 	Message struct {
-		Bookmarks   func(childComplexity int) int
+		Bookmarks   func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) int
 		Content     func(childComplexity int) int
 		CreatedAt   func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -111,6 +111,7 @@ type ComplexityRoot struct {
 		CreateMessage  func(childComplexity int, input ent.CreateMessageInput) int
 		CreateThread   func(childComplexity int, input ent.CreateThreadInput) int
 		CreateUser     func(childComplexity int, input ent.CreateUserInput) int
+		DeleteBookmark func(childComplexity int, id uuid.UUID) int
 	}
 
 	PageInfo struct {
@@ -131,12 +132,12 @@ type ComplexityRoot struct {
 	}
 
 	Thread struct {
-		Bookmarks func(childComplexity int) int
+		Bookmarks func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) int
 		Child     func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		CreatedBy func(childComplexity int) int
 		ID        func(childComplexity int) int
-		Messages  func(childComplexity int) int
+		Messages  func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.MessageOrder, where *ent.MessageWhereInput) int
 		Name      func(childComplexity int) int
 		Parent    func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
@@ -154,12 +155,12 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Bookmarks func(childComplexity int) int
+		Bookmarks func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) int
 		CreatedAt func(childComplexity int) int
 		Email     func(childComplexity int) int
 		ID        func(childComplexity int) int
-		Messages  func(childComplexity int) int
-		Threads   func(childComplexity int) int
+		Messages  func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.MessageOrder, where *ent.MessageWhereInput) int
+		Threads   func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) int
 		UpdatedAt func(childComplexity int) int
 	}
 
@@ -213,7 +214,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Agent.Messages(childComplexity), true
+		args, err := ec.field_Agent_messages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Agent.Messages(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.MessageOrder), args["where"].(*ent.MessageWhereInput)), true
 
 	case "Agent.model":
 		if e.complexity.Agent.Model == nil {
@@ -353,7 +359,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Message.Bookmarks(childComplexity), true
+		args, err := ec.field_Message_bookmarks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Message.Bookmarks(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.BookmarkOrder), args["where"].(*ent.BookmarkWhereInput)), true
 
 	case "Message.content":
 		if e.complexity.Message.Content == nil {
@@ -499,6 +510,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(ent.CreateUserInput)), true
 
+	case "Mutation.deleteBookmark":
+		if e.complexity.Mutation.DeleteBookmark == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteBookmark_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteBookmark(childComplexity, args["id"].(uuid.UUID)), true
+
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
 			break
@@ -616,7 +639,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Thread.Bookmarks(childComplexity), true
+		args, err := ec.field_Thread_bookmarks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Thread.Bookmarks(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.BookmarkOrder), args["where"].(*ent.BookmarkWhereInput)), true
 
 	case "Thread.child":
 		if e.complexity.Thread.Child == nil {
@@ -651,7 +679,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Thread.Messages(childComplexity), true
+		args, err := ec.field_Thread_messages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Thread.Messages(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.MessageOrder), args["where"].(*ent.MessageWhereInput)), true
 
 	case "Thread.name":
 		if e.complexity.Thread.Name == nil {
@@ -714,7 +747,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.User.Bookmarks(childComplexity), true
+		args, err := ec.field_User_bookmarks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Bookmarks(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.BookmarkOrder), args["where"].(*ent.BookmarkWhereInput)), true
 
 	case "User.createdAt":
 		if e.complexity.User.CreatedAt == nil {
@@ -742,14 +780,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.User.Messages(childComplexity), true
+		args, err := ec.field_User_messages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Messages(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.MessageOrder), args["where"].(*ent.MessageWhereInput)), true
 
 	case "User.threads":
 		if e.complexity.User.Threads == nil {
 			break
 		}
 
-		return e.complexity.User.Threads(childComplexity), true
+		args, err := ec.field_User_threads_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Threads(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.ThreadOrder), args["where"].(*ent.ThreadWhereInput)), true
 
 	case "User.updatedAt":
 		if e.complexity.User.UpdatedAt == nil {
@@ -923,6 +971,7 @@ var sources = []*ast.Source{
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/bookmark.graphql", Input: `extend type Mutation {
     createBookmark(input: CreateBookmarkInput!): Bookmark
+    deleteBookmark(id: ID!):Boolean!
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String, omittable: Boolean) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @goModel(model: String, models: [String!], forceGenerate: Boolean) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
@@ -932,7 +981,37 @@ type Agent implements Node {
   updatedAt: Time!
   name: String!
   model: String!
-  messages: [Message!]
+  messages(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Messages returned from the connection.
+    """
+    orderBy: [MessageOrder!]
+
+    """
+    Filtering options for Messages returned from the connection.
+    """
+    where: MessageWhereInput
+  ): MessageConnection!
 }
 """
 A connection to a list of items.
@@ -1254,7 +1333,37 @@ type Message implements Node {
   sentByAgent: Agent
   sentByUser: User
   thread: Thread!
-  bookmarks: [Bookmark!]
+  bookmarks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Bookmarks returned from the connection.
+    """
+    orderBy: [BookmarkOrder!]
+
+    """
+    Filtering options for Bookmarks returned from the connection.
+    """
+    where: BookmarkWhereInput
+  ): BookmarkConnection!
 }
 """
 A connection to a list of items.
@@ -1610,8 +1719,68 @@ type Thread implements Node {
   updatedAt: Time!
   name: String!
   createdBy: User!
-  messages: [Message!]
-  bookmarks: [Bookmark!]
+  messages(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Messages returned from the connection.
+    """
+    orderBy: [MessageOrder!]
+
+    """
+    Filtering options for Messages returned from the connection.
+    """
+    where: MessageWhereInput
+  ): MessageConnection!
+  bookmarks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Bookmarks returned from the connection.
+    """
+    orderBy: [BookmarkOrder!]
+
+    """
+    Filtering options for Bookmarks returned from the connection.
+    """
+    where: BookmarkWhereInput
+  ): BookmarkConnection!
   child: Thread
   parent: Thread
 }
@@ -1834,9 +2003,99 @@ type User implements Node {
   createdAt: Time!
   updatedAt: Time!
   email: String!
-  bookmarks: [Bookmark!]
-  threads: [Thread!]
-  messages: [Message!]
+  bookmarks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Bookmarks returned from the connection.
+    """
+    orderBy: [BookmarkOrder!]
+
+    """
+    Filtering options for Bookmarks returned from the connection.
+    """
+    where: BookmarkWhereInput
+  ): BookmarkConnection!
+  threads(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Threads returned from the connection.
+    """
+    orderBy: [ThreadOrder!]
+
+    """
+    Filtering options for Threads returned from the connection.
+    """
+    where: ThreadWhereInput
+  ): ThreadConnection!
+  messages(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Messages returned from the connection.
+    """
+    orderBy: [MessageOrder!]
+
+    """
+    Filtering options for Messages returned from the connection.
+    """
+    where: MessageWhereInput
+  ): MessageConnection!
 }
 """
 A connection to a list of items.

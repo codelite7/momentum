@@ -9,10 +9,16 @@ import { MenuItem } from 'primeng/api/menuitem'
 import { ButtonModule } from 'primeng/button'
 import { MessageService } from '../../services/message.service'
 import { CdkTrapFocus } from '@angular/cdk/a11y'
-import { OrderByDirection } from '../../services/graphql.service'
 import { UserMessageComponent } from './user-message/user-message.component'
 import { MessageComponent } from './message/message.component'
 import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component'
+import {
+  MessageOrderField,
+  OrderDirection,
+  ThreadFragment, ThreadMessageFragment,
+} from '../../../../graphql/generated'
+import { ActivatedRoute } from '@angular/router'
+
 
 @Component({
   selector: 'app-thread',
@@ -33,13 +39,12 @@ import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component'
   styleUrl: './thread.component.css'
 })
 export class ThreadComponent {
-  @Input() id: string = ''
   @ViewChild('promptInput') promptInput!:ElementRef
   threadService: ThreadService = inject(ThreadService)
   messageService: MessageService = inject(MessageService)
   toastService: ToastService = inject(ToastService)
-  thread: any = undefined
-  messages: any = undefined
+  thread: ThreadFragment | undefined
+  messages: ThreadMessageFragment[] = []
   home: MenuItem = { icon: 'pi pi-home', routerLink: '/' }
 
   loading: boolean = false
@@ -47,31 +52,46 @@ export class ThreadComponent {
     prompt: new FormControl({value: '', disabled: this.loading}, [Validators.required]),
   })
 
+  constructor(private route: ActivatedRoute) {}
+
   async ngOnInit() {
-    try {
-      this.thread = await this.threadService.getThread(this.id)
-    } catch (e) {
-      this.toastService.error(`${e}`)
-    }
-    try {
-      this.messages = await this.messageService.getThreadMessages(this.id, 50, [{field: "CREATED_AT", direction: OrderByDirection.Ascending}])
-      console.log(this.messages)
-    } catch (e) {
-      this.toastService.error(`${e}`)
-    }
+    this.route.paramMap.subscribe(
+      (async (params) => {
+        let id = params.get('id')
+        if (id) {
+          try {
+            this.thread = await this.threadService.thread(id)
+          } catch (e) {
+            this.toastService.error(`${e}`)
+          }
+          try {
+            this.messages = await this.messageService.threadMessages({userId: '', threadId: id, first: 50, orderBy: [{field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc}]})
+          } catch (e) {
+            this.toastService.error(`${e}`)
+          }
+        }
+
+      })
+    )
+
   }
 
   async sendMessage(){
     try {
       this.toggleTextareaDisable()
       this.toggleLoading()
-      let message = await this.messageService.createMessage(this.thread.node.id, this.promptForm.value.prompt)
-      this.messages.edges.push({node: message})
-      let control = this.getPromptControl()
-      control.setValue('')
-      control.clearValidators()
-      // I'm not sure why but this only works if you use setTimeout
-      setTimeout(() => this.promptInput.nativeElement.focus(), 0)
+      let newMessage = await this.messageService.createMessage(this.promptForm.value.prompt, this.thread!.id)
+      let newThreadMessage = await this.messageService.threadMessage({id:newMessage.id, userId: ''})
+      if (newThreadMessage) {
+        this.messages.push(newThreadMessage)
+        let control = this.getPromptControl()
+        control.setValue('')
+        control.clearValidators()
+        // I'm not sure why but this only works if you use setTimeout
+        setTimeout(() => this.promptInput.nativeElement.focus(), 0)
+      } else {
+        throw new Error('error sending message')
+      }
     } catch (e) {
       this.toastService.error(`${e}`)
     } finally {
@@ -79,6 +99,7 @@ export class ThreadComponent {
       this.toggleLoading()
     }
   }
+
   keyPressed(event: KeyboardEvent) {
     if (event.key === 'Enter') {
       event.preventDefault()

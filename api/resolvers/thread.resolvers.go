@@ -6,8 +6,11 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/google/uuid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -18,5 +21,19 @@ func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThr
 		return nil, gqlerror.Errorf(err.Error())
 	}
 	input.CreatedByID = userUuid
+	input.Name = gofakeit.BeerName()
 	return ent.FromContext(ctx).Thread.Create().SetInput(input).Save(ctx)
+}
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *mutationResolver) BookmarkThread(ctx context.Context, id uuid.UUID) (*bool, error) {
+	panic(fmt.Errorf("not implemented: BookmarkThread - bookmarkThread"))
+}
+func (r *mutationResolver) UnbookmarkThread(ctx context.Context, id uuid.UUID) (*bool, error) {
+	panic(fmt.Errorf("not implemented: UnbookmarkThread - unbookmarkThread"))
 }

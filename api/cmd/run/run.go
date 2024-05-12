@@ -218,13 +218,6 @@ func initSuperTokens() error {
 	})
 }
 
-func SupertokensMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		c.Response().Header().Set(echo.HeaderServer, "Echo/3.0")
-		return next(c)
-	}
-}
-
 var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:        "postgres-uri",

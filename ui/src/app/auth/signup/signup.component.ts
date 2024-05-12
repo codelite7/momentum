@@ -8,7 +8,7 @@ import { PasswordModule } from 'primeng/password'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { emailPasswordSignUp } from 'supertokens-web-js/recipe/thirdpartyemailpassword'
 import { ToastService } from '../../services/toast.service'
-import { Router } from '@angular/router'
+import { Router, RouterLink } from '@angular/router'
 
 @Component({
   selector: 'app-signup',
@@ -20,7 +20,8 @@ import { Router } from '@angular/router'
     NgOptimizedImage,
     PaginatorModule,
     PasswordModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    RouterLink
   ],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css'

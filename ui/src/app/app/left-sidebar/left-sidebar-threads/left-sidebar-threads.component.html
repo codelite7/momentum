@@ -1,3 +1,3 @@
-@for (thread of threads?.edges; track thread.node.id) {
-  <app-thread-button [thread]="thread.node"/>
+@for (thread of threads; track thread.id) {
+  <app-thread-button [thread]="thread"/>
 }

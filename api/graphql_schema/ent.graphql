@@ -6,7 +6,37 @@ type Agent implements Node {
   updatedAt: Time!
   name: String!
   model: String!
-  messages: [Message!]
+  messages(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Messages returned from the connection.
+    """
+    orderBy: [MessageOrder!]
+
+    """
+    Filtering options for Messages returned from the connection.
+    """
+    where: MessageWhereInput
+  ): MessageConnection!
 }
 """
 A connection to a list of items.
@@ -328,7 +358,37 @@ type Message implements Node {
   sentByAgent: Agent
   sentByUser: User
   thread: Thread!
-  bookmarks: [Bookmark!]
+  bookmarks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Bookmarks returned from the connection.
+    """
+    orderBy: [BookmarkOrder!]
+
+    """
+    Filtering options for Bookmarks returned from the connection.
+    """
+    where: BookmarkWhereInput
+  ): BookmarkConnection!
 }
 """
 A connection to a list of items.
@@ -684,8 +744,68 @@ type Thread implements Node {
   updatedAt: Time!
   name: String!
   createdBy: User!
-  messages: [Message!]
-  bookmarks: [Bookmark!]
+  messages(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Messages returned from the connection.
+    """
+    orderBy: [MessageOrder!]
+
+    """
+    Filtering options for Messages returned from the connection.
+    """
+    where: MessageWhereInput
+  ): MessageConnection!
+  bookmarks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Bookmarks returned from the connection.
+    """
+    orderBy: [BookmarkOrder!]
+
+    """
+    Filtering options for Bookmarks returned from the connection.
+    """
+    where: BookmarkWhereInput
+  ): BookmarkConnection!
   child: Thread
   parent: Thread
 }
@@ -908,9 +1028,99 @@ type User implements Node {
   createdAt: Time!
   updatedAt: Time!
   email: String!
-  bookmarks: [Bookmark!]
-  threads: [Thread!]
-  messages: [Message!]
+  bookmarks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Bookmarks returned from the connection.
+    """
+    orderBy: [BookmarkOrder!]
+
+    """
+    Filtering options for Bookmarks returned from the connection.
+    """
+    where: BookmarkWhereInput
+  ): BookmarkConnection!
+  threads(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Threads returned from the connection.
+    """
+    orderBy: [ThreadOrder!]
+
+    """
+    Filtering options for Threads returned from the connection.
+    """
+    where: ThreadWhereInput
+  ): ThreadConnection!
+  messages(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Messages returned from the connection.
+    """
+    orderBy: [MessageOrder!]
+
+    """
+    Filtering options for Messages returned from the connection.
+    """
+    where: MessageWhereInput
+  ): MessageConnection!
 }
 """
 A connection to a list of items.

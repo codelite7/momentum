@@ -1,0 +1,28 @@
+<!-- container -->
+<div class="container mb-2 border-1 surface-border border-round" (click)="navigate()">
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="flex justify-content-between mb-2">
+        <!-- icons -->
+        <div>
+          <i class="pi pi-bookmark mr-2" [style]="{color: '#4280FC'}"></i>
+          <i class="pi pi-home" [style]="{color: '#4280FC'}"></i>
+        </div>
+        <!-- remove button -->
+        <div>
+          <i class="pi pi-times cursor-pointer" [style]="{color: '#FFFFFF80'}" pTooltip="Remove bookmark" (click)="removeBookmark()"></i>
+        </div>
+      </div>
+    </ng-template>
+    <!-- content -->
+    @if (bookmark && bookmark.message) {
+      <div class="col-12">
+        {{ bookmark.message.content }}
+      </div>
+    } @else if (bookmark && bookmark.thread) {
+      <div class="col-12">
+        {{ bookmark.thread.name }}
+      </div>
+    }
+  </p-card>
+</div>

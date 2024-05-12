@@ -28,5 +28,11 @@
         </div>
       </div>
     </div>
+  } @else {
+    @for (bookmark of bookmarks; track bookmark.id) {
+      <div class="w-full">
+        <app-bookmark [bookmark]="bookmark"></app-bookmark>
+      </div>
+    }
   }
 </div>

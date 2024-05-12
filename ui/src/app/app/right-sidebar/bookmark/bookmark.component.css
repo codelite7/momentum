@@ -1,0 +1,11 @@
+.container ::ng-deep .p-card {
+  padding: 8px;
+}
+
+.container ::ng-deep .p-card-body {
+  padding: 0;
+}
+
+.container ::ng-deep .col-12 {
+  padding: 0;
+}

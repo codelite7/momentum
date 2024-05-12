@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { MenuItem } from 'primeng/api/menuitem'
+import { ThreadFragment, ThreadQuery } from '../../../../../graphql/generated'
 
 @Component({
   selector: 'app-breadcrumb',
@@ -12,7 +13,7 @@ import { MenuItem } from 'primeng/api/menuitem'
   styleUrl: './breadcrumb.component.css'
 })
 export class BreadcrumbComponent {
-  @Input() thread: any
+  @Input() thread: ThreadFragment | undefined = undefined
   home: MenuItem = { icon: 'pi pi-home', routerLink: '/' }
   get breadcrumbItems() {
     return this.getBreadcrumbItems()
@@ -20,23 +21,23 @@ export class BreadcrumbComponent {
   getBreadcrumbItems(): MenuItem[] {
     let items: MenuItem[] = []
     if (this.thread) {
-      if (this.thread.node.parent) {
-        items.push(this.getBreadcrumbItem(this.thread.node.parent))
+      if (this.thread.parent) {
+        items.push(this.getBreadcrumbItem(this.thread.parent))
       }
       items.push(this.getBreadcrumbItem(this.thread))
-      if (this.thread.node.child) {
-        items.push(this.getBreadcrumbItem(this.thread.node.child))
+      if (this.thread.child) {
+        items.push(this.getBreadcrumbItem(this.thread.child))
       }
     }
     return items
   }
 
-  getBreadcrumbItem(thread: any): MenuItem {
+  getBreadcrumbItem(thread: ThreadFragment): MenuItem {
     let menuItem: MenuItem = {
-      label: thread.node.name
+      label: thread.name
     }
     // only give url for other threads
-    if (thread.node.id != this.thread.node.id) {
+    if (thread.id != this.thread?.id) {
       menuItem.url = this.getThreadUrl(thread)
     }
 

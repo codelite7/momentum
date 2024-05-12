@@ -28,9 +28,9 @@ func (Thread) Edges() []ent.Edge {
 		// a thread is created by a user
 		edge.From("created_by", User.Type).Ref("threads").Unique().Required(),
 		// a thread may have many messages
-		edge.To("messages", Message.Type),
+		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection()),
 		// a thread may be bookmarked many times
-		edge.To("bookmarks", Bookmark.Type),
+		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection()),
 		// a thread may have a parent thread and a child thread
 		edge.To("parent", Thread.Type).Unique().From("child").Unique(),
 	}

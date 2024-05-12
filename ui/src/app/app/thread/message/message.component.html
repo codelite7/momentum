@@ -1,17 +1,41 @@
-<div class="w-full flex pb-3">
-  <!-- avatar  -->
-  <div class="mr-3">
-    <app-user-avatar></app-user-avatar>
-  </div>
-  <!-- sender, time, and content  -->
-  <div class="mt-2 flex flex-column">
-    <div class="mb-2">
-      Me {{ sentAt }}
+<div class="w-full flex pb-3 container" (mouseenter)="hover = true" (mouseleave)="hover=false">
+  <p-card>
+    @if (hover) {
+    <div class="actions-container">
+      <div class="actions">
+        <div class="flex">
+          @if (bookmark) {
+            <div class="action" pTooltip="Remove bookmark" tooltipPosition="bottom" >
+              <p-button icon="pi pi-bookmark-fill" [rounded]="true" [text]="true" (onClick)="removeBookmark()" />
+            </div>
+          } @else {
+            <div class="action" pTooltip="Bookmark this message" tooltipPosition="bottom" >
+              <p-button icon="pi pi-bookmark" [rounded]="true" [text]="true" (onClick)="bookmarkMessage()" />
+            </div>
+          }
+          <div class="action" pTooltip="Copy to clipboard" tooltipPosition="bottom">
+            <p-button icon="pi pi-clipboard" [rounded]="true" [text]="true" [cdkCopyToClipboard]="message!.content" />
+          </div>
+        </div>
+      </div>
     </div>
-    <div>
-      {{ message.node.content }}
+    }
+    <div class="flex">
+      <!-- avatar  -->
+      <div class="mr-3">
+        <app-user-avatar></app-user-avatar>
+      </div>
+      <div>
+        <!-- sender, time, and content  -->
+        <div class="mt-2 flex flex-column">
+          <div class="mb-2">
+            Me {{ sentAt }}
+          </div>
+          <div>
+            {{ message?.content }}
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-  <!-- context actions -->
-
+  </p-card>
 </div>

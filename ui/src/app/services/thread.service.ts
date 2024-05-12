@@ -1,7 +1,14 @@
-import { inject, Injectable } from '@angular/core'
-import { GraphqlService, OrderBy } from './graphql.service'
+import { EventEmitter, inject, Injectable } from '@angular/core'
+import { GraphqlService, ListArgs, OrderBy } from './graphql.service'
 import { gql } from 'graphql-request'
 import { AuthService } from '../auth.service'
+import {
+  CreateThreadMutation,
+  getSdk, Thread, ThreadFragment,
+  ThreadQuery,
+  ThreadsQuery,
+  ThreadsQueryVariables
+} from '../../../graphql/generated'
 
 @Injectable({
   providedIn: 'root'
@@ -9,60 +16,34 @@ import { AuthService } from '../auth.service'
 export class ThreadService {
   graphqlService: GraphqlService = inject(GraphqlService)
   authService: AuthService = inject(AuthService)
+  threadCreatedEmitter: EventEmitter<string> = new EventEmitter()
+  threadUpdatedEmitter: EventEmitter<string> = new EventEmitter()
+  threadDeletedEmitter: EventEmitter<string> = new EventEmitter()
   constructor() {
   }
 
-  async createThread(name: string) {
-    let userId = await this.authService.userId()
-    let doc = gql`
-    mutation createThread($input:CreateThreadInput!) {
-      createThread(input:$input){
-        id
-        name
-      }
+  async threads(variables?: ThreadsQueryVariables): Promise<ThreadFragment[]> {
+    let response = await this.graphqlService.sdk.threads(variables)
+    if (response.threads.edges) {
+      let threads: ThreadFragment[] = []
+      response.threads.edges.forEach(edge => threads.push(edge?.node as ThreadFragment))
+      return threads
     }
-    `
-
-    return await this.graphqlService.request(doc, {input: {name: name, createdByID: userId}})
+    return []
   }
 
-  async listThreads(first: number, returnFields: string, last?: number, after?: string, before?: string, orderBy?: OrderBy[], where?: any) {
-    let args = this.graphqlService.getListArgs(first, last, after, before, orderBy, where)
-    let fields = this.graphqlService.getListReturnFields(returnFields)
-    let doc = gql`
-    query threads {
-        threads${args} ${fields}
-      }
-    `
-    return await this.graphqlService.request(doc)
-  }
-
-  async getThread(id: string): Promise<any | undefined> {
-    let doc = gql`
-    query thread($id:ID!) {
-      threads(where:{id:$id}) {
-        edges {
-          node {
-            id
-            createdAt
-            updatedAt
-            name
-            parent {
-              id
-            }
-            child {
-              id
-            }
-          }
-        }
-      }
-    }
-    `
-    let response = await this.graphqlService.request(doc, {id: id})
-    if (response.threads?.edges?.length > 0) {
-      return response.threads.edges[0]
+  async thread(id:string): Promise<ThreadFragment | undefined> {
+    let response = await this.graphqlService.sdk.thread({id:id})
+    if (response.threads.edges) {
+      return response.threads.edges[0]?.node as ThreadFragment
     }
     return undefined
   }
 
+  async createThread(name:string): Promise<ThreadFragment> {
+    let userId = await this.authService.userId()
+    let response = await this.graphqlService.sdk.createThread({input: {name:name, createdByID: userId}})
+    this.threadCreatedEmitter.emit(response.createThread?.id)
+    return response.createThread as ThreadFragment
+  }
 }

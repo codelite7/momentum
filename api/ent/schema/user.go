@@ -26,10 +26,10 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		// a user can have many bookmarks
-		edge.To("bookmarks", Bookmark.Type),
+		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection()),
 		// a user can have many threads
-		edge.To("threads", Thread.Type),
+		edge.To("threads", Thread.Type).Annotations(entgql.RelayConnection()),
 		// a user can send many messages
-		edge.To("messages", Message.Type),
+		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection()),
 	}
 }

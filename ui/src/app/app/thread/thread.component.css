@@ -11,3 +11,12 @@ textarea {
 ::ng-deep .p-breadcrumb {
   background-color: transparent;
 }
+
+.container {
+  height: calc(100vh - 110px);
+}
+
+.messages-container {
+  overflow-y: auto;
+  background-color: #75A5FD;
+}

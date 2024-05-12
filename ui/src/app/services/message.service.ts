@@ -1,103 +1,80 @@
-import { inject, Injectable } from '@angular/core'
-import { gql } from 'graphql-request'
-import { GraphqlService, OrderBy } from './graphql.service'
+import { EventEmitter, inject, Injectable } from '@angular/core'
+import { gql, GraphQLClient } from 'graphql-request'
+import { GraphqlService, ListArgs, OrderBy } from './graphql.service'
+import { AuthService } from '../auth.service'
+import {
+  CreateMessageMutation,
+  CreateThreadMutation,
+  MessageFragment,
+  MessageQuery,
+  MessagesQuery,
+  MessagesQueryVariables,
+  ThreadFragment,
+  ThreadMessageFragment,
+  ThreadMessageQueryVariables,
+  ThreadMessagesQuery,
+  ThreadMessagesQueryVariables,
+  ThreadQuery,
+  ThreadsQuery,
+  ThreadsQueryVariables
+} from '../../../graphql/generated'
 
 @Injectable({
   providedIn: 'root'
 })
 export class MessageService {
   graphqlService: GraphqlService = inject(GraphqlService)
+  authService: AuthService = inject(AuthService)
+  messageCreatedEmitter: EventEmitter<string> = new EventEmitter()
+  messageUpdatedEmitter: EventEmitter<string> = new EventEmitter()
+  messageDeletedEmitter: EventEmitter<string> = new EventEmitter()
   constructor() { }
 
-  async createMessage(threadId: string, content: string): Promise<any>{
-    let doc = gql`
-    mutation createMessage($input:CreateMessageInput!) {
-      createMessage(input:$input){
-        id
-          createdAt
-          updatedAt
-          content
-          sentByUser {
-            id
-          }
-          sentByAgent {
-            id
-          }
-      }
+  async messages(variables?: MessagesQueryVariables): Promise<MessageFragment[]> {
+    let response = await this.graphqlService.sdk.messages(variables)
+    if (response.messages.edges) {
+      let messages: MessageFragment[] = []
+      response.messages.edges.forEach(edge => messages.push(edge?.node as MessageFragment))
+      return messages
     }
-    `
-
-    let response = await this.graphqlService.request(doc, {input: {threadID: threadId, content: content}})
-    return response.createMessage
+    return []
   }
 
-  async getThreadMessages(threadId: string, first: number, orderBy?: OrderBy[], last?: number, after?: string, before?: string) {
-    let doc = gql`
-    query messages($after:Cursor, $first:Int,$before:Cursor,$last:Int, $threadId:ID!, $orderBy:[MessageOrder!]) {
-      messages(after:$after, first:$first,before:$before, last:$last,where:{hasThreadWith:{id:$threadId}}, orderBy: $orderBy) {
-        edges {
-          node{
-            id
-            createdAt
-            updatedAt
-            content
-            sentByUser {
-              id
-            }
-            sentByAgent {
-              id
-            }
-          }
-        }
-        pageInfo {
-          hasNextPage
-          hasPreviousPage
-          startCursor
-          endCursor
-        }
-      }
+  async message(id:string): Promise<MessageFragment | undefined> {
+    let response = await this.graphqlService.sdk.message({id:id})
+    if (response.messages.edges) {
+      return response.messages.edges[0] as MessageFragment
     }
-    `
-    let vars = {
-      threadId: threadId,
-      first: first,
-      last: last,
-      after: after,
-      before: before,
-      orderBy: orderBy,
-    }
-    let response = await this.graphqlService.request(doc, vars)
-    return response.messages
+    return undefined
   }
 
-  async listMessages(first: number, last?: number, after?: string, before?: string, orderBy?: OrderBy[], where?: any) {
-    let doc = gql`
-    query messages($after:Cursor, $first:Int,$before:Cursor,$last:Int,$where:MessageWhereInput) {
-      messages(after:$after, first:$first,before:$before, last:$last,where:$where){
-        edges {
-          node {
-            id
-            createdAt
-            updatedAt
-            content
-          }
-        }
-        pageInfo {
-          hasNextPage
-          hasPreviousPage
-          startCursor
-          endCursor
-        }
+  async createMessage(content: string, threadID: string): Promise<MessageFragment> {
+    let userId = await this.authService.userId()
+    let response = await this.graphqlService.sdk.createMessage({input: {content: content, sentByUserID: userId, threadID: threadID}})
+    this.messageCreatedEmitter.emit(response.createMessage?.id)
+    return response.createMessage as MessageFragment
+  }
+
+  async threadMessages(vars: ThreadMessagesQueryVariables): Promise<ThreadMessageFragment[]> {
+    vars.userId = await this.authService.userId()
+    let response =  await this.graphqlService.sdk.threadMessages(vars)
+    if (response.messages.edges) {
+      let messages: ThreadMessageFragment[] = []
+      response.messages.edges.forEach(edge => messages.push(edge?.node as ThreadMessageFragment))
+      return messages
+    }
+    return []
+  }
+
+  async threadMessage(vars: ThreadMessageQueryVariables): Promise<ThreadMessageFragment | undefined> {
+    vars.userId = await this.authService.userId()
+    let response =  await this.graphqlService.sdk.threadMessage(vars)
+    if (response.messages.edges && response.messages.edges.length == 1) {
+      let message = response.messages.edges.pop()
+      if (message && message.node) {
+        return message.node as ThreadMessageFragment
       }
     }
-    `
-    let vars = {
-      first: first,
-      last: last,
-      after: after,
-      before: before,
-      where: where,
-    }
-    return await this.graphqlService.request(doc, vars)
+    return undefined
   }
 }

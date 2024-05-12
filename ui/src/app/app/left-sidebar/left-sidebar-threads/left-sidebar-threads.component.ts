@@ -3,7 +3,7 @@ import { ThreadService } from '../../../services/thread.service'
 import { ToastService } from '../../../services/toast.service'
 import { NgForOf, NgIf } from '@angular/common'
 import { ThreadButtonComponent } from './thread-button/thread-button.component'
-import { LeftSidebarThreadsService } from '../../../services/left-sidebar-threads.service'
+import { ThreadFragment, ThreadsQuery } from '../../../../../graphql/generated'
 
 @Component({
   selector: 'app-left-sidebar-threads',
@@ -19,35 +19,16 @@ import { LeftSidebarThreadsService } from '../../../services/left-sidebar-thread
 export class LeftSidebarThreadsComponent {
   threadService: ThreadService = inject(ThreadService)
   toastService: ToastService = inject(ToastService)
-  leftSidebarThreadsService: LeftSidebarThreadsService = inject(LeftSidebarThreadsService)
-  threads: any = []
+  threads: ThreadFragment[] = []
   async ngOnInit(): Promise<void> {
-    // on load refresh the threads
-    this.refreshThreads()
-    // on refresh emit event, refresh threads
-    this.leftSidebarThreadsService.refreshThreadsEmitter.subscribe(
-      () => this.refreshThreads()
-    )
+    await this.loadThreads()
   }
 
-  async refreshThreads() {
+  async loadThreads() {
     try {
-      let response = await this.threadService.listThreads(
-        50,
-        `
-        {
-          id
-          name
-        }
-      `
-      )
-      if (response.threads) {
-        this.threads = response.threads
-      }
+      this.threads = await this.threadService.threads({first: 50})
     } catch (e) {
       this.toastService.error(`${e}`)
     }
   }
-
-  protected readonly JSON = JSON
 }

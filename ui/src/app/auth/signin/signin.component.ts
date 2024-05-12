@@ -6,7 +6,7 @@ import { InputTextModule } from 'primeng/inputtext'
 import { PasswordModule } from 'primeng/password'
 import { ButtonModule } from 'primeng/button'
 import { emailPasswordSignIn } from 'supertokens-web-js/lib/build/recipe/thirdpartyemailpassword'
-import { Router } from '@angular/router'
+import { Router, RouterLink } from '@angular/router'
 import { ToastService } from '../../services/toast.service'
 
 @Component({
@@ -19,7 +19,8 @@ import { ToastService } from '../../services/toast.service'
     InputTextModule,
     FormsModule,
     PasswordModule,
-    ButtonModule
+    ButtonModule,
+    RouterLink
   ],
   templateUrl: './signin.component.html',
   styleUrl: './signin.component.css'
