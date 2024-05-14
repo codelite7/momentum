@@ -18,6 +18,7 @@ import {
   ThreadFragment, ThreadMessageFragment,
 } from '../../../../graphql/generated'
 import { ActivatedRoute } from '@angular/router'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 
 @Component({
@@ -33,7 +34,8 @@ import { ActivatedRoute } from '@angular/router'
     CdkTrapFocus,
     UserMessageComponent,
     MessageComponent,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    ProgressSpinnerModule
   ],
   templateUrl: './thread.component.html',
   styleUrl: './thread.component.css'
@@ -83,7 +85,7 @@ export class ThreadComponent {
       let newMessage = await this.messageService.createMessage(this.promptForm.value.prompt, this.thread!.id)
       let newThreadMessage = await this.messageService.threadMessage({id:newMessage.id, userId: ''})
       if (newThreadMessage) {
-        this.messages.push(newThreadMessage)
+        this.messages = await this.messageService.threadMessages({userId: '', threadId: this.thread!.id, first: 50, orderBy: [{field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc}]})
         let control = this.getPromptControl()
         control.setValue('')
         control.clearValidators()

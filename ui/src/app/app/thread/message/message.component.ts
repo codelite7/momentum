@@ -13,6 +13,7 @@ import { BookmarkFragment, MessageFragment, ThreadMessageFragment } from '../../
 import { Subscription } from 'rxjs'
 import { ThreadService } from '../../../services/thread.service'
 import { Router } from '@angular/router'
+import { MarkdownComponent, MarkdownModule } from 'ngx-markdown'
 
 @Component({
   selector: 'app-message',
@@ -24,7 +25,8 @@ import { Router } from '@angular/router'
     CardModule,
     ButtonModule,
     TooltipModule,
-    CdkCopyToClipboard
+    CdkCopyToClipboard,
+    MarkdownModule,
   ],
   templateUrl: './message.component.html',
   styleUrl: './message.component.css'

@@ -14,13 +14,21 @@
           } @else {
             <div class="pl-3 pr-3">
               @for (message of messages; track message.id) {
-                @if (message.sentByUser) {
-                  <app-message [threadId]="thread?.id" [message]="message"></app-message>
-                }
+                <app-message [threadId]="thread?.id" [message]="message"></app-message>
               }
             </div>
           }
         </div>
+        <!-- loading indicator -->
+        @if (loading) {
+          <div class="flex align-items-center justify-content-center">
+            <p-progressSpinner
+              styleClass="w-4rem h-4rem"
+              strokeWidth="8"
+              fill="var(--surface-ground)"
+              animationDuration=".5s" />
+          </div>
+        }
         <!-- prompt input -->
         <div class="mb-3 pl-3 pr-3">
           <form [formGroup]="promptForm" (ngSubmit)="sendMessage()" class="w-full">

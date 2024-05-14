@@ -1,4 +1,4 @@
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom } from '@angular/core'
 import { provideRouter, withComponentInputBinding } from '@angular/router'
 
 import { routes } from './app.routes';
@@ -7,6 +7,7 @@ import { MessageService } from 'primeng/api';
 import { provideHttpClient } from '@angular/common/http';
 import { graphqlProvider } from './graphql.provider'
 import { GraphqlService } from './services/graphql.service'
+import { MarkdownModule } from 'ngx-markdown'
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -16,5 +17,6 @@ export const appConfig: ApplicationConfig = {
     GraphqlService, // individual object services inject the graphql service so it gets instantiated here
     provideHttpClient(),
     graphqlProvider,
+    importProvidersFrom(MarkdownModule.forRoot())
   ]
 };

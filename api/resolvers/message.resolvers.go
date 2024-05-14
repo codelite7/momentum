@@ -6,10 +6,15 @@ package resolvers
 
 import (
 	"context"
-
+	"errors"
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/thread"
+	"github.com/go-resty/resty/v2"
+	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"time"
 )
 
 // CreateMessage is the resolver for the createMessage field.
@@ -19,5 +24,93 @@ func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMe
 		return nil, gqlerror.Errorf(err.Error())
 	}
 	input.SentByUserID = lo.ToPtr(userUuid)
-	return ent.FromContext(ctx).Message.Create().SetInput(input).Save(ctx)
+	client := r.client
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf(err.Error())
+	}
+	defer tx.Rollback()
+	message, err := tx.Message.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf(err.Error())
+	}
+	history, err := getMessageHistory(ctx, tx, input.ThreadID, message.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	chatMessages, err := chatMessagesFromMessages(history)
+	if err != nil {
+		return nil, err
+	}
+	aiResponse, err := prompt(chatMessages)
+	if err != nil {
+		return nil, err
+	}
+	if aiResponse == "" {
+		return nil, gqlerror.Errorf(errors.New("error getting llm response").Error())
+	}
+	aiMessageInput := ent.CreateMessageInput{
+		ThreadID: input.ThreadID,
+		Content:  aiResponse,
+	}
+	_, err = tx.Message.Create().SetInput(aiMessageInput).Save(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf(err.Error())
+	}
+	err = tx.Commit()
+	return message, err
+}
+
+func prompt(chatMessages []*ChatMessage) (string, error) {
+	client := resty.New()
+	resp, err := client.R().
+		SetBody(chatMessages).
+		Post("http://localhost:6543/perplexity")
+	if err != nil {
+		return "", err
+	}
+	return resp.String(), nil
+}
+
+func getMessageHistory(ctx context.Context, tx *ent.Tx, threadId uuid.UUID, lastMessageCreatedAt time.Time) ([]*ent.Message, error) {
+	return tx.Message.Query().Where(
+		message.HasThreadWith(thread.ID(threadId)),
+		message.CreatedAtLTE(lastMessageCreatedAt),
+	).All(ctx)
+}
+
+type ChatMessage struct {
+	Type string          `json:"type,omitempty"`
+	Data ChatMessageData `json:"data,omitempty"`
+}
+
+type ChatMessageData struct {
+	Content string `json:"content"`
+}
+
+func chatMessageFromMessage(message *ent.Message) (*ChatMessage, error) {
+	chatMessage := &ChatMessage{Data: ChatMessageData{Content: message.Content}}
+	user, err := message.SentByUser(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	if user != nil {
+		chatMessage.Type = "human"
+	} else {
+		chatMessage.Type = "ai"
+	}
+
+	return chatMessage, nil
+}
+
+func chatMessagesFromMessages(messages []*ent.Message) ([]*ChatMessage, error) {
+	chatMessages := make([]*ChatMessage, 0)
+	for _, message := range messages {
+		chatMessage, err := chatMessageFromMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		chatMessages = append(chatMessages, chatMessage)
+	}
+	return chatMessages, nil
 }
