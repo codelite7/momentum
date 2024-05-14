@@ -148,20 +148,33 @@ func (t *Thread) Bookmarks(
 	return t.QueryBookmarks().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (t *Thread) Child(ctx context.Context) (*Thread, error) {
-	result, err := t.Edges.ChildOrErr()
-	if IsNotLoaded(err) {
-		result, err = t.QueryChild().Only(ctx)
-	}
-	return result, MaskNotFound(err)
-}
-
 func (t *Thread) Parent(ctx context.Context) (*Thread, error) {
 	result, err := t.Edges.ParentOrErr()
 	if IsNotLoaded(err) {
 		result, err = t.QueryParent().Only(ctx)
 	}
 	return result, MaskNotFound(err)
+}
+
+func (t *Thread) Children(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ThreadOrder, where *ThreadWhereInput,
+) (*ThreadConnection, error) {
+	opts := []ThreadPaginateOption{
+		WithThreadOrder(orderBy),
+		WithThreadFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[4][alias]
+	if nodes, err := t.NamedChildren(alias); err == nil || hasTotalCount {
+		pager, err := newThreadPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ThreadConnection{Edges: []*ThreadEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return t.QueryChildren().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (u *User) Bookmarks(

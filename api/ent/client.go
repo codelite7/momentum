@@ -921,22 +921,6 @@ func (c *ThreadClient) QueryBookmarks(t *Thread) *BookmarkQuery {
 	return query
 }
 
-// QueryChild queries the child edge of a Thread.
-func (c *ThreadClient) QueryChild(t *Thread) *ThreadQuery {
-	query := (&ThreadClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(thread.Table, thread.FieldID, id),
-			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, thread.ChildTable, thread.ChildColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryParent queries the parent edge of a Thread.
 func (c *ThreadClient) QueryParent(t *Thread) *ThreadQuery {
 	query := (&ThreadClient{config: c.config}).Query()
@@ -945,7 +929,23 @@ func (c *ThreadClient) QueryParent(t *Thread) *ThreadQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(thread.Table, thread.FieldID, id),
 			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, thread.ParentTable, thread.ParentColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, thread.ParentTable, thread.ParentColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChildren queries the children edge of a Thread.
+func (c *ThreadClient) QueryChildren(t *Thread) *ThreadQuery {
+	query := (&ThreadClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(thread.Table, thread.FieldID, id),
+			sqlgraph.To(thread.Table, thread.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, thread.ChildrenTable, thread.ChildrenColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

@@ -99,7 +99,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
-		{Name: "thread_parent", Type: field.TypeUUID, Unique: true, Nullable: true},
+		{Name: "thread_children", Type: field.TypeUUID, Nullable: true},
 		{Name: "user_threads", Type: field.TypeUUID},
 	}
 	// ThreadsTable holds the schema information for the "threads" table.
@@ -109,7 +109,7 @@ var (
 		PrimaryKey: []*schema.Column{ThreadsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "threads_threads_parent",
+				Symbol:     "threads_threads_children",
 				Columns:    []*schema.Column{ThreadsColumns[4]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
 				OnDelete:   schema.SetNull,

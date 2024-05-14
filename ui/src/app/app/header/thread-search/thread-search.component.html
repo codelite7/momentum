@@ -1,6 +1,52 @@
-<div class="flex justify-content-center align-items-center h-full">
+<div class="flex justify-content-center align-items-center h-full search-container">
   <p-iconField iconPosition="left" class="search-input">
     <p-inputIcon styleClass="pi pi-search" />
-    <input type="text" pInputText placeholder="Search threads" [(ngModel)]="query" class="w-full" />
+    <input type="text" pInputText placeholder="Search threads" [(ngModel)]="query" class="w-full"
+           (ngModelChange)="search()" (focusin)="searchResultsVisible = true"
+           (focusout)="lostFocus()" />
   </p-iconField>
+  <p-dialog [(visible)]="searchResultsVisible">
+    <ng-template pTemplate="headless">
+      <div class="p-3">
+        @if (loading) {
+          <div class="flex align-items-center justify-content-center">
+            <p-progressSpinner
+              styleClass="w-4rem h-4rem"
+              strokeWidth="8"
+              fill="var(--surface-ground)"
+              animationDuration=".5s" />
+          </div>
+        } @else {
+          @if (!searchResults) {
+            <div class="flex w-full justify-content-center align-items-center">
+          <span>
+          Type to search
+        </span>
+              <span>
+          <img ngSrc="assets/logo.svg" alt="manifold q" height="26" width="119" class="ml-2">
+        </span>
+            </div>
+          } @else {
+            <div class="flex w-full justify-content-center align-items-center">
+              @if(searchResults.length == 0) {
+                <div>
+                  No results
+                </div>
+              } @else {
+                <div class="w-full">
+                  @for (thread of searchResults; track thread.id) {
+                    <div class="w-full mt-2 search-result cursor-pointer" (click)="goToSearchResult(thread)">
+                      {{ thread.name }}
+                    </div>
+                  }
+                </div>
+
+              }
+            </div>
+          }
+        }
+      </div>
+
+    </ng-template>
+  </p-dialog>
 </div>

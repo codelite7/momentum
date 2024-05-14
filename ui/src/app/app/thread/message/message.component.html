@@ -16,6 +16,9 @@
           <div class="action" pTooltip="Copy to clipboard" tooltipPosition="bottom">
             <p-button icon="pi pi-clipboard" [rounded]="true" [text]="true" [cdkCopyToClipboard]="message!.content" />
           </div>
+          <div class="action" pTooltip="New thread" tooltipPosition="bottom">
+            <p-button icon="pi pi-arrow-right" [rounded]="true" [text]="true" (onClick)="newThread()" />
+          </div>
         </div>
       </div>
     </div>

@@ -1922,10 +1922,11 @@ type ThreadMutation struct {
 	bookmarks         map[uuid.UUID]struct{}
 	removedbookmarks  map[uuid.UUID]struct{}
 	clearedbookmarks  bool
-	child             *uuid.UUID
-	clearedchild      bool
 	parent            *uuid.UUID
 	clearedparent     bool
+	children          map[uuid.UUID]struct{}
+	removedchildren   map[uuid.UUID]struct{}
+	clearedchildren   bool
 	done              bool
 	oldValue          func(context.Context) (*Thread, error)
 	predicates        []predicate.Thread
@@ -2290,45 +2291,6 @@ func (m *ThreadMutation) ResetBookmarks() {
 	m.removedbookmarks = nil
 }
 
-// SetChildID sets the "child" edge to the Thread entity by id.
-func (m *ThreadMutation) SetChildID(id uuid.UUID) {
-	m.child = &id
-}
-
-// ClearChild clears the "child" edge to the Thread entity.
-func (m *ThreadMutation) ClearChild() {
-	m.clearedchild = true
-}
-
-// ChildCleared reports if the "child" edge to the Thread entity was cleared.
-func (m *ThreadMutation) ChildCleared() bool {
-	return m.clearedchild
-}
-
-// ChildID returns the "child" edge ID in the mutation.
-func (m *ThreadMutation) ChildID() (id uuid.UUID, exists bool) {
-	if m.child != nil {
-		return *m.child, true
-	}
-	return
-}
-
-// ChildIDs returns the "child" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ChildID instead. It exists only for internal usage by the builders.
-func (m *ThreadMutation) ChildIDs() (ids []uuid.UUID) {
-	if id := m.child; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetChild resets all changes to the "child" edge.
-func (m *ThreadMutation) ResetChild() {
-	m.child = nil
-	m.clearedchild = false
-}
-
 // SetParentID sets the "parent" edge to the Thread entity by id.
 func (m *ThreadMutation) SetParentID(id uuid.UUID) {
 	m.parent = &id
@@ -2366,6 +2328,60 @@ func (m *ThreadMutation) ParentIDs() (ids []uuid.UUID) {
 func (m *ThreadMutation) ResetParent() {
 	m.parent = nil
 	m.clearedparent = false
+}
+
+// AddChildIDs adds the "children" edge to the Thread entity by ids.
+func (m *ThreadMutation) AddChildIDs(ids ...uuid.UUID) {
+	if m.children == nil {
+		m.children = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.children[ids[i]] = struct{}{}
+	}
+}
+
+// ClearChildren clears the "children" edge to the Thread entity.
+func (m *ThreadMutation) ClearChildren() {
+	m.clearedchildren = true
+}
+
+// ChildrenCleared reports if the "children" edge to the Thread entity was cleared.
+func (m *ThreadMutation) ChildrenCleared() bool {
+	return m.clearedchildren
+}
+
+// RemoveChildIDs removes the "children" edge to the Thread entity by IDs.
+func (m *ThreadMutation) RemoveChildIDs(ids ...uuid.UUID) {
+	if m.removedchildren == nil {
+		m.removedchildren = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.children, ids[i])
+		m.removedchildren[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedChildren returns the removed IDs of the "children" edge to the Thread entity.
+func (m *ThreadMutation) RemovedChildrenIDs() (ids []uuid.UUID) {
+	for id := range m.removedchildren {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ChildrenIDs returns the "children" edge IDs in the mutation.
+func (m *ThreadMutation) ChildrenIDs() (ids []uuid.UUID) {
+	for id := range m.children {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetChildren resets all changes to the "children" edge.
+func (m *ThreadMutation) ResetChildren() {
+	m.children = nil
+	m.clearedchildren = false
+	m.removedchildren = nil
 }
 
 // Where appends a list predicates to the ThreadMutation builder.
@@ -2545,11 +2561,11 @@ func (m *ThreadMutation) AddedEdges() []string {
 	if m.bookmarks != nil {
 		edges = append(edges, thread.EdgeBookmarks)
 	}
-	if m.child != nil {
-		edges = append(edges, thread.EdgeChild)
-	}
 	if m.parent != nil {
 		edges = append(edges, thread.EdgeParent)
+	}
+	if m.children != nil {
+		edges = append(edges, thread.EdgeChildren)
 	}
 	return edges
 }
@@ -2574,14 +2590,16 @@ func (m *ThreadMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case thread.EdgeChild:
-		if id := m.child; id != nil {
-			return []ent.Value{*id}
-		}
 	case thread.EdgeParent:
 		if id := m.parent; id != nil {
 			return []ent.Value{*id}
 		}
+	case thread.EdgeChildren:
+		ids := make([]ent.Value, 0, len(m.children))
+		for id := range m.children {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -2594,6 +2612,9 @@ func (m *ThreadMutation) RemovedEdges() []string {
 	}
 	if m.removedbookmarks != nil {
 		edges = append(edges, thread.EdgeBookmarks)
+	}
+	if m.removedchildren != nil {
+		edges = append(edges, thread.EdgeChildren)
 	}
 	return edges
 }
@@ -2614,6 +2635,12 @@ func (m *ThreadMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case thread.EdgeChildren:
+		ids := make([]ent.Value, 0, len(m.removedchildren))
+		for id := range m.removedchildren {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -2630,11 +2657,11 @@ func (m *ThreadMutation) ClearedEdges() []string {
 	if m.clearedbookmarks {
 		edges = append(edges, thread.EdgeBookmarks)
 	}
-	if m.clearedchild {
-		edges = append(edges, thread.EdgeChild)
-	}
 	if m.clearedparent {
 		edges = append(edges, thread.EdgeParent)
+	}
+	if m.clearedchildren {
+		edges = append(edges, thread.EdgeChildren)
 	}
 	return edges
 }
@@ -2649,10 +2676,10 @@ func (m *ThreadMutation) EdgeCleared(name string) bool {
 		return m.clearedmessages
 	case thread.EdgeBookmarks:
 		return m.clearedbookmarks
-	case thread.EdgeChild:
-		return m.clearedchild
 	case thread.EdgeParent:
 		return m.clearedparent
+	case thread.EdgeChildren:
+		return m.clearedchildren
 	}
 	return false
 }
@@ -2663,9 +2690,6 @@ func (m *ThreadMutation) ClearEdge(name string) error {
 	switch name {
 	case thread.EdgeCreatedBy:
 		m.ClearCreatedBy()
-		return nil
-	case thread.EdgeChild:
-		m.ClearChild()
 		return nil
 	case thread.EdgeParent:
 		m.ClearParent()
@@ -2687,11 +2711,11 @@ func (m *ThreadMutation) ResetEdge(name string) error {
 	case thread.EdgeBookmarks:
 		m.ResetBookmarks()
 		return nil
-	case thread.EdgeChild:
-		m.ResetChild()
-		return nil
 	case thread.EdgeParent:
 		m.ResetParent()
+		return nil
+	case thread.EdgeChildren:
+		m.ResetChildren()
 		return nil
 	}
 	return fmt.Errorf("unknown Thread edge %s", name)

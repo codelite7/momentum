@@ -101,25 +101,6 @@ func (tu *ThreadUpdate) AddBookmarks(b ...*Bookmark) *ThreadUpdate {
 	return tu.AddBookmarkIDs(ids...)
 }
 
-// SetChildID sets the "child" edge to the Thread entity by ID.
-func (tu *ThreadUpdate) SetChildID(id uuid.UUID) *ThreadUpdate {
-	tu.mutation.SetChildID(id)
-	return tu
-}
-
-// SetNillableChildID sets the "child" edge to the Thread entity by ID if the given value is not nil.
-func (tu *ThreadUpdate) SetNillableChildID(id *uuid.UUID) *ThreadUpdate {
-	if id != nil {
-		tu = tu.SetChildID(*id)
-	}
-	return tu
-}
-
-// SetChild sets the "child" edge to the Thread entity.
-func (tu *ThreadUpdate) SetChild(t *Thread) *ThreadUpdate {
-	return tu.SetChildID(t.ID)
-}
-
 // SetParentID sets the "parent" edge to the Thread entity by ID.
 func (tu *ThreadUpdate) SetParentID(id uuid.UUID) *ThreadUpdate {
 	tu.mutation.SetParentID(id)
@@ -137,6 +118,21 @@ func (tu *ThreadUpdate) SetNillableParentID(id *uuid.UUID) *ThreadUpdate {
 // SetParent sets the "parent" edge to the Thread entity.
 func (tu *ThreadUpdate) SetParent(t *Thread) *ThreadUpdate {
 	return tu.SetParentID(t.ID)
+}
+
+// AddChildIDs adds the "children" edge to the Thread entity by IDs.
+func (tu *ThreadUpdate) AddChildIDs(ids ...uuid.UUID) *ThreadUpdate {
+	tu.mutation.AddChildIDs(ids...)
+	return tu
+}
+
+// AddChildren adds the "children" edges to the Thread entity.
+func (tu *ThreadUpdate) AddChildren(t ...*Thread) *ThreadUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.AddChildIDs(ids...)
 }
 
 // Mutation returns the ThreadMutation object of the builder.
@@ -192,16 +188,31 @@ func (tu *ThreadUpdate) RemoveBookmarks(b ...*Bookmark) *ThreadUpdate {
 	return tu.RemoveBookmarkIDs(ids...)
 }
 
-// ClearChild clears the "child" edge to the Thread entity.
-func (tu *ThreadUpdate) ClearChild() *ThreadUpdate {
-	tu.mutation.ClearChild()
-	return tu
-}
-
 // ClearParent clears the "parent" edge to the Thread entity.
 func (tu *ThreadUpdate) ClearParent() *ThreadUpdate {
 	tu.mutation.ClearParent()
 	return tu
+}
+
+// ClearChildren clears all "children" edges to the Thread entity.
+func (tu *ThreadUpdate) ClearChildren() *ThreadUpdate {
+	tu.mutation.ClearChildren()
+	return tu
+}
+
+// RemoveChildIDs removes the "children" edge to Thread entities by IDs.
+func (tu *ThreadUpdate) RemoveChildIDs(ids ...uuid.UUID) *ThreadUpdate {
+	tu.mutation.RemoveChildIDs(ids...)
+	return tu
+}
+
+// RemoveChildren removes "children" edges to Thread entities.
+func (tu *ThreadUpdate) RemoveChildren(t ...*Thread) *ThreadUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.RemoveChildIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -376,39 +387,10 @@ func (tu *ThreadUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tu.mutation.ChildCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   thread.ChildTable,
-			Columns: []string{thread.ChildColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tu.mutation.ChildIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   thread.ChildTable,
-			Columns: []string{thread.ChildColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if tu.mutation.ParentCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   thread.ParentTable,
 			Columns: []string{thread.ParentColumn},
 			Bidi:    false,
@@ -420,10 +402,55 @@ func (tu *ThreadUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := tu.mutation.ParentIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   thread.ParentTable,
 			Columns: []string{thread.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tu.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   thread.ChildrenTable,
+			Columns: []string{thread.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedChildrenIDs(); len(nodes) > 0 && !tu.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   thread.ChildrenTable,
+			Columns: []string{thread.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   thread.ChildrenTable,
+			Columns: []string{thread.ChildrenColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
@@ -523,25 +550,6 @@ func (tuo *ThreadUpdateOne) AddBookmarks(b ...*Bookmark) *ThreadUpdateOne {
 	return tuo.AddBookmarkIDs(ids...)
 }
 
-// SetChildID sets the "child" edge to the Thread entity by ID.
-func (tuo *ThreadUpdateOne) SetChildID(id uuid.UUID) *ThreadUpdateOne {
-	tuo.mutation.SetChildID(id)
-	return tuo
-}
-
-// SetNillableChildID sets the "child" edge to the Thread entity by ID if the given value is not nil.
-func (tuo *ThreadUpdateOne) SetNillableChildID(id *uuid.UUID) *ThreadUpdateOne {
-	if id != nil {
-		tuo = tuo.SetChildID(*id)
-	}
-	return tuo
-}
-
-// SetChild sets the "child" edge to the Thread entity.
-func (tuo *ThreadUpdateOne) SetChild(t *Thread) *ThreadUpdateOne {
-	return tuo.SetChildID(t.ID)
-}
-
 // SetParentID sets the "parent" edge to the Thread entity by ID.
 func (tuo *ThreadUpdateOne) SetParentID(id uuid.UUID) *ThreadUpdateOne {
 	tuo.mutation.SetParentID(id)
@@ -559,6 +567,21 @@ func (tuo *ThreadUpdateOne) SetNillableParentID(id *uuid.UUID) *ThreadUpdateOne 
 // SetParent sets the "parent" edge to the Thread entity.
 func (tuo *ThreadUpdateOne) SetParent(t *Thread) *ThreadUpdateOne {
 	return tuo.SetParentID(t.ID)
+}
+
+// AddChildIDs adds the "children" edge to the Thread entity by IDs.
+func (tuo *ThreadUpdateOne) AddChildIDs(ids ...uuid.UUID) *ThreadUpdateOne {
+	tuo.mutation.AddChildIDs(ids...)
+	return tuo
+}
+
+// AddChildren adds the "children" edges to the Thread entity.
+func (tuo *ThreadUpdateOne) AddChildren(t ...*Thread) *ThreadUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.AddChildIDs(ids...)
 }
 
 // Mutation returns the ThreadMutation object of the builder.
@@ -614,16 +637,31 @@ func (tuo *ThreadUpdateOne) RemoveBookmarks(b ...*Bookmark) *ThreadUpdateOne {
 	return tuo.RemoveBookmarkIDs(ids...)
 }
 
-// ClearChild clears the "child" edge to the Thread entity.
-func (tuo *ThreadUpdateOne) ClearChild() *ThreadUpdateOne {
-	tuo.mutation.ClearChild()
-	return tuo
-}
-
 // ClearParent clears the "parent" edge to the Thread entity.
 func (tuo *ThreadUpdateOne) ClearParent() *ThreadUpdateOne {
 	tuo.mutation.ClearParent()
 	return tuo
+}
+
+// ClearChildren clears all "children" edges to the Thread entity.
+func (tuo *ThreadUpdateOne) ClearChildren() *ThreadUpdateOne {
+	tuo.mutation.ClearChildren()
+	return tuo
+}
+
+// RemoveChildIDs removes the "children" edge to Thread entities by IDs.
+func (tuo *ThreadUpdateOne) RemoveChildIDs(ids ...uuid.UUID) *ThreadUpdateOne {
+	tuo.mutation.RemoveChildIDs(ids...)
+	return tuo
+}
+
+// RemoveChildren removes "children" edges to Thread entities.
+func (tuo *ThreadUpdateOne) RemoveChildren(t ...*Thread) *ThreadUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.RemoveChildIDs(ids...)
 }
 
 // Where appends a list predicates to the ThreadUpdate builder.
@@ -828,39 +866,10 @@ func (tuo *ThreadUpdateOne) sqlSave(ctx context.Context) (_node *Thread, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tuo.mutation.ChildCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   thread.ChildTable,
-			Columns: []string{thread.ChildColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tuo.mutation.ChildIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   thread.ChildTable,
-			Columns: []string{thread.ChildColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if tuo.mutation.ParentCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   thread.ParentTable,
 			Columns: []string{thread.ParentColumn},
 			Bidi:    false,
@@ -872,10 +881,55 @@ func (tuo *ThreadUpdateOne) sqlSave(ctx context.Context) (_node *Thread, err err
 	}
 	if nodes := tuo.mutation.ParentIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   thread.ParentTable,
 			Columns: []string{thread.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   thread.ChildrenTable,
+			Columns: []string{thread.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedChildrenIDs(); len(nodes) > 0 && !tuo.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   thread.ChildrenTable,
+			Columns: []string{thread.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   thread.ChildrenTable,
+			Columns: []string{thread.ChildrenColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),

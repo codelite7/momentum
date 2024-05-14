@@ -15,7 +15,7 @@
             <div class="pl-3 pr-3">
               @for (message of messages; track message.id) {
                 @if (message.sentByUser) {
-                  <app-message [message]="message"></app-message>
+                  <app-message [threadId]="thread?.id" [message]="message"></app-message>
                 }
               }
             </div>
@@ -34,49 +34,11 @@
           >
         </textarea>
             <div class="flex justify-content-end">
-              <p-button label="Enter" icon="pi pi-arrow-down" [disabled]="!promptForm.valid"
-                        [loading]="loading"></p-button>
+              <p-button label="Enter" icon="pi pi-arrow-down" [disabled]="!promptForm.valid" [loading]="loading" type="submit"></p-button>
             </div>
           </form>
         </div>
       </div>
     </div>
   </div>
-  <!-- layout -->
-  <!--  <div class="grid grid-nogutter">-->
-  <!--    &lt;!&ndash; breadcrumbs &ndash;&gt;-->
-  <!--    <div class="col-12">-->
-  <!--      <app-breadcrumb [thread]="thread"></app-breadcrumb>-->
-  <!--    </div>-->
-  <!--    &lt;!&ndash; messages container &ndash;&gt;-->
-  <!--  </div>-->
-
-  <!--  <div class="flex flex-column-reverse w-full p-3">-->
-  <!--    <div class="w-full messages">-->
-  <!--      @for (message of messages; track message.id) {-->
-  <!--        @if (message.sentByUser) {-->
-  <!--          <app-message [message]="message"></app-message>-->
-  <!--        }-->
-  <!--      }-->
-  <!--    </div>-->
-  <!--    @if (messages.length == 0) {-->
-  <!--      <div class="flex w-full justify-content-center mb-3">-->
-  <!--        <span class="explore">What do you want to explore?</span>-->
-  <!--      </div>-->
-  <!--    }-->
-  <!--    <form [formGroup]="promptForm" (ngSubmit)="sendMessage()" class="w-full">-->
-  <!--      <textarea-->
-  <!--        #promptInput-->
-  <!--        formControlName="prompt"-->
-  <!--        class="w-full prompt-textarea mb-2"-->
-  <!--        rows="5"-->
-  <!--        pInputTextarea-->
-  <!--        (keydown)="keyPressed($event)"-->
-  <!--      >-->
-  <!--    </textarea>-->
-  <!--    <div class="flex justify-content-end">-->
-  <!--      <p-button label="Enter" icon="pi pi-arrow-down" [disabled]="!promptForm.valid" [loading]="loading"></p-button>-->
-  <!--    </div>-->
-  <!--    </form>-->
-  <!--  </div>-->
 </app-base>

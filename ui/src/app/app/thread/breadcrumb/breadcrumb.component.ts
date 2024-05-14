@@ -1,50 +1,46 @@
-import { Component, Input } from '@angular/core';
+import { Component, computed, inject, input, Input, InputSignal, signal, Signal } from '@angular/core'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { MenuItem } from 'primeng/api/menuitem'
 import { ThreadFragment, ThreadQuery } from '../../../../../graphql/generated'
+import { DropdownChangeEvent, DropdownModule } from 'primeng/dropdown'
+import { Router } from '@angular/router'
 
 @Component({
   selector: 'app-breadcrumb',
   standalone: true,
   imports: [
-    BreadcrumbModule
+    BreadcrumbModule,
+    DropdownModule
   ],
   templateUrl: './breadcrumb.component.html',
   styleUrl: './breadcrumb.component.css'
 })
 export class BreadcrumbComponent {
-  @Input() thread: ThreadFragment | undefined = undefined
+  router: Router = inject(Router)
+  thread: InputSignal<ThreadFragment | undefined> = input<ThreadFragment | undefined>(undefined, {alias: 'thread'})
+  children = computed(() => {
+    let thread = this.thread()
+    let children: ThreadFragment[] = []
+    if (thread?.children) {
+      thread.children.edges?.forEach(edge => {
+        if (edge?.node) {
+          children.push(edge.node as ThreadFragment)
+        }
+      })
+    }
+    return children
+  })
+  childrenOptions = computed(() => {
+    return this.children().map((child: ThreadFragment) => {
+      return {
+        label: child.name,
+        value: child.id
+      }
+    })
+  })
   home: MenuItem = { icon: 'pi pi-home', routerLink: '/' }
-  get breadcrumbItems() {
-    return this.getBreadcrumbItems()
-  }
-  getBreadcrumbItems(): MenuItem[] {
-    let items: MenuItem[] = []
-    if (this.thread) {
-      if (this.thread.parent) {
-        items.push(this.getBreadcrumbItem(this.thread.parent))
-      }
-      items.push(this.getBreadcrumbItem(this.thread))
-      if (this.thread.child) {
-        items.push(this.getBreadcrumbItem(this.thread.child))
-      }
-    }
-    return items
-  }
 
-  getBreadcrumbItem(thread: ThreadFragment): MenuItem {
-    let menuItem: MenuItem = {
-      label: thread.name
-    }
-    // only give url for other threads
-    if (thread.id != this.thread?.id) {
-      menuItem.url = this.getThreadUrl(thread)
-    }
-
-    return menuItem
-  }
-
-  getThreadUrl(thread: any): string {
-    return `/app/thread/${thread.id}`
+  async navigateToChild(event: DropdownChangeEvent) {
+    await this.router.navigate([`/app/thread/${event.value}`])
   }
 }

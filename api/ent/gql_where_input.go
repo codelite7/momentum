@@ -994,13 +994,13 @@ type ThreadWhereInput struct {
 	HasBookmarks     *bool                 `json:"hasBookmarks,omitempty"`
 	HasBookmarksWith []*BookmarkWhereInput `json:"hasBookmarksWith,omitempty"`
 
-	// "child" edge predicates.
-	HasChild     *bool               `json:"hasChild,omitempty"`
-	HasChildWith []*ThreadWhereInput `json:"hasChildWith,omitempty"`
-
 	// "parent" edge predicates.
 	HasParent     *bool               `json:"hasParent,omitempty"`
 	HasParentWith []*ThreadWhereInput `json:"hasParentWith,omitempty"`
+
+	// "children" edge predicates.
+	HasChildren     *bool               `json:"hasChildren,omitempty"`
+	HasChildrenWith []*ThreadWhereInput `json:"hasChildrenWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1240,24 +1240,6 @@ func (i *ThreadWhereInput) P() (predicate.Thread, error) {
 		}
 		predicates = append(predicates, thread.HasBookmarksWith(with...))
 	}
-	if i.HasChild != nil {
-		p := thread.HasChild()
-		if !*i.HasChild {
-			p = thread.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasChildWith) > 0 {
-		with := make([]predicate.Thread, 0, len(i.HasChildWith))
-		for _, w := range i.HasChildWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasChildWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, thread.HasChildWith(with...))
-	}
 	if i.HasParent != nil {
 		p := thread.HasParent()
 		if !*i.HasParent {
@@ -1275,6 +1257,24 @@ func (i *ThreadWhereInput) P() (predicate.Thread, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, thread.HasParentWith(with...))
+	}
+	if i.HasChildren != nil {
+		p := thread.HasChildren()
+		if !*i.HasChildren {
+			p = thread.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasChildrenWith) > 0 {
+		with := make([]predicate.Thread, 0, len(i.HasChildrenWith))
+		for _, w := range i.HasChildrenWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasChildrenWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, thread.HasChildrenWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

@@ -3,7 +3,9 @@ import { ThreadService } from '../../../services/thread.service'
 import { ToastService } from '../../../services/toast.service'
 import { NgForOf, NgIf } from '@angular/common'
 import { ThreadButtonComponent } from './thread-button/thread-button.component'
-import { ThreadFragment, ThreadsQuery } from '../../../../../graphql/generated'
+import { MessageOrderField, OrderDirection, ThreadFragment, ThreadsQuery } from '../../../../../graphql/generated'
+import { Subscription } from 'rxjs'
+import { ActivatedRoute } from '@angular/router'
 
 @Component({
   selector: 'app-left-sidebar-threads',
@@ -20,6 +22,19 @@ export class LeftSidebarThreadsComponent {
   threadService: ThreadService = inject(ThreadService)
   toastService: ToastService = inject(ToastService)
   threads: ThreadFragment[] = []
+  threadCreatedSubscription: Subscription
+
+  constructor(private route: ActivatedRoute) {
+    this.threadCreatedSubscription = this.threadService.threadCreatedEmitter.subscribe(
+      async (id) => {
+        let thread = await this.threadService.thread(id)
+        if (thread) {
+          this.threads.unshift(thread)
+        }
+      }
+    )
+  }
+
   async ngOnInit(): Promise<void> {
     await this.loadThreads()
   }

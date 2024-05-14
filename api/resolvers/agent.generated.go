@@ -435,10 +435,10 @@ func (ec *executionContext) fieldContext_Mutation_createThread(ctx context.Conte
 				return ec.fieldContext_Thread_messages(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_Thread_bookmarks(ctx, field)
-			case "child":
-				return ec.fieldContext_Thread_child(ctx, field)
 			case "parent":
 				return ec.fieldContext_Thread_parent(ctx, field)
+			case "children":
+				return ec.fieldContext_Thread_children(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Thread", field.Name)
 		},

@@ -264,8 +264,8 @@ type CreateThreadInput struct {
 	CreatedByID uuid.UUID
 	MessageIDs  []uuid.UUID
 	BookmarkIDs []uuid.UUID
-	ChildID     *uuid.UUID
 	ParentID    *uuid.UUID
+	ChildIDs    []uuid.UUID
 }
 
 // Mutate applies the CreateThreadInput on the ThreadMutation builder.
@@ -284,11 +284,11 @@ func (i *CreateThreadInput) Mutate(m *ThreadMutation) {
 	if v := i.BookmarkIDs; len(v) > 0 {
 		m.AddBookmarkIDs(v...)
 	}
-	if v := i.ChildID; v != nil {
-		m.SetChildID(*v)
-	}
 	if v := i.ParentID; v != nil {
 		m.SetParentID(*v)
+	}
+	if v := i.ChildIDs; len(v) > 0 {
+		m.AddChildIDs(v...)
 	}
 }
 
@@ -309,10 +309,11 @@ type UpdateThreadInput struct {
 	ClearBookmarks    bool
 	AddBookmarkIDs    []uuid.UUID
 	RemoveBookmarkIDs []uuid.UUID
-	ClearChild        bool
-	ChildID           *uuid.UUID
 	ClearParent       bool
 	ParentID          *uuid.UUID
+	ClearChildren     bool
+	AddChildIDs       []uuid.UUID
+	RemoveChildIDs    []uuid.UUID
 }
 
 // Mutate applies the UpdateThreadInput on the ThreadMutation builder.
@@ -344,17 +345,20 @@ func (i *UpdateThreadInput) Mutate(m *ThreadMutation) {
 	if v := i.RemoveBookmarkIDs; len(v) > 0 {
 		m.RemoveBookmarkIDs(v...)
 	}
-	if i.ClearChild {
-		m.ClearChild()
-	}
-	if v := i.ChildID; v != nil {
-		m.SetChildID(*v)
-	}
 	if i.ClearParent {
 		m.ClearParent()
 	}
 	if v := i.ParentID; v != nil {
 		m.SetParentID(*v)
+	}
+	if i.ClearChildren {
+		m.ClearChildren()
+	}
+	if v := i.AddChildIDs; len(v) > 0 {
+		m.AddChildIDs(v...)
+	}
+	if v := i.RemoveChildIDs; len(v) > 0 {
+		m.RemoveChildIDs(v...)
 	}
 }
 

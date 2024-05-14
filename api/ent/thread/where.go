@@ -285,35 +285,12 @@ func HasBookmarksWith(preds ...predicate.Bookmark) predicate.Thread {
 	})
 }
 
-// HasChild applies the HasEdge predicate on the "child" edge.
-func HasChild() predicate.Thread {
-	return predicate.Thread(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, ChildTable, ChildColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasChildWith applies the HasEdge predicate on the "child" edge with a given conditions (other predicates).
-func HasChildWith(preds ...predicate.Thread) predicate.Thread {
-	return predicate.Thread(func(s *sql.Selector) {
-		step := newChildStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasParent applies the HasEdge predicate on the "parent" edge.
 func HasParent() predicate.Thread {
 	return predicate.Thread(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, ParentTable, ParentColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -323,6 +300,29 @@ func HasParent() predicate.Thread {
 func HasParentWith(preds ...predicate.Thread) predicate.Thread {
 	return predicate.Thread(func(s *sql.Selector) {
 		step := newParentStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasChildren applies the HasEdge predicate on the "children" edge.
+func HasChildren() predicate.Thread {
+	return predicate.Thread(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasChildrenWith applies the HasEdge predicate on the "children" edge with a given conditions (other predicates).
+func HasChildrenWith(preds ...predicate.Thread) predicate.Thread {
+	return predicate.Thread(func(s *sql.Selector) {
+		step := newChildrenStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

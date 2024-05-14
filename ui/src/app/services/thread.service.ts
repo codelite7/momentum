@@ -40,9 +40,9 @@ export class ThreadService {
     return undefined
   }
 
-  async createThread(name:string): Promise<ThreadFragment> {
+  async createThread(name:string, parentId?: string): Promise<ThreadFragment> {
     let userId = await this.authService.userId()
-    let response = await this.graphqlService.sdk.createThread({input: {name:name, createdByID: userId}})
+    let response = await this.graphqlService.sdk.createThread({input: {name:name, createdByID: userId, parentID: parentId}})
     this.threadCreatedEmitter.emit(response.createThread?.id)
     return response.createThread as ThreadFragment
   }

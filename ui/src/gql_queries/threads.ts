@@ -11,11 +11,15 @@ fragment Thread on Thread {
     updatedAt
     name
   }
-  child {
-    id
-    createdAt
-    updatedAt
-    name
+  children {
+    edges {
+      node {
+        id
+        createdAt
+        updatedAt
+        name
+      }
+    }
   }
 }
 `

@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brianvoe/gofakeit/v6"
+	gofakeit "github.com/brianvoe/gofakeit/v6"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/google/uuid"
 	"github.com/vektah/gqlparser/v2/gqlerror"

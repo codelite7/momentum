@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core'
 import { ButtonModule } from 'primeng/button'
-import { RouterLink } from '@angular/router'
+import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { ThreadFragment } from '../../../../../../graphql/generated'
 
 @Component({
@@ -15,6 +15,15 @@ import { ThreadFragment } from '../../../../../../graphql/generated'
 })
 export class ThreadButtonComponent {
   @Input() thread: ThreadFragment | undefined
+  selectedThreadId: string | null = null
+  constructor(private route: ActivatedRoute) {}
+  ngOnInit() {
+    this.route.paramMap.subscribe(
+      (params => {
+        this.selectedThreadId = params.get('id')
+      })
+    )
+  }
 
   getLinkUrl(): string {
     let url = `/app/thread/${this.thread?.id}`

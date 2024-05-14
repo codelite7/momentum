@@ -277,7 +277,7 @@ export type CreateMessageInput = {
  */
 export type CreateThreadInput = {
   bookmarkIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
-  childID?: InputMaybe<Scalars['ID']['input']>;
+  childIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
   createdAt?: InputMaybe<Scalars['Time']['input']>;
   createdByID: Scalars['ID']['input'];
   messageIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -567,7 +567,7 @@ export type QueryUsersArgs = {
 export type Thread = Node & {
   __typename?: 'Thread';
   bookmarks: BookmarkConnection;
-  child?: Maybe<Thread>;
+  children: ThreadConnection;
   createdAt: Scalars['Time']['output'];
   createdBy: User;
   id: Scalars['ID']['output'];
@@ -585,6 +585,16 @@ export type ThreadBookmarksArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<Array<BookmarkOrder>>;
   where?: InputMaybe<BookmarkWhereInput>;
+};
+
+
+export type ThreadChildrenArgs = {
+  after?: InputMaybe<Scalars['Cursor']['input']>;
+  before?: InputMaybe<Scalars['Cursor']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Array<ThreadOrder>>;
+  where?: InputMaybe<ThreadWhereInput>;
 };
 
 
@@ -650,9 +660,9 @@ export type ThreadWhereInput = {
   /** bookmarks edge predicates */
   hasBookmarks?: InputMaybe<Scalars['Boolean']['input']>;
   hasBookmarksWith?: InputMaybe<Array<BookmarkWhereInput>>;
-  /** child edge predicates */
-  hasChild?: InputMaybe<Scalars['Boolean']['input']>;
-  hasChildWith?: InputMaybe<Array<ThreadWhereInput>>;
+  /** children edge predicates */
+  hasChildren?: InputMaybe<Scalars['Boolean']['input']>;
+  hasChildrenWith?: InputMaybe<Array<ThreadWhereInput>>;
   /** created_by edge predicates */
   hasCreatedBy?: InputMaybe<Scalars['Boolean']['input']>;
   hasCreatedByWith?: InputMaybe<Array<UserWhereInput>>;
@@ -747,16 +757,17 @@ export type UpdateMessageInput = {
  */
 export type UpdateThreadInput = {
   addBookmarkIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
+  addChildIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
   addMessageIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
-  childID?: InputMaybe<Scalars['ID']['input']>;
   clearBookmarks?: InputMaybe<Scalars['Boolean']['input']>;
-  clearChild?: InputMaybe<Scalars['Boolean']['input']>;
+  clearChildren?: InputMaybe<Scalars['Boolean']['input']>;
   clearMessages?: InputMaybe<Scalars['Boolean']['input']>;
   clearParent?: InputMaybe<Scalars['Boolean']['input']>;
   createdByID?: InputMaybe<Scalars['ID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   parentID?: InputMaybe<Scalars['ID']['input']>;
   removeBookmarkIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
+  removeChildIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
   removeMessageIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
   updatedAt?: InputMaybe<Scalars['Time']['input']>;
 };
@@ -1001,7 +1012,7 @@ export type ThreadMessageQueryVariables = Exact<{
 
 export type ThreadMessageQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentByAgent?: { __typename?: 'Agent', id: string, createdAt: any, updatedAt: any } | null, sentByUser?: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string } | null } | null } | null> | null } } | null } | null> | null } };
 
-export type ThreadFragment = { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string, parent?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, child?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null };
+export type ThreadFragment = { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string, parent?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, children: { __typename?: 'ThreadConnection', edges?: Array<{ __typename?: 'ThreadEdge', node?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null } | null> | null } };
 
 export type ThreadsQueryVariables = Exact<{
   after?: InputMaybe<Scalars['Cursor']['input']>;
@@ -1013,14 +1024,14 @@ export type ThreadsQueryVariables = Exact<{
 }>;
 
 
-export type ThreadsQuery = { __typename?: 'Query', threads: { __typename?: 'ThreadConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'ThreadEdge', cursor: any, node?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string, parent?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, child?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null } | null } | null> | null } };
+export type ThreadsQuery = { __typename?: 'Query', threads: { __typename?: 'ThreadConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'ThreadEdge', cursor: any, node?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string, parent?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, children: { __typename?: 'ThreadConnection', edges?: Array<{ __typename?: 'ThreadEdge', node?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null } | null> | null } } | null } | null> | null } };
 
 export type ThreadQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type ThreadQuery = { __typename?: 'Query', threads: { __typename?: 'ThreadConnection', edges?: Array<{ __typename?: 'ThreadEdge', node?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string, parent?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, child?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null } | null } | null> | null } };
+export type ThreadQuery = { __typename?: 'Query', threads: { __typename?: 'ThreadConnection', edges?: Array<{ __typename?: 'ThreadEdge', node?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string, parent?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, children: { __typename?: 'ThreadConnection', edges?: Array<{ __typename?: 'ThreadEdge', node?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null } | null> | null } } | null } | null> | null } };
 
 export type CreateThreadMutationVariables = Exact<{
   input: CreateThreadInput;
@@ -1111,11 +1122,15 @@ export const ThreadFragmentDoc = gql`
     updatedAt
     name
   }
-  child {
-    id
-    createdAt
-    updatedAt
-    name
+  children {
+    edges {
+      node {
+        id
+        createdAt
+        updatedAt
+        name
+      }
+    }
   }
 }
     `;

@@ -11,6 +11,8 @@ import { BookmarkService } from '../../../services/bookmark.service'
 import { ToastService } from '../../../services/toast.service'
 import { BookmarkFragment, MessageFragment, ThreadMessageFragment } from '../../../../../graphql/generated'
 import { Subscription } from 'rxjs'
+import { ThreadService } from '../../../services/thread.service'
+import { Router } from '@angular/router'
 
 @Component({
   selector: 'app-message',
@@ -29,10 +31,13 @@ import { Subscription } from 'rxjs'
 })
 export class MessageComponent {
   @Input() message: ThreadMessageFragment | undefined
+  @Input() threadId?: string = ''
   bookmark: BookmarkFragment | undefined
   authService: AuthService = inject(AuthService)
   bookmarkService: BookmarkService = inject(BookmarkService)
+  threadService: ThreadService = inject(ThreadService)
   toastService: ToastService = inject(ToastService)
+  router: Router = inject(Router)
   email: string = ''
   hover: boolean = false
   bookmarkDeletedSubscription?: Subscription
@@ -85,6 +90,17 @@ export class MessageComponent {
       this.toastService.success('Bookmarked message')
       this.bookmark = result
       }
+    } catch (e) {
+      this.toastService.error(`${e}`)
+      console.error(e)
+    }
+  }
+
+  async newThread() {
+    try {
+      let result = await this.threadService.createThread('New Thread', this.threadId)
+      this.toastService.success('Created new thread')
+      await this.router.navigate([`/app/thread/${result.id}`])
     } catch (e) {
       this.toastService.error(`${e}`)
       console.error(e)

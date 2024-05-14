@@ -113,25 +113,6 @@ func (tc *ThreadCreate) AddBookmarks(b ...*Bookmark) *ThreadCreate {
 	return tc.AddBookmarkIDs(ids...)
 }
 
-// SetChildID sets the "child" edge to the Thread entity by ID.
-func (tc *ThreadCreate) SetChildID(id uuid.UUID) *ThreadCreate {
-	tc.mutation.SetChildID(id)
-	return tc
-}
-
-// SetNillableChildID sets the "child" edge to the Thread entity by ID if the given value is not nil.
-func (tc *ThreadCreate) SetNillableChildID(id *uuid.UUID) *ThreadCreate {
-	if id != nil {
-		tc = tc.SetChildID(*id)
-	}
-	return tc
-}
-
-// SetChild sets the "child" edge to the Thread entity.
-func (tc *ThreadCreate) SetChild(t *Thread) *ThreadCreate {
-	return tc.SetChildID(t.ID)
-}
-
 // SetParentID sets the "parent" edge to the Thread entity by ID.
 func (tc *ThreadCreate) SetParentID(id uuid.UUID) *ThreadCreate {
 	tc.mutation.SetParentID(id)
@@ -149,6 +130,21 @@ func (tc *ThreadCreate) SetNillableParentID(id *uuid.UUID) *ThreadCreate {
 // SetParent sets the "parent" edge to the Thread entity.
 func (tc *ThreadCreate) SetParent(t *Thread) *ThreadCreate {
 	return tc.SetParentID(t.ID)
+}
+
+// AddChildIDs adds the "children" edge to the Thread entity by IDs.
+func (tc *ThreadCreate) AddChildIDs(ids ...uuid.UUID) *ThreadCreate {
+	tc.mutation.AddChildIDs(ids...)
+	return tc
+}
+
+// AddChildren adds the "children" edges to the Thread entity.
+func (tc *ThreadCreate) AddChildren(t ...*Thread) *ThreadCreate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tc.AddChildIDs(ids...)
 }
 
 // Mutation returns the ThreadMutation object of the builder.
@@ -310,12 +306,12 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := tc.mutation.ChildIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.ParentIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   thread.ChildTable,
-			Columns: []string{thread.ChildColumn},
+			Table:   thread.ParentTable,
+			Columns: []string{thread.ParentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
@@ -324,15 +320,15 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.thread_parent = &nodes[0]
+		_node.thread_children = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := tc.mutation.ParentIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.ChildrenIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   thread.ParentTable,
-			Columns: []string{thread.ParentColumn},
+			Table:   thread.ChildrenTable,
+			Columns: []string{thread.ChildrenColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),

@@ -29,13 +29,14 @@ type ThreadQuery struct {
 	withCreatedBy      *UserQuery
 	withMessages       *MessageQuery
 	withBookmarks      *BookmarkQuery
-	withChild          *ThreadQuery
 	withParent         *ThreadQuery
+	withChildren       *ThreadQuery
 	withFKs            bool
 	modifiers          []func(*sql.Selector)
 	loadTotal          []func(context.Context, []*Thread) error
 	withNamedMessages  map[string]*MessageQuery
 	withNamedBookmarks map[string]*BookmarkQuery
+	withNamedChildren  map[string]*ThreadQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -138,28 +139,6 @@ func (tq *ThreadQuery) QueryBookmarks() *BookmarkQuery {
 	return query
 }
 
-// QueryChild chains the current query on the "child" edge.
-func (tq *ThreadQuery) QueryChild() *ThreadQuery {
-	query := (&ThreadClient{config: tq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(thread.Table, thread.FieldID, selector),
-			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, thread.ChildTable, thread.ChildColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryParent chains the current query on the "parent" edge.
 func (tq *ThreadQuery) QueryParent() *ThreadQuery {
 	query := (&ThreadClient{config: tq.config}).Query()
@@ -174,7 +153,29 @@ func (tq *ThreadQuery) QueryParent() *ThreadQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(thread.Table, thread.FieldID, selector),
 			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, thread.ParentTable, thread.ParentColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, thread.ParentTable, thread.ParentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChildren chains the current query on the "children" edge.
+func (tq *ThreadQuery) QueryChildren() *ThreadQuery {
+	query := (&ThreadClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(thread.Table, thread.FieldID, selector),
+			sqlgraph.To(thread.Table, thread.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, thread.ChildrenTable, thread.ChildrenColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -377,8 +378,8 @@ func (tq *ThreadQuery) Clone() *ThreadQuery {
 		withCreatedBy: tq.withCreatedBy.Clone(),
 		withMessages:  tq.withMessages.Clone(),
 		withBookmarks: tq.withBookmarks.Clone(),
-		withChild:     tq.withChild.Clone(),
 		withParent:    tq.withParent.Clone(),
+		withChildren:  tq.withChildren.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -418,17 +419,6 @@ func (tq *ThreadQuery) WithBookmarks(opts ...func(*BookmarkQuery)) *ThreadQuery 
 	return tq
 }
 
-// WithChild tells the query-builder to eager-load the nodes that are connected to
-// the "child" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *ThreadQuery) WithChild(opts ...func(*ThreadQuery)) *ThreadQuery {
-	query := (&ThreadClient{config: tq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withChild = query
-	return tq
-}
-
 // WithParent tells the query-builder to eager-load the nodes that are connected to
 // the "parent" edge. The optional arguments are used to configure the query builder of the edge.
 func (tq *ThreadQuery) WithParent(opts ...func(*ThreadQuery)) *ThreadQuery {
@@ -437,6 +427,17 @@ func (tq *ThreadQuery) WithParent(opts ...func(*ThreadQuery)) *ThreadQuery {
 		opt(query)
 	}
 	tq.withParent = query
+	return tq
+}
+
+// WithChildren tells the query-builder to eager-load the nodes that are connected to
+// the "children" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *ThreadQuery) WithChildren(opts ...func(*ThreadQuery)) *ThreadQuery {
+	query := (&ThreadClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withChildren = query
 	return tq
 }
 
@@ -523,11 +524,11 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 			tq.withCreatedBy != nil,
 			tq.withMessages != nil,
 			tq.withBookmarks != nil,
-			tq.withChild != nil,
 			tq.withParent != nil,
+			tq.withChildren != nil,
 		}
 	)
-	if tq.withCreatedBy != nil || tq.withChild != nil {
+	if tq.withCreatedBy != nil || tq.withParent != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -574,15 +575,16 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 			return nil, err
 		}
 	}
-	if query := tq.withChild; query != nil {
-		if err := tq.loadChild(ctx, query, nodes, nil,
-			func(n *Thread, e *Thread) { n.Edges.Child = e }); err != nil {
-			return nil, err
-		}
-	}
 	if query := tq.withParent; query != nil {
 		if err := tq.loadParent(ctx, query, nodes, nil,
 			func(n *Thread, e *Thread) { n.Edges.Parent = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withChildren; query != nil {
+		if err := tq.loadChildren(ctx, query, nodes,
+			func(n *Thread) { n.Edges.Children = []*Thread{} },
+			func(n *Thread, e *Thread) { n.Edges.Children = append(n.Edges.Children, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -597,6 +599,13 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 		if err := tq.loadBookmarks(ctx, query, nodes,
 			func(n *Thread) { n.appendNamedBookmarks(name) },
 			func(n *Thread, e *Bookmark) { n.appendNamedBookmarks(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedChildren {
+		if err := tq.loadChildren(ctx, query, nodes,
+			func(n *Thread) { n.appendNamedChildren(name) },
+			func(n *Thread, e *Thread) { n.appendNamedChildren(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -702,14 +711,14 @@ func (tq *ThreadQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, 
 	}
 	return nil
 }
-func (tq *ThreadQuery) loadChild(ctx context.Context, query *ThreadQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Thread)) error {
+func (tq *ThreadQuery) loadParent(ctx context.Context, query *ThreadQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Thread)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Thread)
 	for i := range nodes {
-		if nodes[i].thread_parent == nil {
+		if nodes[i].thread_children == nil {
 			continue
 		}
-		fk := *nodes[i].thread_parent
+		fk := *nodes[i].thread_children
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -726,7 +735,7 @@ func (tq *ThreadQuery) loadChild(ctx context.Context, query *ThreadQuery, nodes 
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "thread_parent" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "thread_children" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -734,29 +743,32 @@ func (tq *ThreadQuery) loadChild(ctx context.Context, query *ThreadQuery, nodes 
 	}
 	return nil
 }
-func (tq *ThreadQuery) loadParent(ctx context.Context, query *ThreadQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Thread)) error {
+func (tq *ThreadQuery) loadChildren(ctx context.Context, query *ThreadQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Thread)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Thread)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
 	}
 	query.withFKs = true
 	query.Where(predicate.Thread(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(thread.ParentColumn), fks...))
+		s.Where(sql.InValues(s.C(thread.ChildrenColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.thread_parent
+		fk := n.thread_children
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "thread_parent" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "thread_children" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "thread_parent" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "thread_children" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -872,6 +884,20 @@ func (tq *ThreadQuery) WithNamedBookmarks(name string, opts ...func(*BookmarkQue
 		tq.withNamedBookmarks = make(map[string]*BookmarkQuery)
 	}
 	tq.withNamedBookmarks[name] = query
+	return tq
+}
+
+// WithNamedChildren tells the query-builder to eager-load the nodes that are connected to the "children"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *ThreadQuery) WithNamedChildren(name string, opts ...func(*ThreadQuery)) *ThreadQuery {
+	query := (&ThreadClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedChildren == nil {
+		tq.withNamedChildren = make(map[string]*ThreadQuery)
+	}
+	tq.withNamedChildren[name] = query
 	return tq
 }
 

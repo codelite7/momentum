@@ -133,7 +133,7 @@ type ComplexityRoot struct {
 
 	Thread struct {
 		Bookmarks func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) int
-		Child     func(childComplexity int) int
+		Children  func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) int
 		CreatedAt func(childComplexity int) int
 		CreatedBy func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -646,12 +646,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Thread.Bookmarks(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.BookmarkOrder), args["where"].(*ent.BookmarkWhereInput)), true
 
-	case "Thread.child":
-		if e.complexity.Thread.Child == nil {
+	case "Thread.children":
+		if e.complexity.Thread.Children == nil {
 			break
 		}
 
-		return e.complexity.Thread.Child(childComplexity), true
+		args, err := ec.field_Thread_children_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Thread.Children(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.ThreadOrder), args["where"].(*ent.ThreadWhereInput)), true
 
 	case "Thread.createdAt":
 		if e.complexity.Thread.CreatedAt == nil {
@@ -1305,8 +1310,8 @@ input CreateThreadInput {
   createdByID: ID!
   messageIDs: [ID!]
   bookmarkIDs: [ID!]
-  childID: ID
   parentID: ID
+  childIDs: [ID!]
 }
 """
 CreateUserInput is used for create User object.
@@ -1781,8 +1786,38 @@ type Thread implements Node {
     """
     where: BookmarkWhereInput
   ): BookmarkConnection!
-  child: Thread
   parent: Thread
+  children(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Threads returned from the connection.
+    """
+    orderBy: [ThreadOrder!]
+
+    """
+    Filtering options for Threads returned from the connection.
+    """
+    where: ThreadWhereInput
+  ): ThreadConnection!
 }
 """
 A connection to a list of items.
@@ -1908,15 +1943,15 @@ input ThreadWhereInput {
   hasBookmarks: Boolean
   hasBookmarksWith: [BookmarkWhereInput!]
   """
-  child edge predicates
-  """
-  hasChild: Boolean
-  hasChildWith: [ThreadWhereInput!]
-  """
   parent edge predicates
   """
   hasParent: Boolean
   hasParentWith: [ThreadWhereInput!]
+  """
+  children edge predicates
+  """
+  hasChildren: Boolean
+  hasChildrenWith: [ThreadWhereInput!]
 }
 """
 The builtin Time type
@@ -1976,10 +2011,11 @@ input UpdateThreadInput {
   addBookmarkIDs: [ID!]
   removeBookmarkIDs: [ID!]
   clearBookmarks: Boolean
-  childID: ID
-  clearChild: Boolean
   parentID: ID
   clearParent: Boolean
+  addChildIDs: [ID!]
+  removeChildIDs: [ID!]
+  clearChildren: Boolean
 }
 """
 UpdateUserInput is used for update User object.

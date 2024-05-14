@@ -330,8 +330,8 @@ input CreateThreadInput {
   createdByID: ID!
   messageIDs: [ID!]
   bookmarkIDs: [ID!]
-  childID: ID
   parentID: ID
+  childIDs: [ID!]
 }
 """
 CreateUserInput is used for create User object.
@@ -806,8 +806,38 @@ type Thread implements Node {
     """
     where: BookmarkWhereInput
   ): BookmarkConnection!
-  child: Thread
   parent: Thread
+  children(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Threads returned from the connection.
+    """
+    orderBy: [ThreadOrder!]
+
+    """
+    Filtering options for Threads returned from the connection.
+    """
+    where: ThreadWhereInput
+  ): ThreadConnection!
 }
 """
 A connection to a list of items.
@@ -933,15 +963,15 @@ input ThreadWhereInput {
   hasBookmarks: Boolean
   hasBookmarksWith: [BookmarkWhereInput!]
   """
-  child edge predicates
-  """
-  hasChild: Boolean
-  hasChildWith: [ThreadWhereInput!]
-  """
   parent edge predicates
   """
   hasParent: Boolean
   hasParentWith: [ThreadWhereInput!]
+  """
+  children edge predicates
+  """
+  hasChildren: Boolean
+  hasChildrenWith: [ThreadWhereInput!]
 }
 """
 The builtin Time type
@@ -1001,10 +1031,11 @@ input UpdateThreadInput {
   addBookmarkIDs: [ID!]
   removeBookmarkIDs: [ID!]
   clearBookmarks: Boolean
-  childID: ID
-  clearChild: Boolean
   parentID: ID
   clearParent: Boolean
+  addChildIDs: [ID!]
+  removeChildIDs: [ID!]
+  clearChildren: Boolean
 }
 """
 UpdateUserInput is used for update User object.

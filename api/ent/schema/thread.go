@@ -31,7 +31,7 @@ func (Thread) Edges() []ent.Edge {
 		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection()),
 		// a thread may be bookmarked many times
 		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection()),
-		// a thread may have a parent thread and a child thread
-		edge.To("parent", Thread.Type).Unique().From("child").Unique(),
+		// a thread may have a parent thread and many child threads
+		edge.To("children", Thread.Type).Annotations(entgql.RelayConnection()).From("parent").Unique(),
 	}
 }
