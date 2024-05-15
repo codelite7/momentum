@@ -17,6 +17,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -376,17 +377,17 @@ var (
 			}
 		},
 	}
-	// AgentOrderFieldName orders Agent by name.
-	AgentOrderFieldName = &AgentOrderField{
+	// AgentOrderFieldProvider orders Agent by provider.
+	AgentOrderFieldProvider = &AgentOrderField{
 		Value: func(a *Agent) (ent.Value, error) {
-			return a.Name, nil
+			return a.Provider, nil
 		},
-		column: agent.FieldName,
-		toTerm: agent.ByName,
+		column: agent.FieldProvider,
+		toTerm: agent.ByProvider,
 		toCursor: func(a *Agent) Cursor {
 			return Cursor{
 				ID:    a.ID,
-				Value: a.Name,
+				Value: a.Provider,
 			}
 		},
 	}
@@ -414,8 +415,8 @@ func (f AgentOrderField) String() string {
 		str = "CREATED_AT"
 	case AgentOrderFieldUpdatedAt.column:
 		str = "UPDATED_AT"
-	case AgentOrderFieldName.column:
-		str = "NAME"
+	case AgentOrderFieldProvider.column:
+		str = "PROVIDER"
 	case AgentOrderFieldModel.column:
 		str = "MODEL"
 	}
@@ -438,8 +439,8 @@ func (f *AgentOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *AgentOrderFieldCreatedAt
 	case "UPDATED_AT":
 		*f = *AgentOrderFieldUpdatedAt
-	case "NAME":
-		*f = *AgentOrderFieldName
+	case "PROVIDER":
+		*f = *AgentOrderFieldProvider
 	case "MODEL":
 		*f = *AgentOrderFieldModel
 	default:
@@ -1186,6 +1187,356 @@ func (m *Message) ToEdge(order *MessageOrder) *MessageEdge {
 	return &MessageEdge{
 		Node:   m,
 		Cursor: order.Field.toCursor(m),
+	}
+}
+
+// ResponseEdge is the edge representation of Response.
+type ResponseEdge struct {
+	Node   *Response `json:"node"`
+	Cursor Cursor    `json:"cursor"`
+}
+
+// ResponseConnection is the connection containing edges to Response.
+type ResponseConnection struct {
+	Edges      []*ResponseEdge `json:"edges"`
+	PageInfo   PageInfo        `json:"pageInfo"`
+	TotalCount int             `json:"totalCount"`
+}
+
+func (c *ResponseConnection) build(nodes []*Response, pager *responsePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Response
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Response {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Response {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*ResponseEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &ResponseEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// ResponsePaginateOption enables pagination customization.
+type ResponsePaginateOption func(*responsePager) error
+
+// WithResponseOrder configures pagination ordering.
+func WithResponseOrder(order []*ResponseOrder) ResponsePaginateOption {
+	return func(pager *responsePager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithResponseFilter configures pagination filter.
+func WithResponseFilter(filter func(*ResponseQuery) (*ResponseQuery, error)) ResponsePaginateOption {
+	return func(pager *responsePager) error {
+		if filter == nil {
+			return errors.New("ResponseQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type responsePager struct {
+	reverse bool
+	order   []*ResponseOrder
+	filter  func(*ResponseQuery) (*ResponseQuery, error)
+}
+
+func newResponsePager(opts []ResponsePaginateOption, reverse bool) (*responsePager, error) {
+	pager := &responsePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *responsePager) applyFilter(query *ResponseQuery) (*ResponseQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *responsePager) toCursor(r *Response) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(r).Value)
+	}
+	return Cursor{ID: r.ID, Value: cs_}
+}
+
+func (p *responsePager) applyCursors(query *ResponseQuery, after, before *Cursor) (*ResponseQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultResponseOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *responsePager) applyOrder(query *ResponseQuery) *ResponseQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultResponseOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultResponseOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *responsePager) orderExpr(query *ResponseQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultResponseOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Response.
+func (r *ResponseQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ResponsePaginateOption,
+) (*ResponseConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newResponsePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if r, err = pager.applyFilter(r); err != nil {
+		return nil, err
+	}
+	conn := &ResponseConnection{Edges: []*ResponseEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := r.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if r, err = pager.applyCursors(r, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		r.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := r.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	r = pager.applyOrder(r)
+	nodes, err := r.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// ResponseOrderFieldCreatedAt orders Response by created_at.
+	ResponseOrderFieldCreatedAt = &ResponseOrderField{
+		Value: func(r *Response) (ent.Value, error) {
+			return r.CreatedAt, nil
+		},
+		column: response.FieldCreatedAt,
+		toTerm: response.ByCreatedAt,
+		toCursor: func(r *Response) Cursor {
+			return Cursor{
+				ID:    r.ID,
+				Value: r.CreatedAt,
+			}
+		},
+	}
+	// ResponseOrderFieldUpdatedAt orders Response by updated_at.
+	ResponseOrderFieldUpdatedAt = &ResponseOrderField{
+		Value: func(r *Response) (ent.Value, error) {
+			return r.UpdatedAt, nil
+		},
+		column: response.FieldUpdatedAt,
+		toTerm: response.ByUpdatedAt,
+		toCursor: func(r *Response) Cursor {
+			return Cursor{
+				ID:    r.ID,
+				Value: r.UpdatedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f ResponseOrderField) String() string {
+	var str string
+	switch f.column {
+	case ResponseOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case ResponseOrderFieldUpdatedAt.column:
+		str = "UPDATED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f ResponseOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *ResponseOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("ResponseOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *ResponseOrderFieldCreatedAt
+	case "UPDATED_AT":
+		*f = *ResponseOrderFieldUpdatedAt
+	default:
+		return fmt.Errorf("%s is not a valid ResponseOrderField", str)
+	}
+	return nil
+}
+
+// ResponseOrderField defines the ordering field of Response.
+type ResponseOrderField struct {
+	// Value extracts the ordering value from the given Response.
+	Value    func(*Response) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) response.OrderOption
+	toCursor func(*Response) Cursor
+}
+
+// ResponseOrder defines the ordering of Response.
+type ResponseOrder struct {
+	Direction OrderDirection      `json:"direction"`
+	Field     *ResponseOrderField `json:"field"`
+}
+
+// DefaultResponseOrder is the default ordering of Response.
+var DefaultResponseOrder = &ResponseOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &ResponseOrderField{
+		Value: func(r *Response) (ent.Value, error) {
+			return r.ID, nil
+		},
+		column: response.FieldID,
+		toTerm: response.ByID,
+		toCursor: func(r *Response) Cursor {
+			return Cursor{ID: r.ID}
+		},
+	},
+}
+
+// ToEdge converts Response into ResponseEdge.
+func (r *Response) ToEdge(order *ResponseOrder) *ResponseEdge {
+	if order == nil {
+		order = DefaultResponseOrder
+	}
+	return &ResponseEdge{
+		Node:   r,
+		Cursor: order.Field.toCursor(r),
 	}
 }
 

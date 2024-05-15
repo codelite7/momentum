@@ -170,12 +170,14 @@ func (ec *executionContext) fieldContext_Mutation_createAgent(ctx context.Contex
 				return ec.fieldContext_Agent_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Agent_updatedAt(ctx, field)
-			case "name":
-				return ec.fieldContext_Agent_name(ctx, field)
+			case "provider":
+				return ec.fieldContext_Agent_provider(ctx, field)
 			case "model":
 				return ec.fieldContext_Agent_model(ctx, field)
-			case "messages":
-				return ec.fieldContext_Agent_messages(ctx, field)
+			case "apiKey":
+				return ec.fieldContext_Agent_apiKey(ctx, field)
+			case "responses":
+				return ec.fieldContext_Agent_responses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -359,14 +361,14 @@ func (ec *executionContext) fieldContext_Mutation_createMessage(ctx context.Cont
 				return ec.fieldContext_Message_updatedAt(ctx, field)
 			case "content":
 				return ec.fieldContext_Message_content(ctx, field)
-			case "sentByAgent":
-				return ec.fieldContext_Message_sentByAgent(ctx, field)
-			case "sentByUser":
-				return ec.fieldContext_Message_sentByUser(ctx, field)
+			case "sentBy":
+				return ec.fieldContext_Message_sentBy(ctx, field)
 			case "thread":
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_Message_bookmarks(ctx, field)
+			case "response":
+				return ec.fieldContext_Message_response(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},

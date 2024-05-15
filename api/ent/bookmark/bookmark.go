@@ -61,6 +61,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"message_bookmarks",
+	"response_bookmarks",
 	"thread_bookmarks",
 	"user_bookmarks",
 }

@@ -19,6 +19,7 @@ import { MenuItem } from 'primeng/api'
 })
 export class UserAvatarComponent {
   @Input() showMenu: boolean = false;
+  @Input() agent: any = undefined
   menuItems: MenuItem[] = [{
     label: 'Sign out',
     icon: 'pi pi-power-off',

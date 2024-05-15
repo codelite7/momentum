@@ -1,8 +1,9 @@
-package run
+package config
 
 var PostgresUri string
 var Port string
 var SuperTokensConfig = SuperTokensConfigg{}
+var DefaultAgents string
 
 type SuperTokensConfigg struct {
 	Uri                string

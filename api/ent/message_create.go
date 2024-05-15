@@ -10,9 +10,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -73,42 +73,15 @@ func (mc *MessageCreate) SetNillableID(u *uuid.UUID) *MessageCreate {
 	return mc
 }
 
-// SetSentByAgentID sets the "sent_by_agent" edge to the Agent entity by ID.
-func (mc *MessageCreate) SetSentByAgentID(id uuid.UUID) *MessageCreate {
-	mc.mutation.SetSentByAgentID(id)
+// SetSentByID sets the "sent_by" edge to the User entity by ID.
+func (mc *MessageCreate) SetSentByID(id uuid.UUID) *MessageCreate {
+	mc.mutation.SetSentByID(id)
 	return mc
 }
 
-// SetNillableSentByAgentID sets the "sent_by_agent" edge to the Agent entity by ID if the given value is not nil.
-func (mc *MessageCreate) SetNillableSentByAgentID(id *uuid.UUID) *MessageCreate {
-	if id != nil {
-		mc = mc.SetSentByAgentID(*id)
-	}
-	return mc
-}
-
-// SetSentByAgent sets the "sent_by_agent" edge to the Agent entity.
-func (mc *MessageCreate) SetSentByAgent(a *Agent) *MessageCreate {
-	return mc.SetSentByAgentID(a.ID)
-}
-
-// SetSentByUserID sets the "sent_by_user" edge to the User entity by ID.
-func (mc *MessageCreate) SetSentByUserID(id uuid.UUID) *MessageCreate {
-	mc.mutation.SetSentByUserID(id)
-	return mc
-}
-
-// SetNillableSentByUserID sets the "sent_by_user" edge to the User entity by ID if the given value is not nil.
-func (mc *MessageCreate) SetNillableSentByUserID(id *uuid.UUID) *MessageCreate {
-	if id != nil {
-		mc = mc.SetSentByUserID(*id)
-	}
-	return mc
-}
-
-// SetSentByUser sets the "sent_by_user" edge to the User entity.
-func (mc *MessageCreate) SetSentByUser(u *User) *MessageCreate {
-	return mc.SetSentByUserID(u.ID)
+// SetSentBy sets the "sent_by" edge to the User entity.
+func (mc *MessageCreate) SetSentBy(u *User) *MessageCreate {
+	return mc.SetSentByID(u.ID)
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by ID.
@@ -135,6 +108,25 @@ func (mc *MessageCreate) AddBookmarks(b ...*Bookmark) *MessageCreate {
 		ids[i] = b[i].ID
 	}
 	return mc.AddBookmarkIDs(ids...)
+}
+
+// SetResponseID sets the "response" edge to the Response entity by ID.
+func (mc *MessageCreate) SetResponseID(id uuid.UUID) *MessageCreate {
+	mc.mutation.SetResponseID(id)
+	return mc
+}
+
+// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
+func (mc *MessageCreate) SetNillableResponseID(id *uuid.UUID) *MessageCreate {
+	if id != nil {
+		mc = mc.SetResponseID(*id)
+	}
+	return mc
+}
+
+// SetResponse sets the "response" edge to the Response entity.
+func (mc *MessageCreate) SetResponse(r *Response) *MessageCreate {
+	return mc.SetResponseID(r.ID)
 }
 
 // Mutation returns the MessageMutation object of the builder.
@@ -197,6 +189,9 @@ func (mc *MessageCreate) check() error {
 	if _, ok := mc.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "Message.content"`)}
 	}
+	if _, ok := mc.mutation.SentByID(); !ok {
+		return &ValidationError{Name: "sent_by", err: errors.New(`ent: missing required edge "Message.sent_by"`)}
+	}
 	if _, ok := mc.mutation.ThreadID(); !ok {
 		return &ValidationError{Name: "thread", err: errors.New(`ent: missing required edge "Message.thread"`)}
 	}
@@ -247,29 +242,12 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 		_spec.SetField(message.FieldContent, field.TypeString, value)
 		_node.Content = value
 	}
-	if nodes := mc.mutation.SentByAgentIDs(); len(nodes) > 0 {
+	if nodes := mc.mutation.SentByIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   message.SentByAgentTable,
-			Columns: []string{message.SentByAgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.agent_messages = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := mc.mutation.SentByUserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByUserTable,
-			Columns: []string{message.SentByUserColumn},
+			Table:   message.SentByTable,
+			Columns: []string{message.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
@@ -307,6 +285,22 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.ResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   message.ResponseTable,
+			Columns: []string{message.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

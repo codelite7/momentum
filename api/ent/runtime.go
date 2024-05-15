@@ -8,6 +8,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
@@ -69,6 +70,23 @@ func init() {
 	messageDescID := messageMixinFields0[0].Descriptor()
 	// message.DefaultID holds the default value on creation for the id field.
 	message.DefaultID = messageDescID.Default.(func() uuid.UUID)
+	responseMixin := schema.Response{}.Mixin()
+	responseMixinFields0 := responseMixin[0].Fields()
+	_ = responseMixinFields0
+	responseFields := schema.Response{}.Fields()
+	_ = responseFields
+	// responseDescCreatedAt is the schema descriptor for created_at field.
+	responseDescCreatedAt := responseMixinFields0[1].Descriptor()
+	// response.DefaultCreatedAt holds the default value on creation for the created_at field.
+	response.DefaultCreatedAt = responseDescCreatedAt.Default.(func() time.Time)
+	// responseDescUpdatedAt is the schema descriptor for updated_at field.
+	responseDescUpdatedAt := responseMixinFields0[2].Descriptor()
+	// response.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	response.DefaultUpdatedAt = responseDescUpdatedAt.Default.(func() time.Time)
+	// responseDescID is the schema descriptor for id field.
+	responseDescID := responseMixinFields0[0].Descriptor()
+	// response.DefaultID holds the default value on creation for the id field.
+	response.DefaultID = responseDescID.Default.(func() uuid.UUID)
 	threadMixin := schema.Thread{}.Mixin()
 	threadMixinFields0 := threadMixin[0].Fields()
 	_ = threadMixinFields0

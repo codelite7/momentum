@@ -11,6 +11,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -36,6 +37,11 @@ var messageImplementors = []string{"Message", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Message) IsNode() {}
+
+var responseImplementors = []string{"Response", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Response) IsNode() {}
 
 var threadImplementors = []string{"Thread", "Node"}
 
@@ -128,6 +134,15 @@ func (c *Client) noder(ctx context.Context, table string, id uuid.UUID) (Noder, 
 			Where(message.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, messageImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case response.Table:
+		query := c.Response.Query().
+			Where(response.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, responseImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -259,6 +274,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []uuid.UUID) ([]N
 		query := c.Message.Query().
 			Where(message.IDIn(ids...))
 		query, err := query.CollectFields(ctx, messageImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case response.Table:
+		query := c.Response.Query().
+			Where(response.IDIn(ids...))
+		query, err := query.CollectFields(ctx, responseImplementors...)
 		if err != nil {
 			return nil, err
 		}

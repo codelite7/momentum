@@ -3,17 +3,25 @@ package run
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/codelite7/momentum/api/config"
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/resolvers"
+	"github.com/codelite7/momentum/api/river"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/rivermigrate"
 	"github.com/samber/lo"
 	"github.com/supertokens/supertokens-golang/recipe/dashboard"
 	"github.com/supertokens/supertokens-golang/recipe/session"
@@ -25,6 +33,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -45,22 +54,78 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	err = runRiverMigrations()
+	if err != nil {
+		return err
+	}
+	err = river.StartRiverClient()
+	if err != nil {
+		return err
+	}
+	err = ensureDefaultAgents()
+	if err != nil {
+		return err
+	}
 	graphqlServer := initGraphqlServer(Client)
-	return runHttpServer(graphqlServer)
+	err = runHttpServer(graphqlServer)
+	if err != nil {
+		return err
+	}
 
+	err = river.StopRiverClient()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
+func ensureDefaultAgents() error {
+	var defaultAgents []*ent.Agent
+	err := json.Unmarshal([]byte(config.DefaultAgents), &defaultAgents)
+	if err != nil {
+		return err
+	}
+	for _, agent := range defaultAgents {
+		existingAgent, err := getAgentByProviderAndModel(agent.Provider, agent.Model)
+		if err != nil && !strings.Contains(err.Error(), "not found") {
+			return err
+		}
+		if existingAgent == nil {
+			_, err = Client.Agent.Create().
+				SetProvider(agent.Provider).
+				SetModel(agent.Model).
+				SetAPIKey(agent.APIKey).
+				Save(context.Background())
+			if err != nil {
+				return err
+			}
+		} else {
+			existingAgent.APIKey = agent.APIKey
+			_, err = Client.Agent.UpdateOne(existingAgent).Save(context.Background())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func getAgentByProviderAndModel(provider, model string) (*ent.Agent, error) {
+	return Client.Agent.Query().Where(agent.Provider(provider), agent.Model(model)).First(context.Background())
+}
 func runHttpServer(graphqlServer *handler.Server) error {
 	httpServer, err := initHttpServer(graphqlServer)
 	if err != nil {
 		return err
 	}
-	port := fmt.Sprintf(":%s", Port)
+	port := fmt.Sprintf(":%s", config.Port)
 	return httpServer.Start(port)
 }
 
 func initEntClient() *ent.Client {
-	return Open(PostgresUri)
+	return Open(config.PostgresUri)
 }
 
 func createSchema(client *ent.Client) error {
@@ -118,15 +183,15 @@ func initSuperTokens() error {
 	return supertokens.Init(supertokens.TypeInput{
 		Supertokens: &supertokens.ConnectionInfo{
 			// These are the connection details of the app you created on supertokens.com
-			ConnectionURI: SuperTokensConfig.Uri,
-			APIKey:        SuperTokensConfig.ApiKey,
+			ConnectionURI: config.SuperTokensConfig.Uri,
+			APIKey:        config.SuperTokensConfig.ApiKey,
 		},
 		AppInfo: supertokens.AppInfo{
 			AppName:         "momentum",
-			APIDomain:       SuperTokensConfig.ApiDomain,
-			WebsiteDomain:   SuperTokensConfig.WebsiteDomain,
-			APIBasePath:     &SuperTokensConfig.ApiBasePath,
-			WebsiteBasePath: &SuperTokensConfig.WebsiteBasePath,
+			APIDomain:       config.SuperTokensConfig.ApiDomain,
+			WebsiteDomain:   config.SuperTokensConfig.WebsiteDomain,
+			APIBasePath:     &config.SuperTokensConfig.ApiBasePath,
+			WebsiteBasePath: &config.SuperTokensConfig.WebsiteBasePath,
 		},
 		RecipeList: []supertokens.Recipe{
 			thirdpartyemailpassword.Init(&tpepmodels.TypeInput{
@@ -136,8 +201,8 @@ func initSuperTokens() error {
 							ThirdPartyId: "google",
 							Clients: []tpmodels.ProviderClientConfig{
 								{
-									ClientID:     SuperTokensConfig.GoogleClientID,
-									ClientSecret: SuperTokensConfig.GoogleClientSecret,
+									ClientID:     config.SuperTokensConfig.GoogleClientID,
+									ClientSecret: config.SuperTokensConfig.GoogleClientSecret,
 								},
 							},
 						},
@@ -225,7 +290,7 @@ var flags = []cli.Flag{
 		Value:       "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
 		Usage:       "postgres connection string",
 		EnvVars:     []string{"POSTGRES_URI"},
-		Destination: &PostgresUri,
+		Destination: &config.PostgresUri,
 	},
 	&cli.StringFlag{
 		Name:        "port",
@@ -233,7 +298,7 @@ var flags = []cli.Flag{
 		Value:       "3000",
 		Usage:       "port to run the server on",
 		EnvVars:     []string{"PORT"},
-		Destination: &Port,
+		Destination: &config.Port,
 	},
 	&cli.StringFlag{
 		Name:        "supertokens-uri",
@@ -241,7 +306,7 @@ var flags = []cli.Flag{
 		Value:       "",
 		Usage:       "uri to supertokens instance",
 		EnvVars:     []string{"SUPERTOKENS_URI"},
-		Destination: &SuperTokensConfig.Uri,
+		Destination: &config.SuperTokensConfig.Uri,
 	},
 	&cli.StringFlag{
 		Name:        "supertokens-api-key",
@@ -249,7 +314,7 @@ var flags = []cli.Flag{
 		Value:       "",
 		Usage:       "supertokens api key",
 		EnvVars:     []string{"SUPERTOKENS_API_KEY"},
-		Destination: &SuperTokensConfig.ApiKey,
+		Destination: &config.SuperTokensConfig.ApiKey,
 	},
 	&cli.StringFlag{
 		Name:        "supertokens-api-domain",
@@ -257,7 +322,7 @@ var flags = []cli.Flag{
 		Value:       "http://localhost:3000",
 		Usage:       "api address, this is self referential",
 		EnvVars:     []string{"SUPERTOKENS_API_DOMAIN"},
-		Destination: &SuperTokensConfig.ApiDomain,
+		Destination: &config.SuperTokensConfig.ApiDomain,
 	},
 	&cli.StringFlag{
 		Name:        "supertokens-website-domain",
@@ -265,7 +330,7 @@ var flags = []cli.Flag{
 		Value:       "http://localhost:4200",
 		Usage:       "ui address",
 		EnvVars:     []string{"SUPERTOKENS_WEBSITE_DOMAIN"},
-		Destination: &SuperTokensConfig.WebsiteDomain,
+		Destination: &config.SuperTokensConfig.WebsiteDomain,
 	},
 	&cli.StringFlag{
 		Name:        "supertokens-api-base-path",
@@ -273,7 +338,7 @@ var flags = []cli.Flag{
 		Value:       "/auth",
 		Usage:       "api path where supertokens features are served from",
 		EnvVars:     []string{"SUPERTOKENS_API_BASE_PATH"},
-		Destination: &SuperTokensConfig.ApiBasePath,
+		Destination: &config.SuperTokensConfig.ApiBasePath,
 	},
 	&cli.StringFlag{
 		Name:        "supertokens-website-base-path",
@@ -281,7 +346,7 @@ var flags = []cli.Flag{
 		Value:       "/auth",
 		Usage:       "ui path where supertokens features are handled",
 		EnvVars:     []string{"SUPERTOKENS_WEBSITE_BASE_PATH"},
-		Destination: &SuperTokensConfig.WebsiteBasePath,
+		Destination: &config.SuperTokensConfig.WebsiteBasePath,
 	},
 	&cli.StringFlag{
 		Name:        "supertokens-google-client-id",
@@ -289,7 +354,7 @@ var flags = []cli.Flag{
 		Value:       "1060725074195-kmeum4crr01uirfl2op9kd5acmi9jutn.apps.googleusercontent.com",
 		Usage:       "client id for google social login",
 		EnvVars:     []string{"SUPERTOKENS_GOOGLE_CLIENT_ID"},
-		Destination: &SuperTokensConfig.GoogleClientID,
+		Destination: &config.SuperTokensConfig.GoogleClientID,
 	},
 	&cli.StringFlag{
 		Name:        "supertokens-google-client-secret",
@@ -297,10 +362,49 @@ var flags = []cli.Flag{
 		Value:       "",
 		Usage:       "client secret for google social login",
 		EnvVars:     []string{"SUPERTOKENS_GOOGLE_CLIENT_SECRET"},
-		Destination: &SuperTokensConfig.GoogleClientSecret,
+		Destination: &config.SuperTokensConfig.GoogleClientSecret,
+	},
+	&cli.StringFlag{
+		Name:        "default-agents",
+		Aliases:     []string{"da"},
+		Value:       "[]",
+		Usage:       "json array of agent objects that will be created on startup",
+		EnvVars:     []string{"DEFAULT_AGENTS"},
+		Destination: &config.DefaultAgents,
 	},
 }
 
 func sessionMiddleware(next http.Handler) http.Handler {
 	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(false)}, next.ServeHTTP)
+}
+
+func runRiverMigrations() error {
+	ctx := context.Background()
+
+	dbPool, err := pgxpool.New(context.Background(), config.PostgresUri)
+	if err != nil {
+		return err
+	}
+	defer dbPool.Close()
+
+	tx, err := dbPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	migrator := rivermigrate.New[pgx.Tx](riverpgxv5.New(dbPool), nil)
+
+	printVersions := func(res *rivermigrate.MigrateResult) {
+		for _, version := range res.Versions {
+			fmt.Printf("Migrated [%s] version %d\n", strings.ToUpper(string(res.Direction)), version.Version)
+		}
+	}
+
+	res, err := migrator.MigrateTx(ctx, tx, rivermigrate.DirectionUp, nil)
+	if err != nil {
+		return err
+	}
+	printVersions(res)
+	return tx.Commit(ctx)
 }

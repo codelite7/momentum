@@ -66,14 +66,19 @@ func UpdatedAt(v time.Time) predicate.Agent {
 	return predicate.Agent(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
-func Name(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldEQ(FieldName, v))
+// Provider applies equality check predicate on the "provider" field. It's identical to ProviderEQ.
+func Provider(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldEQ(FieldProvider, v))
 }
 
 // Model applies equality check predicate on the "model" field. It's identical to ModelEQ.
 func Model(v string) predicate.Agent {
 	return predicate.Agent(sql.FieldEQ(FieldModel, v))
+}
+
+// APIKey applies equality check predicate on the "api_key" field. It's identical to APIKeyEQ.
+func APIKey(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldEQ(FieldAPIKey, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -156,69 +161,69 @@ func UpdatedAtLTE(v time.Time) predicate.Agent {
 	return predicate.Agent(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// NameEQ applies the EQ predicate on the "name" field.
-func NameEQ(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldEQ(FieldName, v))
+// ProviderEQ applies the EQ predicate on the "provider" field.
+func ProviderEQ(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldEQ(FieldProvider, v))
 }
 
-// NameNEQ applies the NEQ predicate on the "name" field.
-func NameNEQ(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldNEQ(FieldName, v))
+// ProviderNEQ applies the NEQ predicate on the "provider" field.
+func ProviderNEQ(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldNEQ(FieldProvider, v))
 }
 
-// NameIn applies the In predicate on the "name" field.
-func NameIn(vs ...string) predicate.Agent {
-	return predicate.Agent(sql.FieldIn(FieldName, vs...))
+// ProviderIn applies the In predicate on the "provider" field.
+func ProviderIn(vs ...string) predicate.Agent {
+	return predicate.Agent(sql.FieldIn(FieldProvider, vs...))
 }
 
-// NameNotIn applies the NotIn predicate on the "name" field.
-func NameNotIn(vs ...string) predicate.Agent {
-	return predicate.Agent(sql.FieldNotIn(FieldName, vs...))
+// ProviderNotIn applies the NotIn predicate on the "provider" field.
+func ProviderNotIn(vs ...string) predicate.Agent {
+	return predicate.Agent(sql.FieldNotIn(FieldProvider, vs...))
 }
 
-// NameGT applies the GT predicate on the "name" field.
-func NameGT(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldGT(FieldName, v))
+// ProviderGT applies the GT predicate on the "provider" field.
+func ProviderGT(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldGT(FieldProvider, v))
 }
 
-// NameGTE applies the GTE predicate on the "name" field.
-func NameGTE(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldGTE(FieldName, v))
+// ProviderGTE applies the GTE predicate on the "provider" field.
+func ProviderGTE(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldGTE(FieldProvider, v))
 }
 
-// NameLT applies the LT predicate on the "name" field.
-func NameLT(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldLT(FieldName, v))
+// ProviderLT applies the LT predicate on the "provider" field.
+func ProviderLT(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldLT(FieldProvider, v))
 }
 
-// NameLTE applies the LTE predicate on the "name" field.
-func NameLTE(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldLTE(FieldName, v))
+// ProviderLTE applies the LTE predicate on the "provider" field.
+func ProviderLTE(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldLTE(FieldProvider, v))
 }
 
-// NameContains applies the Contains predicate on the "name" field.
-func NameContains(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldContains(FieldName, v))
+// ProviderContains applies the Contains predicate on the "provider" field.
+func ProviderContains(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldContains(FieldProvider, v))
 }
 
-// NameHasPrefix applies the HasPrefix predicate on the "name" field.
-func NameHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldHasPrefix(FieldName, v))
+// ProviderHasPrefix applies the HasPrefix predicate on the "provider" field.
+func ProviderHasPrefix(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldHasPrefix(FieldProvider, v))
 }
 
-// NameHasSuffix applies the HasSuffix predicate on the "name" field.
-func NameHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldHasSuffix(FieldName, v))
+// ProviderHasSuffix applies the HasSuffix predicate on the "provider" field.
+func ProviderHasSuffix(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldHasSuffix(FieldProvider, v))
 }
 
-// NameEqualFold applies the EqualFold predicate on the "name" field.
-func NameEqualFold(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldEqualFold(FieldName, v))
+// ProviderEqualFold applies the EqualFold predicate on the "provider" field.
+func ProviderEqualFold(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldEqualFold(FieldProvider, v))
 }
 
-// NameContainsFold applies the ContainsFold predicate on the "name" field.
-func NameContainsFold(v string) predicate.Agent {
-	return predicate.Agent(sql.FieldContainsFold(FieldName, v))
+// ProviderContainsFold applies the ContainsFold predicate on the "provider" field.
+func ProviderContainsFold(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldContainsFold(FieldProvider, v))
 }
 
 // ModelEQ applies the EQ predicate on the "model" field.
@@ -286,21 +291,86 @@ func ModelContainsFold(v string) predicate.Agent {
 	return predicate.Agent(sql.FieldContainsFold(FieldModel, v))
 }
 
-// HasMessages applies the HasEdge predicate on the "messages" edge.
-func HasMessages() predicate.Agent {
+// APIKeyEQ applies the EQ predicate on the "api_key" field.
+func APIKeyEQ(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldEQ(FieldAPIKey, v))
+}
+
+// APIKeyNEQ applies the NEQ predicate on the "api_key" field.
+func APIKeyNEQ(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldNEQ(FieldAPIKey, v))
+}
+
+// APIKeyIn applies the In predicate on the "api_key" field.
+func APIKeyIn(vs ...string) predicate.Agent {
+	return predicate.Agent(sql.FieldIn(FieldAPIKey, vs...))
+}
+
+// APIKeyNotIn applies the NotIn predicate on the "api_key" field.
+func APIKeyNotIn(vs ...string) predicate.Agent {
+	return predicate.Agent(sql.FieldNotIn(FieldAPIKey, vs...))
+}
+
+// APIKeyGT applies the GT predicate on the "api_key" field.
+func APIKeyGT(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldGT(FieldAPIKey, v))
+}
+
+// APIKeyGTE applies the GTE predicate on the "api_key" field.
+func APIKeyGTE(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldGTE(FieldAPIKey, v))
+}
+
+// APIKeyLT applies the LT predicate on the "api_key" field.
+func APIKeyLT(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldLT(FieldAPIKey, v))
+}
+
+// APIKeyLTE applies the LTE predicate on the "api_key" field.
+func APIKeyLTE(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldLTE(FieldAPIKey, v))
+}
+
+// APIKeyContains applies the Contains predicate on the "api_key" field.
+func APIKeyContains(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldContains(FieldAPIKey, v))
+}
+
+// APIKeyHasPrefix applies the HasPrefix predicate on the "api_key" field.
+func APIKeyHasPrefix(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldHasPrefix(FieldAPIKey, v))
+}
+
+// APIKeyHasSuffix applies the HasSuffix predicate on the "api_key" field.
+func APIKeyHasSuffix(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldHasSuffix(FieldAPIKey, v))
+}
+
+// APIKeyEqualFold applies the EqualFold predicate on the "api_key" field.
+func APIKeyEqualFold(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldEqualFold(FieldAPIKey, v))
+}
+
+// APIKeyContainsFold applies the ContainsFold predicate on the "api_key" field.
+func APIKeyContainsFold(v string) predicate.Agent {
+	return predicate.Agent(sql.FieldContainsFold(FieldAPIKey, v))
+}
+
+// HasResponses applies the HasEdge predicate on the "responses" edge.
+func HasResponses() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, MessagesTable, MessagesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, ResponsesTable, ResponsesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasMessagesWith applies the HasEdge predicate on the "messages" edge with a given conditions (other predicates).
-func HasMessagesWith(preds ...predicate.Message) predicate.Agent {
+// HasResponsesWith applies the HasEdge predicate on the "responses" edge with a given conditions (other predicates).
+func HasResponsesWith(preds ...predicate.Response) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
-		step := newMessagesStep()
+		step := newResponsesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

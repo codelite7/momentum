@@ -5,16 +5,22 @@ fragment ThreadMessage on Message {
   createdAt
   updatedAt
   content
-  sentByAgent {
-    id
-    createdAt
-    updatedAt
-  }
-  sentByUser {
+  sentBy {
     id
     createdAt
     updatedAt
     email
+  }
+  response {
+    id
+    createdAt
+    updatedAt
+    content
+    sentBy {
+      id
+      provider
+      model
+    }
   }
   bookmarks(where:{hasUserWith:{id:$userId}}) {
     edges {
@@ -31,16 +37,22 @@ fragment Message on Message {
   createdAt
   updatedAt
   content
-  sentByAgent {
-    id
-    createdAt
-    updatedAt
-  }
-  sentByUser {
+  sentBy {
     id
     createdAt
     updatedAt
     email
+  }
+  response {
+    id
+    createdAt
+    updatedAt
+    content
+    sentBy {
+      id
+      provider
+      model
+    }
   }
 }
 `

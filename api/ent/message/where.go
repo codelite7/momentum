@@ -216,44 +216,21 @@ func ContentContainsFold(v string) predicate.Message {
 	return predicate.Message(sql.FieldContainsFold(FieldContent, v))
 }
 
-// HasSentByAgent applies the HasEdge predicate on the "sent_by_agent" edge.
-func HasSentByAgent() predicate.Message {
+// HasSentBy applies the HasEdge predicate on the "sent_by" edge.
+func HasSentBy() predicate.Message {
 	return predicate.Message(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, SentByAgentTable, SentByAgentColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, SentByTable, SentByColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSentByAgentWith applies the HasEdge predicate on the "sent_by_agent" edge with a given conditions (other predicates).
-func HasSentByAgentWith(preds ...predicate.Agent) predicate.Message {
+// HasSentByWith applies the HasEdge predicate on the "sent_by" edge with a given conditions (other predicates).
+func HasSentByWith(preds ...predicate.User) predicate.Message {
 	return predicate.Message(func(s *sql.Selector) {
-		step := newSentByAgentStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasSentByUser applies the HasEdge predicate on the "sent_by_user" edge.
-func HasSentByUser() predicate.Message {
-	return predicate.Message(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, SentByUserTable, SentByUserColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasSentByUserWith applies the HasEdge predicate on the "sent_by_user" edge with a given conditions (other predicates).
-func HasSentByUserWith(preds ...predicate.User) predicate.Message {
-	return predicate.Message(func(s *sql.Selector) {
-		step := newSentByUserStep()
+		step := newSentByStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -300,6 +277,29 @@ func HasBookmarks() predicate.Message {
 func HasBookmarksWith(preds ...predicate.Bookmark) predicate.Message {
 	return predicate.Message(func(s *sql.Selector) {
 		step := newBookmarksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasResponse applies the HasEdge predicate on the "response" edge.
+func HasResponse() predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, ResponseTable, ResponseColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasResponseWith applies the HasEdge predicate on the "response" edge with a given conditions (other predicates).
+func HasResponseWith(preds ...predicate.Response) predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := newResponseStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -22,10 +22,12 @@ type Agent struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	// Provider holds the value of the "provider" field.
+	Provider string `json:"provider,omitempty"`
 	// Model holds the value of the "model" field.
 	Model string `json:"model,omitempty"`
+	// APIKey holds the value of the "api_key" field.
+	APIKey string `json:"api_key,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AgentQuery when eager-loading is set.
 	Edges        AgentEdges `json:"edges"`
@@ -34,24 +36,24 @@ type Agent struct {
 
 // AgentEdges holds the relations/edges for other nodes in the graph.
 type AgentEdges struct {
-	// Messages holds the value of the messages edge.
-	Messages []*Message `json:"messages,omitempty"`
+	// Responses holds the value of the responses edge.
+	Responses []*Response `json:"responses,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
 	totalCount [1]map[string]int
 
-	namedMessages map[string][]*Message
+	namedResponses map[string][]*Response
 }
 
-// MessagesOrErr returns the Messages value or an error if the edge
+// ResponsesOrErr returns the Responses value or an error if the edge
 // was not loaded in eager-loading.
-func (e AgentEdges) MessagesOrErr() ([]*Message, error) {
+func (e AgentEdges) ResponsesOrErr() ([]*Response, error) {
 	if e.loadedTypes[0] {
-		return e.Messages, nil
+		return e.Responses, nil
 	}
-	return nil, &NotLoadedError{edge: "messages"}
+	return nil, &NotLoadedError{edge: "responses"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -59,7 +61,7 @@ func (*Agent) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case agent.FieldName, agent.FieldModel:
+		case agent.FieldProvider, agent.FieldModel, agent.FieldAPIKey:
 			values[i] = new(sql.NullString)
 		case agent.FieldCreatedAt, agent.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -98,17 +100,23 @@ func (a *Agent) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				a.UpdatedAt = value.Time
 			}
-		case agent.FieldName:
+		case agent.FieldProvider:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field name", values[i])
+				return fmt.Errorf("unexpected type %T for field provider", values[i])
 			} else if value.Valid {
-				a.Name = value.String
+				a.Provider = value.String
 			}
 		case agent.FieldModel:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field model", values[i])
 			} else if value.Valid {
 				a.Model = value.String
+			}
+		case agent.FieldAPIKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field api_key", values[i])
+			} else if value.Valid {
+				a.APIKey = value.String
 			}
 		default:
 			a.selectValues.Set(columns[i], values[i])
@@ -123,9 +131,9 @@ func (a *Agent) Value(name string) (ent.Value, error) {
 	return a.selectValues.Get(name)
 }
 
-// QueryMessages queries the "messages" edge of the Agent entity.
-func (a *Agent) QueryMessages() *MessageQuery {
-	return NewAgentClient(a.config).QueryMessages(a)
+// QueryResponses queries the "responses" edge of the Agent entity.
+func (a *Agent) QueryResponses() *ResponseQuery {
+	return NewAgentClient(a.config).QueryResponses(a)
 }
 
 // Update returns a builder for updating this Agent.
@@ -157,36 +165,39 @@ func (a *Agent) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(a.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("name=")
-	builder.WriteString(a.Name)
+	builder.WriteString("provider=")
+	builder.WriteString(a.Provider)
 	builder.WriteString(", ")
 	builder.WriteString("model=")
 	builder.WriteString(a.Model)
+	builder.WriteString(", ")
+	builder.WriteString("api_key=")
+	builder.WriteString(a.APIKey)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
-// NamedMessages returns the Messages named value or an error if the edge was not
+// NamedResponses returns the Responses named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (a *Agent) NamedMessages(name string) ([]*Message, error) {
-	if a.Edges.namedMessages == nil {
+func (a *Agent) NamedResponses(name string) ([]*Response, error) {
+	if a.Edges.namedResponses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := a.Edges.namedMessages[name]
+	nodes, ok := a.Edges.namedResponses[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (a *Agent) appendNamedMessages(name string, edges ...*Message) {
-	if a.Edges.namedMessages == nil {
-		a.Edges.namedMessages = make(map[string][]*Message)
+func (a *Agent) appendNamedResponses(name string, edges ...*Response) {
+	if a.Edges.namedResponses == nil {
+		a.Edges.namedResponses = make(map[string][]*Response)
 	}
 	if len(edges) == 0 {
-		a.Edges.namedMessages[name] = []*Message{}
+		a.Edges.namedResponses[name] = []*Response{}
 	} else {
-		a.Edges.namedMessages[name] = append(a.Edges.namedMessages[name], edges...)
+		a.Edges.namedResponses[name] = append(a.Edges.namedResponses[name], edges...)
 	}
 }
 

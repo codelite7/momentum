@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
-	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/google/uuid"
 )
 
@@ -44,16 +44,16 @@ func (au *AgentUpdate) SetNillableUpdatedAt(t *time.Time) *AgentUpdate {
 	return au
 }
 
-// SetName sets the "name" field.
-func (au *AgentUpdate) SetName(s string) *AgentUpdate {
-	au.mutation.SetName(s)
+// SetProvider sets the "provider" field.
+func (au *AgentUpdate) SetProvider(s string) *AgentUpdate {
+	au.mutation.SetProvider(s)
 	return au
 }
 
-// SetNillableName sets the "name" field if the given value is not nil.
-func (au *AgentUpdate) SetNillableName(s *string) *AgentUpdate {
+// SetNillableProvider sets the "provider" field if the given value is not nil.
+func (au *AgentUpdate) SetNillableProvider(s *string) *AgentUpdate {
 	if s != nil {
-		au.SetName(*s)
+		au.SetProvider(*s)
 	}
 	return au
 }
@@ -72,19 +72,33 @@ func (au *AgentUpdate) SetNillableModel(s *string) *AgentUpdate {
 	return au
 }
 
-// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (au *AgentUpdate) AddMessageIDs(ids ...uuid.UUID) *AgentUpdate {
-	au.mutation.AddMessageIDs(ids...)
+// SetAPIKey sets the "api_key" field.
+func (au *AgentUpdate) SetAPIKey(s string) *AgentUpdate {
+	au.mutation.SetAPIKey(s)
 	return au
 }
 
-// AddMessages adds the "messages" edges to the Message entity.
-func (au *AgentUpdate) AddMessages(m ...*Message) *AgentUpdate {
-	ids := make([]uuid.UUID, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// SetNillableAPIKey sets the "api_key" field if the given value is not nil.
+func (au *AgentUpdate) SetNillableAPIKey(s *string) *AgentUpdate {
+	if s != nil {
+		au.SetAPIKey(*s)
 	}
-	return au.AddMessageIDs(ids...)
+	return au
+}
+
+// AddResponseIDs adds the "responses" edge to the Response entity by IDs.
+func (au *AgentUpdate) AddResponseIDs(ids ...uuid.UUID) *AgentUpdate {
+	au.mutation.AddResponseIDs(ids...)
+	return au
+}
+
+// AddResponses adds the "responses" edges to the Response entity.
+func (au *AgentUpdate) AddResponses(r ...*Response) *AgentUpdate {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return au.AddResponseIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -92,25 +106,25 @@ func (au *AgentUpdate) Mutation() *AgentMutation {
 	return au.mutation
 }
 
-// ClearMessages clears all "messages" edges to the Message entity.
-func (au *AgentUpdate) ClearMessages() *AgentUpdate {
-	au.mutation.ClearMessages()
+// ClearResponses clears all "responses" edges to the Response entity.
+func (au *AgentUpdate) ClearResponses() *AgentUpdate {
+	au.mutation.ClearResponses()
 	return au
 }
 
-// RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (au *AgentUpdate) RemoveMessageIDs(ids ...uuid.UUID) *AgentUpdate {
-	au.mutation.RemoveMessageIDs(ids...)
+// RemoveResponseIDs removes the "responses" edge to Response entities by IDs.
+func (au *AgentUpdate) RemoveResponseIDs(ids ...uuid.UUID) *AgentUpdate {
+	au.mutation.RemoveResponseIDs(ids...)
 	return au
 }
 
-// RemoveMessages removes "messages" edges to Message entities.
-func (au *AgentUpdate) RemoveMessages(m ...*Message) *AgentUpdate {
-	ids := make([]uuid.UUID, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// RemoveResponses removes "responses" edges to Response entities.
+func (au *AgentUpdate) RemoveResponses(r ...*Response) *AgentUpdate {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return au.RemoveMessageIDs(ids...)
+	return au.RemoveResponseIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -152,34 +166,37 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := au.mutation.UpdatedAt(); ok {
 		_spec.SetField(agent.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := au.mutation.Name(); ok {
-		_spec.SetField(agent.FieldName, field.TypeString, value)
+	if value, ok := au.mutation.Provider(); ok {
+		_spec.SetField(agent.FieldProvider, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Model(); ok {
 		_spec.SetField(agent.FieldModel, field.TypeString, value)
 	}
-	if au.mutation.MessagesCleared() {
+	if value, ok := au.mutation.APIKey(); ok {
+		_spec.SetField(agent.FieldAPIKey, field.TypeString, value)
+	}
+	if au.mutation.ResponsesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   agent.MessagesTable,
-			Columns: []string{agent.MessagesColumn},
+			Table:   agent.ResponsesTable,
+			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.RemovedMessagesIDs(); len(nodes) > 0 && !au.mutation.MessagesCleared() {
+	if nodes := au.mutation.RemovedResponsesIDs(); len(nodes) > 0 && !au.mutation.ResponsesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   agent.MessagesTable,
-			Columns: []string{agent.MessagesColumn},
+			Table:   agent.ResponsesTable,
+			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -187,15 +204,15 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.MessagesIDs(); len(nodes) > 0 {
+	if nodes := au.mutation.ResponsesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   agent.MessagesTable,
-			Columns: []string{agent.MessagesColumn},
+			Table:   agent.ResponsesTable,
+			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -237,16 +254,16 @@ func (auo *AgentUpdateOne) SetNillableUpdatedAt(t *time.Time) *AgentUpdateOne {
 	return auo
 }
 
-// SetName sets the "name" field.
-func (auo *AgentUpdateOne) SetName(s string) *AgentUpdateOne {
-	auo.mutation.SetName(s)
+// SetProvider sets the "provider" field.
+func (auo *AgentUpdateOne) SetProvider(s string) *AgentUpdateOne {
+	auo.mutation.SetProvider(s)
 	return auo
 }
 
-// SetNillableName sets the "name" field if the given value is not nil.
-func (auo *AgentUpdateOne) SetNillableName(s *string) *AgentUpdateOne {
+// SetNillableProvider sets the "provider" field if the given value is not nil.
+func (auo *AgentUpdateOne) SetNillableProvider(s *string) *AgentUpdateOne {
 	if s != nil {
-		auo.SetName(*s)
+		auo.SetProvider(*s)
 	}
 	return auo
 }
@@ -265,19 +282,33 @@ func (auo *AgentUpdateOne) SetNillableModel(s *string) *AgentUpdateOne {
 	return auo
 }
 
-// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (auo *AgentUpdateOne) AddMessageIDs(ids ...uuid.UUID) *AgentUpdateOne {
-	auo.mutation.AddMessageIDs(ids...)
+// SetAPIKey sets the "api_key" field.
+func (auo *AgentUpdateOne) SetAPIKey(s string) *AgentUpdateOne {
+	auo.mutation.SetAPIKey(s)
 	return auo
 }
 
-// AddMessages adds the "messages" edges to the Message entity.
-func (auo *AgentUpdateOne) AddMessages(m ...*Message) *AgentUpdateOne {
-	ids := make([]uuid.UUID, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// SetNillableAPIKey sets the "api_key" field if the given value is not nil.
+func (auo *AgentUpdateOne) SetNillableAPIKey(s *string) *AgentUpdateOne {
+	if s != nil {
+		auo.SetAPIKey(*s)
 	}
-	return auo.AddMessageIDs(ids...)
+	return auo
+}
+
+// AddResponseIDs adds the "responses" edge to the Response entity by IDs.
+func (auo *AgentUpdateOne) AddResponseIDs(ids ...uuid.UUID) *AgentUpdateOne {
+	auo.mutation.AddResponseIDs(ids...)
+	return auo
+}
+
+// AddResponses adds the "responses" edges to the Response entity.
+func (auo *AgentUpdateOne) AddResponses(r ...*Response) *AgentUpdateOne {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return auo.AddResponseIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -285,25 +316,25 @@ func (auo *AgentUpdateOne) Mutation() *AgentMutation {
 	return auo.mutation
 }
 
-// ClearMessages clears all "messages" edges to the Message entity.
-func (auo *AgentUpdateOne) ClearMessages() *AgentUpdateOne {
-	auo.mutation.ClearMessages()
+// ClearResponses clears all "responses" edges to the Response entity.
+func (auo *AgentUpdateOne) ClearResponses() *AgentUpdateOne {
+	auo.mutation.ClearResponses()
 	return auo
 }
 
-// RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (auo *AgentUpdateOne) RemoveMessageIDs(ids ...uuid.UUID) *AgentUpdateOne {
-	auo.mutation.RemoveMessageIDs(ids...)
+// RemoveResponseIDs removes the "responses" edge to Response entities by IDs.
+func (auo *AgentUpdateOne) RemoveResponseIDs(ids ...uuid.UUID) *AgentUpdateOne {
+	auo.mutation.RemoveResponseIDs(ids...)
 	return auo
 }
 
-// RemoveMessages removes "messages" edges to Message entities.
-func (auo *AgentUpdateOne) RemoveMessages(m ...*Message) *AgentUpdateOne {
-	ids := make([]uuid.UUID, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// RemoveResponses removes "responses" edges to Response entities.
+func (auo *AgentUpdateOne) RemoveResponses(r ...*Response) *AgentUpdateOne {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return auo.RemoveMessageIDs(ids...)
+	return auo.RemoveResponseIDs(ids...)
 }
 
 // Where appends a list predicates to the AgentUpdate builder.
@@ -375,34 +406,37 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 	if value, ok := auo.mutation.UpdatedAt(); ok {
 		_spec.SetField(agent.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := auo.mutation.Name(); ok {
-		_spec.SetField(agent.FieldName, field.TypeString, value)
+	if value, ok := auo.mutation.Provider(); ok {
+		_spec.SetField(agent.FieldProvider, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Model(); ok {
 		_spec.SetField(agent.FieldModel, field.TypeString, value)
 	}
-	if auo.mutation.MessagesCleared() {
+	if value, ok := auo.mutation.APIKey(); ok {
+		_spec.SetField(agent.FieldAPIKey, field.TypeString, value)
+	}
+	if auo.mutation.ResponsesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   agent.MessagesTable,
-			Columns: []string{agent.MessagesColumn},
+			Table:   agent.ResponsesTable,
+			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.RemovedMessagesIDs(); len(nodes) > 0 && !auo.mutation.MessagesCleared() {
+	if nodes := auo.mutation.RemovedResponsesIDs(); len(nodes) > 0 && !auo.mutation.ResponsesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   agent.MessagesTable,
-			Columns: []string{agent.MessagesColumn},
+			Table:   agent.ResponsesTable,
+			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -410,15 +444,15 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.MessagesIDs(); len(nodes) > 0 {
+	if nodes := auo.mutation.ResponsesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   agent.MessagesTable,
-			Columns: []string{agent.MessagesColumn},
+			Table:   agent.ResponsesTable,
+			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

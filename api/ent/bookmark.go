@@ -27,11 +27,12 @@ type Bookmark struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BookmarkQuery when eager-loading is set.
-	Edges             BookmarkEdges `json:"edges"`
-	message_bookmarks *uuid.UUID
-	thread_bookmarks  *uuid.UUID
-	user_bookmarks    *uuid.UUID
-	selectValues      sql.SelectValues
+	Edges              BookmarkEdges `json:"edges"`
+	message_bookmarks  *uuid.UUID
+	response_bookmarks *uuid.UUID
+	thread_bookmarks   *uuid.UUID
+	user_bookmarks     *uuid.UUID
+	selectValues       sql.SelectValues
 }
 
 // BookmarkEdges holds the relations/edges for other nodes in the graph.
@@ -93,9 +94,11 @@ func (*Bookmark) scanValues(columns []string) ([]any, error) {
 			values[i] = new(uuid.UUID)
 		case bookmark.ForeignKeys[0]: // message_bookmarks
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case bookmark.ForeignKeys[1]: // thread_bookmarks
+		case bookmark.ForeignKeys[1]: // response_bookmarks
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case bookmark.ForeignKeys[2]: // user_bookmarks
+		case bookmark.ForeignKeys[2]: // thread_bookmarks
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case bookmark.ForeignKeys[3]: // user_bookmarks
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
@@ -139,12 +142,19 @@ func (b *Bookmark) assignValues(columns []string, values []any) error {
 			}
 		case bookmark.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field response_bookmarks", values[i])
+			} else if value.Valid {
+				b.response_bookmarks = new(uuid.UUID)
+				*b.response_bookmarks = *value.S.(*uuid.UUID)
+			}
+		case bookmark.ForeignKeys[2]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field thread_bookmarks", values[i])
 			} else if value.Valid {
 				b.thread_bookmarks = new(uuid.UUID)
 				*b.thread_bookmarks = *value.S.(*uuid.UUID)
 			}
-		case bookmark.ForeignKeys[2]:
+		case bookmark.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_bookmarks", values[i])
 			} else if value.Valid {

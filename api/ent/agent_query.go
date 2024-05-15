@@ -12,22 +12,22 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
-	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/google/uuid"
 )
 
 // AgentQuery is the builder for querying Agent entities.
 type AgentQuery struct {
 	config
-	ctx               *QueryContext
-	order             []agent.OrderOption
-	inters            []Interceptor
-	predicates        []predicate.Agent
-	withMessages      *MessageQuery
-	modifiers         []func(*sql.Selector)
-	loadTotal         []func(context.Context, []*Agent) error
-	withNamedMessages map[string]*MessageQuery
+	ctx                *QueryContext
+	order              []agent.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Agent
+	withResponses      *ResponseQuery
+	modifiers          []func(*sql.Selector)
+	loadTotal          []func(context.Context, []*Agent) error
+	withNamedResponses map[string]*ResponseQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -64,9 +64,9 @@ func (aq *AgentQuery) Order(o ...agent.OrderOption) *AgentQuery {
 	return aq
 }
 
-// QueryMessages chains the current query on the "messages" edge.
-func (aq *AgentQuery) QueryMessages() *MessageQuery {
-	query := (&MessageClient{config: aq.config}).Query()
+// QueryResponses chains the current query on the "responses" edge.
+func (aq *AgentQuery) QueryResponses() *ResponseQuery {
+	query := (&ResponseClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -77,8 +77,8 @@ func (aq *AgentQuery) QueryMessages() *MessageQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(agent.Table, agent.FieldID, selector),
-			sqlgraph.To(message.Table, message.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, agent.MessagesTable, agent.MessagesColumn),
+			sqlgraph.To(response.Table, response.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, agent.ResponsesTable, agent.ResponsesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -273,26 +273,26 @@ func (aq *AgentQuery) Clone() *AgentQuery {
 		return nil
 	}
 	return &AgentQuery{
-		config:       aq.config,
-		ctx:          aq.ctx.Clone(),
-		order:        append([]agent.OrderOption{}, aq.order...),
-		inters:       append([]Interceptor{}, aq.inters...),
-		predicates:   append([]predicate.Agent{}, aq.predicates...),
-		withMessages: aq.withMessages.Clone(),
+		config:        aq.config,
+		ctx:           aq.ctx.Clone(),
+		order:         append([]agent.OrderOption{}, aq.order...),
+		inters:        append([]Interceptor{}, aq.inters...),
+		predicates:    append([]predicate.Agent{}, aq.predicates...),
+		withResponses: aq.withResponses.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
 	}
 }
 
-// WithMessages tells the query-builder to eager-load the nodes that are connected to
-// the "messages" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *AgentQuery) WithMessages(opts ...func(*MessageQuery)) *AgentQuery {
-	query := (&MessageClient{config: aq.config}).Query()
+// WithResponses tells the query-builder to eager-load the nodes that are connected to
+// the "responses" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AgentQuery) WithResponses(opts ...func(*ResponseQuery)) *AgentQuery {
+	query := (&ResponseClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	aq.withMessages = query
+	aq.withResponses = query
 	return aq
 }
 
@@ -375,7 +375,7 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 		nodes       = []*Agent{}
 		_spec       = aq.querySpec()
 		loadedTypes = [1]bool{
-			aq.withMessages != nil,
+			aq.withResponses != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -399,17 +399,17 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := aq.withMessages; query != nil {
-		if err := aq.loadMessages(ctx, query, nodes,
-			func(n *Agent) { n.Edges.Messages = []*Message{} },
-			func(n *Agent, e *Message) { n.Edges.Messages = append(n.Edges.Messages, e) }); err != nil {
+	if query := aq.withResponses; query != nil {
+		if err := aq.loadResponses(ctx, query, nodes,
+			func(n *Agent) { n.Edges.Responses = []*Response{} },
+			func(n *Agent, e *Response) { n.Edges.Responses = append(n.Edges.Responses, e) }); err != nil {
 			return nil, err
 		}
 	}
-	for name, query := range aq.withNamedMessages {
-		if err := aq.loadMessages(ctx, query, nodes,
-			func(n *Agent) { n.appendNamedMessages(name) },
-			func(n *Agent, e *Message) { n.appendNamedMessages(name, e) }); err != nil {
+	for name, query := range aq.withNamedResponses {
+		if err := aq.loadResponses(ctx, query, nodes,
+			func(n *Agent) { n.appendNamedResponses(name) },
+			func(n *Agent, e *Response) { n.appendNamedResponses(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -421,7 +421,7 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 	return nodes, nil
 }
 
-func (aq *AgentQuery) loadMessages(ctx context.Context, query *MessageQuery, nodes []*Agent, init func(*Agent), assign func(*Agent, *Message)) error {
+func (aq *AgentQuery) loadResponses(ctx context.Context, query *ResponseQuery, nodes []*Agent, init func(*Agent), assign func(*Agent, *Response)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Agent)
 	for i := range nodes {
@@ -432,21 +432,21 @@ func (aq *AgentQuery) loadMessages(ctx context.Context, query *MessageQuery, nod
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.Message(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(agent.MessagesColumn), fks...))
+	query.Where(predicate.Response(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(agent.ResponsesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.agent_messages
+		fk := n.agent_responses
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "agent_messages" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "agent_responses" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "agent_messages" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "agent_responses" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -537,17 +537,17 @@ func (aq *AgentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// WithNamedMessages tells the query-builder to eager-load the nodes that are connected to the "messages"
+// WithNamedResponses tells the query-builder to eager-load the nodes that are connected to the "responses"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (aq *AgentQuery) WithNamedMessages(name string, opts ...func(*MessageQuery)) *AgentQuery {
-	query := (&MessageClient{config: aq.config}).Query()
+func (aq *AgentQuery) WithNamedResponses(name string, opts ...func(*ResponseQuery)) *AgentQuery {
+	query := (&ResponseClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	if aq.withNamedMessages == nil {
-		aq.withNamedMessages = make(map[string]*MessageQuery)
+	if aq.withNamedResponses == nil {
+		aq.withNamedResponses = make(map[string]*ResponseQuery)
 	}
-	aq.withNamedMessages[name] = query
+	aq.withNamedResponses[name] = query
 	return aq
 }
 

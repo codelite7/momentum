@@ -25,17 +25,41 @@
     }
     <div class="flex">
       <!-- avatar  -->
-      <div class="mr-3">
-        <app-user-avatar></app-user-avatar>
+      <div class="flex flex-column justify-content-start">
+        <div class="mr-3">
+          @if (!response) {
+            <app-user-avatar></app-user-avatar>
+          } @else {
+            <app-agent-avatar></app-agent-avatar>
+          }
+        </div>
       </div>
       <div>
         <!-- sender, time, and content  -->
         <div class="mt-2 flex flex-column">
           <div class="mb-2">
-            Me {{ sentAt }}
+            {{ sentByName | titlecase }} {{ sentAt }}
           </div>
-          <div markdown>
-            {{ message?.content }}
+          <div>
+            @if (!response) {
+              {{ message?.content }}
+            } @else {
+              @if (last) {
+                @if(message?.response?.content) {
+                  <app-typewriter
+                    [words]="[message!.response!.content]"
+                    [typeSpeed]="50"
+                  >
+                  </app-typewriter>
+                } @else {
+                    <app-typewriter
+                      [words]="['|']"
+                      [typeSpeed]="1000"
+                    >
+                    </app-typewriter>
+                }
+              }
+            }
           </div>
         </div>
       </div>

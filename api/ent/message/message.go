@@ -21,30 +21,23 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
-	// EdgeSentByAgent holds the string denoting the sent_by_agent edge name in mutations.
-	EdgeSentByAgent = "sent_by_agent"
-	// EdgeSentByUser holds the string denoting the sent_by_user edge name in mutations.
-	EdgeSentByUser = "sent_by_user"
+	// EdgeSentBy holds the string denoting the sent_by edge name in mutations.
+	EdgeSentBy = "sent_by"
 	// EdgeThread holds the string denoting the thread edge name in mutations.
 	EdgeThread = "thread"
 	// EdgeBookmarks holds the string denoting the bookmarks edge name in mutations.
 	EdgeBookmarks = "bookmarks"
+	// EdgeResponse holds the string denoting the response edge name in mutations.
+	EdgeResponse = "response"
 	// Table holds the table name of the message in the database.
 	Table = "messages"
-	// SentByAgentTable is the table that holds the sent_by_agent relation/edge.
-	SentByAgentTable = "messages"
-	// SentByAgentInverseTable is the table name for the Agent entity.
-	// It exists in this package in order to avoid circular dependency with the "agent" package.
-	SentByAgentInverseTable = "agents"
-	// SentByAgentColumn is the table column denoting the sent_by_agent relation/edge.
-	SentByAgentColumn = "agent_messages"
-	// SentByUserTable is the table that holds the sent_by_user relation/edge.
-	SentByUserTable = "messages"
-	// SentByUserInverseTable is the table name for the User entity.
+	// SentByTable is the table that holds the sent_by relation/edge.
+	SentByTable = "messages"
+	// SentByInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
-	SentByUserInverseTable = "users"
-	// SentByUserColumn is the table column denoting the sent_by_user relation/edge.
-	SentByUserColumn = "user_messages"
+	SentByInverseTable = "users"
+	// SentByColumn is the table column denoting the sent_by relation/edge.
+	SentByColumn = "user_messages"
 	// ThreadTable is the table that holds the thread relation/edge.
 	ThreadTable = "messages"
 	// ThreadInverseTable is the table name for the Thread entity.
@@ -59,6 +52,13 @@ const (
 	BookmarksInverseTable = "bookmarks"
 	// BookmarksColumn is the table column denoting the bookmarks relation/edge.
 	BookmarksColumn = "message_bookmarks"
+	// ResponseTable is the table that holds the response relation/edge.
+	ResponseTable = "responses"
+	// ResponseInverseTable is the table name for the Response entity.
+	// It exists in this package in order to avoid circular dependency with the "response" package.
+	ResponseInverseTable = "responses"
+	// ResponseColumn is the table column denoting the response relation/edge.
+	ResponseColumn = "message_response"
 )
 
 // Columns holds all SQL columns for message fields.
@@ -72,7 +72,6 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "messages"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"agent_messages",
 	"thread_messages",
 	"user_messages",
 }
@@ -124,17 +123,10 @@ func ByContent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContent, opts...).ToFunc()
 }
 
-// BySentByAgentField orders the results by sent_by_agent field.
-func BySentByAgentField(field string, opts ...sql.OrderTermOption) OrderOption {
+// BySentByField orders the results by sent_by field.
+func BySentByField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newSentByAgentStep(), sql.OrderByField(field, opts...))
-	}
-}
-
-// BySentByUserField orders the results by sent_by_user field.
-func BySentByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newSentByUserStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newSentByStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -158,18 +150,18 @@ func ByBookmarks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newBookmarksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newSentByAgentStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(SentByAgentInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, SentByAgentTable, SentByAgentColumn),
-	)
+
+// ByResponseField orders the results by response field.
+func ByResponseField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newResponseStep(), sql.OrderByField(field, opts...))
+	}
 }
-func newSentByUserStep() *sqlgraph.Step {
+func newSentByStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(SentByUserInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, SentByUserTable, SentByUserColumn),
+		sqlgraph.To(SentByInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, SentByTable, SentByColumn),
 	)
 }
 func newThreadStep() *sqlgraph.Step {
@@ -184,5 +176,12 @@ func newBookmarksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(BookmarksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, BookmarksTable, BookmarksColumn),
+	)
+}
+func newResponseStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ResponseInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ResponseTable, ResponseColumn),
 	)
 }

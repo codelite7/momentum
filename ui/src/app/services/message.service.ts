@@ -50,7 +50,7 @@ export class MessageService {
 
   async createMessage(content: string, threadID: string): Promise<MessageFragment> {
     let userId = await this.authService.userId()
-    let response = await this.graphqlService.sdk.createMessage({input: {content: content, sentByUserID: userId, threadID: threadID}})
+    let response = await this.graphqlService.sdk.createMessage({input: {content: content, sentByID: userId, threadID: threadID}})
     this.messageCreatedEmitter.emit(response.createMessage?.id)
     return response.createMessage as MessageFragment
   }

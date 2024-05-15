@@ -11,10 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -61,42 +61,15 @@ func (mu *MessageUpdate) SetNillableContent(s *string) *MessageUpdate {
 	return mu
 }
 
-// SetSentByAgentID sets the "sent_by_agent" edge to the Agent entity by ID.
-func (mu *MessageUpdate) SetSentByAgentID(id uuid.UUID) *MessageUpdate {
-	mu.mutation.SetSentByAgentID(id)
+// SetSentByID sets the "sent_by" edge to the User entity by ID.
+func (mu *MessageUpdate) SetSentByID(id uuid.UUID) *MessageUpdate {
+	mu.mutation.SetSentByID(id)
 	return mu
 }
 
-// SetNillableSentByAgentID sets the "sent_by_agent" edge to the Agent entity by ID if the given value is not nil.
-func (mu *MessageUpdate) SetNillableSentByAgentID(id *uuid.UUID) *MessageUpdate {
-	if id != nil {
-		mu = mu.SetSentByAgentID(*id)
-	}
-	return mu
-}
-
-// SetSentByAgent sets the "sent_by_agent" edge to the Agent entity.
-func (mu *MessageUpdate) SetSentByAgent(a *Agent) *MessageUpdate {
-	return mu.SetSentByAgentID(a.ID)
-}
-
-// SetSentByUserID sets the "sent_by_user" edge to the User entity by ID.
-func (mu *MessageUpdate) SetSentByUserID(id uuid.UUID) *MessageUpdate {
-	mu.mutation.SetSentByUserID(id)
-	return mu
-}
-
-// SetNillableSentByUserID sets the "sent_by_user" edge to the User entity by ID if the given value is not nil.
-func (mu *MessageUpdate) SetNillableSentByUserID(id *uuid.UUID) *MessageUpdate {
-	if id != nil {
-		mu = mu.SetSentByUserID(*id)
-	}
-	return mu
-}
-
-// SetSentByUser sets the "sent_by_user" edge to the User entity.
-func (mu *MessageUpdate) SetSentByUser(u *User) *MessageUpdate {
-	return mu.SetSentByUserID(u.ID)
+// SetSentBy sets the "sent_by" edge to the User entity.
+func (mu *MessageUpdate) SetSentBy(u *User) *MessageUpdate {
+	return mu.SetSentByID(u.ID)
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by ID.
@@ -125,20 +98,33 @@ func (mu *MessageUpdate) AddBookmarks(b ...*Bookmark) *MessageUpdate {
 	return mu.AddBookmarkIDs(ids...)
 }
 
+// SetResponseID sets the "response" edge to the Response entity by ID.
+func (mu *MessageUpdate) SetResponseID(id uuid.UUID) *MessageUpdate {
+	mu.mutation.SetResponseID(id)
+	return mu
+}
+
+// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
+func (mu *MessageUpdate) SetNillableResponseID(id *uuid.UUID) *MessageUpdate {
+	if id != nil {
+		mu = mu.SetResponseID(*id)
+	}
+	return mu
+}
+
+// SetResponse sets the "response" edge to the Response entity.
+func (mu *MessageUpdate) SetResponse(r *Response) *MessageUpdate {
+	return mu.SetResponseID(r.ID)
+}
+
 // Mutation returns the MessageMutation object of the builder.
 func (mu *MessageUpdate) Mutation() *MessageMutation {
 	return mu.mutation
 }
 
-// ClearSentByAgent clears the "sent_by_agent" edge to the Agent entity.
-func (mu *MessageUpdate) ClearSentByAgent() *MessageUpdate {
-	mu.mutation.ClearSentByAgent()
-	return mu
-}
-
-// ClearSentByUser clears the "sent_by_user" edge to the User entity.
-func (mu *MessageUpdate) ClearSentByUser() *MessageUpdate {
-	mu.mutation.ClearSentByUser()
+// ClearSentBy clears the "sent_by" edge to the User entity.
+func (mu *MessageUpdate) ClearSentBy() *MessageUpdate {
+	mu.mutation.ClearSentBy()
 	return mu
 }
 
@@ -167,6 +153,12 @@ func (mu *MessageUpdate) RemoveBookmarks(b ...*Bookmark) *MessageUpdate {
 		ids[i] = b[i].ID
 	}
 	return mu.RemoveBookmarkIDs(ids...)
+}
+
+// ClearResponse clears the "response" edge to the Response entity.
+func (mu *MessageUpdate) ClearResponse() *MessageUpdate {
+	mu.mutation.ClearResponse()
+	return mu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -198,6 +190,9 @@ func (mu *MessageUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (mu *MessageUpdate) check() error {
+	if _, ok := mu.mutation.SentByID(); mu.mutation.SentByCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Message.sent_by"`)
+	}
 	if _, ok := mu.mutation.ThreadID(); mu.mutation.ThreadCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Message.thread"`)
 	}
@@ -222,41 +217,12 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := mu.mutation.Content(); ok {
 		_spec.SetField(message.FieldContent, field.TypeString, value)
 	}
-	if mu.mutation.SentByAgentCleared() {
+	if mu.mutation.SentByCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   message.SentByAgentTable,
-			Columns: []string{message.SentByAgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := mu.mutation.SentByAgentIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByAgentTable,
-			Columns: []string{message.SentByAgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if mu.mutation.SentByUserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByUserTable,
-			Columns: []string{message.SentByUserColumn},
+			Table:   message.SentByTable,
+			Columns: []string{message.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
@@ -264,12 +230,12 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.SentByUserIDs(); len(nodes) > 0 {
+	if nodes := mu.mutation.SentByIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   message.SentByUserTable,
-			Columns: []string{message.SentByUserColumn},
+			Table:   message.SentByTable,
+			Columns: []string{message.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
@@ -354,6 +320,35 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if mu.mutation.ResponseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   message.ResponseTable,
+			Columns: []string{message.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := mu.mutation.ResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   message.ResponseTable,
+			Columns: []string{message.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, mu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{message.Label}
@@ -402,42 +397,15 @@ func (muo *MessageUpdateOne) SetNillableContent(s *string) *MessageUpdateOne {
 	return muo
 }
 
-// SetSentByAgentID sets the "sent_by_agent" edge to the Agent entity by ID.
-func (muo *MessageUpdateOne) SetSentByAgentID(id uuid.UUID) *MessageUpdateOne {
-	muo.mutation.SetSentByAgentID(id)
+// SetSentByID sets the "sent_by" edge to the User entity by ID.
+func (muo *MessageUpdateOne) SetSentByID(id uuid.UUID) *MessageUpdateOne {
+	muo.mutation.SetSentByID(id)
 	return muo
 }
 
-// SetNillableSentByAgentID sets the "sent_by_agent" edge to the Agent entity by ID if the given value is not nil.
-func (muo *MessageUpdateOne) SetNillableSentByAgentID(id *uuid.UUID) *MessageUpdateOne {
-	if id != nil {
-		muo = muo.SetSentByAgentID(*id)
-	}
-	return muo
-}
-
-// SetSentByAgent sets the "sent_by_agent" edge to the Agent entity.
-func (muo *MessageUpdateOne) SetSentByAgent(a *Agent) *MessageUpdateOne {
-	return muo.SetSentByAgentID(a.ID)
-}
-
-// SetSentByUserID sets the "sent_by_user" edge to the User entity by ID.
-func (muo *MessageUpdateOne) SetSentByUserID(id uuid.UUID) *MessageUpdateOne {
-	muo.mutation.SetSentByUserID(id)
-	return muo
-}
-
-// SetNillableSentByUserID sets the "sent_by_user" edge to the User entity by ID if the given value is not nil.
-func (muo *MessageUpdateOne) SetNillableSentByUserID(id *uuid.UUID) *MessageUpdateOne {
-	if id != nil {
-		muo = muo.SetSentByUserID(*id)
-	}
-	return muo
-}
-
-// SetSentByUser sets the "sent_by_user" edge to the User entity.
-func (muo *MessageUpdateOne) SetSentByUser(u *User) *MessageUpdateOne {
-	return muo.SetSentByUserID(u.ID)
+// SetSentBy sets the "sent_by" edge to the User entity.
+func (muo *MessageUpdateOne) SetSentBy(u *User) *MessageUpdateOne {
+	return muo.SetSentByID(u.ID)
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by ID.
@@ -466,20 +434,33 @@ func (muo *MessageUpdateOne) AddBookmarks(b ...*Bookmark) *MessageUpdateOne {
 	return muo.AddBookmarkIDs(ids...)
 }
 
+// SetResponseID sets the "response" edge to the Response entity by ID.
+func (muo *MessageUpdateOne) SetResponseID(id uuid.UUID) *MessageUpdateOne {
+	muo.mutation.SetResponseID(id)
+	return muo
+}
+
+// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
+func (muo *MessageUpdateOne) SetNillableResponseID(id *uuid.UUID) *MessageUpdateOne {
+	if id != nil {
+		muo = muo.SetResponseID(*id)
+	}
+	return muo
+}
+
+// SetResponse sets the "response" edge to the Response entity.
+func (muo *MessageUpdateOne) SetResponse(r *Response) *MessageUpdateOne {
+	return muo.SetResponseID(r.ID)
+}
+
 // Mutation returns the MessageMutation object of the builder.
 func (muo *MessageUpdateOne) Mutation() *MessageMutation {
 	return muo.mutation
 }
 
-// ClearSentByAgent clears the "sent_by_agent" edge to the Agent entity.
-func (muo *MessageUpdateOne) ClearSentByAgent() *MessageUpdateOne {
-	muo.mutation.ClearSentByAgent()
-	return muo
-}
-
-// ClearSentByUser clears the "sent_by_user" edge to the User entity.
-func (muo *MessageUpdateOne) ClearSentByUser() *MessageUpdateOne {
-	muo.mutation.ClearSentByUser()
+// ClearSentBy clears the "sent_by" edge to the User entity.
+func (muo *MessageUpdateOne) ClearSentBy() *MessageUpdateOne {
+	muo.mutation.ClearSentBy()
 	return muo
 }
 
@@ -508,6 +489,12 @@ func (muo *MessageUpdateOne) RemoveBookmarks(b ...*Bookmark) *MessageUpdateOne {
 		ids[i] = b[i].ID
 	}
 	return muo.RemoveBookmarkIDs(ids...)
+}
+
+// ClearResponse clears the "response" edge to the Response entity.
+func (muo *MessageUpdateOne) ClearResponse() *MessageUpdateOne {
+	muo.mutation.ClearResponse()
+	return muo
 }
 
 // Where appends a list predicates to the MessageUpdate builder.
@@ -552,6 +539,9 @@ func (muo *MessageUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (muo *MessageUpdateOne) check() error {
+	if _, ok := muo.mutation.SentByID(); muo.mutation.SentByCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Message.sent_by"`)
+	}
 	if _, ok := muo.mutation.ThreadID(); muo.mutation.ThreadCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Message.thread"`)
 	}
@@ -593,41 +583,12 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 	if value, ok := muo.mutation.Content(); ok {
 		_spec.SetField(message.FieldContent, field.TypeString, value)
 	}
-	if muo.mutation.SentByAgentCleared() {
+	if muo.mutation.SentByCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   message.SentByAgentTable,
-			Columns: []string{message.SentByAgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := muo.mutation.SentByAgentIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByAgentTable,
-			Columns: []string{message.SentByAgentColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if muo.mutation.SentByUserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByUserTable,
-			Columns: []string{message.SentByUserColumn},
+			Table:   message.SentByTable,
+			Columns: []string{message.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
@@ -635,12 +596,12 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.SentByUserIDs(); len(nodes) > 0 {
+	if nodes := muo.mutation.SentByIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   message.SentByUserTable,
-			Columns: []string{message.SentByUserColumn},
+			Table:   message.SentByTable,
+			Columns: []string{message.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
@@ -718,6 +679,35 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if muo.mutation.ResponseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   message.ResponseTable,
+			Columns: []string{message.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := muo.mutation.ResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   message.ResponseTable,
+			Columns: []string{message.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

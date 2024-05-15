@@ -19,21 +19,23 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldName holds the string denoting the name field in the database.
-	FieldName = "name"
+	// FieldProvider holds the string denoting the provider field in the database.
+	FieldProvider = "provider"
 	// FieldModel holds the string denoting the model field in the database.
 	FieldModel = "model"
-	// EdgeMessages holds the string denoting the messages edge name in mutations.
-	EdgeMessages = "messages"
+	// FieldAPIKey holds the string denoting the api_key field in the database.
+	FieldAPIKey = "api_key"
+	// EdgeResponses holds the string denoting the responses edge name in mutations.
+	EdgeResponses = "responses"
 	// Table holds the table name of the agent in the database.
 	Table = "agents"
-	// MessagesTable is the table that holds the messages relation/edge.
-	MessagesTable = "messages"
-	// MessagesInverseTable is the table name for the Message entity.
-	// It exists in this package in order to avoid circular dependency with the "message" package.
-	MessagesInverseTable = "messages"
-	// MessagesColumn is the table column denoting the messages relation/edge.
-	MessagesColumn = "agent_messages"
+	// ResponsesTable is the table that holds the responses relation/edge.
+	ResponsesTable = "responses"
+	// ResponsesInverseTable is the table name for the Response entity.
+	// It exists in this package in order to avoid circular dependency with the "response" package.
+	ResponsesInverseTable = "responses"
+	// ResponsesColumn is the table column denoting the responses relation/edge.
+	ResponsesColumn = "agent_responses"
 )
 
 // Columns holds all SQL columns for agent fields.
@@ -41,8 +43,9 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldName,
+	FieldProvider,
 	FieldModel,
+	FieldAPIKey,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -82,9 +85,9 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByName orders the results by the name field.
-func ByName(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldName, opts...).ToFunc()
+// ByProvider orders the results by the provider field.
+func ByProvider(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProvider, opts...).ToFunc()
 }
 
 // ByModel orders the results by the model field.
@@ -92,23 +95,28 @@ func ByModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldModel, opts...).ToFunc()
 }
 
-// ByMessagesCount orders the results by messages count.
-func ByMessagesCount(opts ...sql.OrderTermOption) OrderOption {
+// ByAPIKey orders the results by the api_key field.
+func ByAPIKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAPIKey, opts...).ToFunc()
+}
+
+// ByResponsesCount orders the results by responses count.
+func ByResponsesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newMessagesStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newResponsesStep(), opts...)
 	}
 }
 
-// ByMessages orders the results by messages terms.
-func ByMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByResponses orders the results by responses terms.
+func ByResponses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newResponsesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newMessagesStep() *sqlgraph.Step {
+func newResponsesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(MessagesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, MessagesTable, MessagesColumn),
+		sqlgraph.To(ResponsesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ResponsesTable, ResponsesColumn),
 	)
 }

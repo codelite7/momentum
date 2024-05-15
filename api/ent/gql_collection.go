@@ -13,6 +13,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -40,17 +41,17 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 
-		case "messages":
+		case "responses":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&MessageClient{config: a.config}).Query()
+				query = (&ResponseClient{config: a.config}).Query()
 			)
-			args := newMessagePaginateArgs(fieldArgs(ctx, new(MessageWhereInput), path...))
+			args := newResponsePaginateArgs(fieldArgs(ctx, new(ResponseWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
 				return fmt.Errorf("validate first and last in path %q: %w", path, err)
 			}
-			pager, err := newMessagePager(args.opts, args.last != nil)
+			pager, err := newResponsePager(args.opts, args.last != nil)
 			if err != nil {
 				return fmt.Errorf("create new pager in path %q: %w", path, err)
 			}
@@ -68,13 +69,13 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"agent_messages"`
+							NodeID uuid.UUID `sql:"agent_responses"`
 							Count  int       `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
-							s.Where(sql.InValues(s.C(agent.MessagesColumn), ids...))
+							s.Where(sql.InValues(s.C(agent.ResponsesColumn), ids...))
 						})
-						if err := query.GroupBy(agent.MessagesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+						if err := query.GroupBy(agent.ResponsesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
 						m := make(map[uuid.UUID]int, len(v))
@@ -93,7 +94,7 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				} else {
 					a.loadTotal = append(a.loadTotal, func(_ context.Context, nodes []*Agent) error {
 						for i := range nodes {
-							n := len(nodes[i].Edges.Messages)
+							n := len(nodes[i].Edges.Responses)
 							if nodes[i].Edges.totalCount[0] == nil {
 								nodes[i].Edges.totalCount[0] = make(map[string]int)
 							}
@@ -111,7 +112,7 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			}
 			path = append(path, edgesField, nodeField)
 			if field := collectedField(ctx, path...); field != nil {
-				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, messageImplementors)...); err != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, responseImplementors)...); err != nil {
 					return err
 				}
 			}
@@ -119,13 +120,13 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				if oneNode {
 					pager.applyOrder(query.Limit(limit))
 				} else {
-					modify := entgql.LimitPerRow(agent.MessagesColumn, limit, pager.orderExpr(query))
+					modify := entgql.LimitPerRow(agent.ResponsesColumn, limit, pager.orderExpr(query))
 					query.modifiers = append(query.modifiers, modify)
 				}
 			} else {
 				query = pager.applyOrder(query)
 			}
-			a.WithNamedMessages(alias, func(wq *MessageQuery) {
+			a.WithNamedResponses(alias, func(wq *ResponseQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -138,15 +139,20 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				selectedFields = append(selectedFields, agent.FieldUpdatedAt)
 				fieldSeen[agent.FieldUpdatedAt] = struct{}{}
 			}
-		case "name":
-			if _, ok := fieldSeen[agent.FieldName]; !ok {
-				selectedFields = append(selectedFields, agent.FieldName)
-				fieldSeen[agent.FieldName] = struct{}{}
+		case "provider":
+			if _, ok := fieldSeen[agent.FieldProvider]; !ok {
+				selectedFields = append(selectedFields, agent.FieldProvider)
+				fieldSeen[agent.FieldProvider] = struct{}{}
 			}
 		case "model":
 			if _, ok := fieldSeen[agent.FieldModel]; !ok {
 				selectedFields = append(selectedFields, agent.FieldModel)
 				fieldSeen[agent.FieldModel] = struct{}{}
+			}
+		case "apiKey":
+			if _, ok := fieldSeen[agent.FieldAPIKey]; !ok {
+				selectedFields = append(selectedFields, agent.FieldAPIKey)
+				fieldSeen[agent.FieldAPIKey] = struct{}{}
 			}
 		case "id":
 		case "__typename":
@@ -372,18 +378,7 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 
-		case "sentByAgent":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&AgentClient{config: m.config}).Query()
-			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, agentImplementors)...); err != nil {
-				return err
-			}
-			m.withSentByAgent = query
-
-		case "sentByUser":
+		case "sentBy":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
@@ -392,7 +387,7 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
 				return err
 			}
-			m.withSentByUser = query
+			m.withSentBy = query
 
 		case "thread":
 			var (
@@ -448,10 +443,10 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							if nodes[i].Edges.totalCount[3] == nil {
-								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[3][alias] = n
+							nodes[i].Edges.totalCount[2][alias] = n
 						}
 						return nil
 					})
@@ -459,10 +454,10 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 					m.loadTotal = append(m.loadTotal, func(_ context.Context, nodes []*Message) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Bookmarks)
-							if nodes[i].Edges.totalCount[3] == nil {
-								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[3][alias] = n
+							nodes[i].Edges.totalCount[2][alias] = n
 						}
 						return nil
 					})
@@ -493,6 +488,17 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 			m.WithNamedBookmarks(alias, func(wq *BookmarkQuery) {
 				*wq = *query
 			})
+
+		case "response":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ResponseClient{config: m.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, responseImplementors)...); err != nil {
+				return err
+			}
+			m.withResponse = query
 		case "createdAt":
 			if _, ok := fieldSeen[message.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, message.FieldCreatedAt)
@@ -573,6 +579,222 @@ func newMessagePaginateArgs(rv map[string]any) *messagePaginateArgs {
 	}
 	if v, ok := rv[whereField].(*MessageWhereInput); ok {
 		args.opts = append(args.opts, WithMessageFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (r *ResponseQuery) CollectFields(ctx context.Context, satisfies ...string) (*ResponseQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return r, nil
+	}
+	if err := r.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (r *ResponseQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(response.Columns))
+		selectedFields = []string{response.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "sentBy":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AgentClient{config: r.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, agentImplementors)...); err != nil {
+				return err
+			}
+			r.withSentBy = query
+
+		case "message":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&MessageClient{config: r.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, messageImplementors)...); err != nil {
+				return err
+			}
+			r.withMessage = query
+
+		case "bookmarks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BookmarkClient{config: r.config}).Query()
+			)
+			args := newBookmarkPaginateArgs(fieldArgs(ctx, new(BookmarkWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newBookmarkPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					r.loadTotal = append(r.loadTotal, func(ctx context.Context, nodes []*Response) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID uuid.UUID `sql:"response_bookmarks"`
+							Count  int       `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(response.BookmarksColumn), ids...))
+						})
+						if err := query.GroupBy(response.BookmarksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[uuid.UUID]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				} else {
+					r.loadTotal = append(r.loadTotal, func(_ context.Context, nodes []*Response) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Bookmarks)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, bookmarkImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(response.BookmarksColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			r.WithNamedBookmarks(alias, func(wq *BookmarkQuery) {
+				*wq = *query
+			})
+		case "createdAt":
+			if _, ok := fieldSeen[response.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, response.FieldCreatedAt)
+				fieldSeen[response.FieldCreatedAt] = struct{}{}
+			}
+		case "updatedAt":
+			if _, ok := fieldSeen[response.FieldUpdatedAt]; !ok {
+				selectedFields = append(selectedFields, response.FieldUpdatedAt)
+				fieldSeen[response.FieldUpdatedAt] = struct{}{}
+			}
+		case "content":
+			if _, ok := fieldSeen[response.FieldContent]; !ok {
+				selectedFields = append(selectedFields, response.FieldContent)
+				fieldSeen[response.FieldContent] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		r.Select(selectedFields...)
+	}
+	return nil
+}
+
+type responsePaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ResponsePaginateOption
+}
+
+func newResponsePaginateArgs(rv map[string]any) *responsePaginateArgs {
+	args := &responsePaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*ResponseOrder:
+			args.opts = append(args.opts, WithResponseOrder(v))
+		case []any:
+			var orders []*ResponseOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &ResponseOrder{Field: &ResponseOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithResponseOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*ResponseWhereInput); ok {
+		args.opts = append(args.opts, WithResponseFilter(v.Filter))
 	}
 	return args
 }

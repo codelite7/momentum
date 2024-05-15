@@ -15,6 +15,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -80,6 +81,7 @@ func checkColumn(table, column string) error {
 			agent.Table:    agent.ValidColumn,
 			bookmark.Table: bookmark.ValidColumn,
 			message.Table:  message.ValidColumn,
+			response.Table: response.ValidColumn,
 			thread.Table:   thread.ValidColumn,
 			user.Table:     user.ValidColumn,
 		})

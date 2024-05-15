@@ -11,10 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -27,10 +27,10 @@ type MessageQuery struct {
 	order              []message.OrderOption
 	inters             []Interceptor
 	predicates         []predicate.Message
-	withSentByAgent    *AgentQuery
-	withSentByUser     *UserQuery
+	withSentBy         *UserQuery
 	withThread         *ThreadQuery
 	withBookmarks      *BookmarkQuery
+	withResponse       *ResponseQuery
 	withFKs            bool
 	modifiers          []func(*sql.Selector)
 	loadTotal          []func(context.Context, []*Message) error
@@ -71,30 +71,8 @@ func (mq *MessageQuery) Order(o ...message.OrderOption) *MessageQuery {
 	return mq
 }
 
-// QuerySentByAgent chains the current query on the "sent_by_agent" edge.
-func (mq *MessageQuery) QuerySentByAgent() *AgentQuery {
-	query := (&AgentClient{config: mq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := mq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := mq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(message.Table, message.FieldID, selector),
-			sqlgraph.To(agent.Table, agent.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, message.SentByAgentTable, message.SentByAgentColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QuerySentByUser chains the current query on the "sent_by_user" edge.
-func (mq *MessageQuery) QuerySentByUser() *UserQuery {
+// QuerySentBy chains the current query on the "sent_by" edge.
+func (mq *MessageQuery) QuerySentBy() *UserQuery {
 	query := (&UserClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
@@ -107,7 +85,7 @@ func (mq *MessageQuery) QuerySentByUser() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(message.Table, message.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, message.SentByUserTable, message.SentByUserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, message.SentByTable, message.SentByColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -152,6 +130,28 @@ func (mq *MessageQuery) QueryBookmarks() *BookmarkQuery {
 			sqlgraph.From(message.Table, message.FieldID, selector),
 			sqlgraph.To(bookmark.Table, bookmark.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, message.BookmarksTable, message.BookmarksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryResponse chains the current query on the "response" edge.
+func (mq *MessageQuery) QueryResponse() *ResponseQuery {
+	query := (&ResponseClient{config: mq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, selector),
+			sqlgraph.To(response.Table, response.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, message.ResponseTable, message.ResponseColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -346,40 +346,29 @@ func (mq *MessageQuery) Clone() *MessageQuery {
 		return nil
 	}
 	return &MessageQuery{
-		config:          mq.config,
-		ctx:             mq.ctx.Clone(),
-		order:           append([]message.OrderOption{}, mq.order...),
-		inters:          append([]Interceptor{}, mq.inters...),
-		predicates:      append([]predicate.Message{}, mq.predicates...),
-		withSentByAgent: mq.withSentByAgent.Clone(),
-		withSentByUser:  mq.withSentByUser.Clone(),
-		withThread:      mq.withThread.Clone(),
-		withBookmarks:   mq.withBookmarks.Clone(),
+		config:        mq.config,
+		ctx:           mq.ctx.Clone(),
+		order:         append([]message.OrderOption{}, mq.order...),
+		inters:        append([]Interceptor{}, mq.inters...),
+		predicates:    append([]predicate.Message{}, mq.predicates...),
+		withSentBy:    mq.withSentBy.Clone(),
+		withThread:    mq.withThread.Clone(),
+		withBookmarks: mq.withBookmarks.Clone(),
+		withResponse:  mq.withResponse.Clone(),
 		// clone intermediate query.
 		sql:  mq.sql.Clone(),
 		path: mq.path,
 	}
 }
 
-// WithSentByAgent tells the query-builder to eager-load the nodes that are connected to
-// the "sent_by_agent" edge. The optional arguments are used to configure the query builder of the edge.
-func (mq *MessageQuery) WithSentByAgent(opts ...func(*AgentQuery)) *MessageQuery {
-	query := (&AgentClient{config: mq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	mq.withSentByAgent = query
-	return mq
-}
-
-// WithSentByUser tells the query-builder to eager-load the nodes that are connected to
-// the "sent_by_user" edge. The optional arguments are used to configure the query builder of the edge.
-func (mq *MessageQuery) WithSentByUser(opts ...func(*UserQuery)) *MessageQuery {
+// WithSentBy tells the query-builder to eager-load the nodes that are connected to
+// the "sent_by" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithSentBy(opts ...func(*UserQuery)) *MessageQuery {
 	query := (&UserClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	mq.withSentByUser = query
+	mq.withSentBy = query
 	return mq
 }
 
@@ -402,6 +391,17 @@ func (mq *MessageQuery) WithBookmarks(opts ...func(*BookmarkQuery)) *MessageQuer
 		opt(query)
 	}
 	mq.withBookmarks = query
+	return mq
+}
+
+// WithResponse tells the query-builder to eager-load the nodes that are connected to
+// the "response" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithResponse(opts ...func(*ResponseQuery)) *MessageQuery {
+	query := (&ResponseClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withResponse = query
 	return mq
 }
 
@@ -485,13 +485,13 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 		withFKs     = mq.withFKs
 		_spec       = mq.querySpec()
 		loadedTypes = [4]bool{
-			mq.withSentByAgent != nil,
-			mq.withSentByUser != nil,
+			mq.withSentBy != nil,
 			mq.withThread != nil,
 			mq.withBookmarks != nil,
+			mq.withResponse != nil,
 		}
 	)
-	if mq.withSentByAgent != nil || mq.withSentByUser != nil || mq.withThread != nil {
+	if mq.withSentBy != nil || mq.withThread != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -518,15 +518,9 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := mq.withSentByAgent; query != nil {
-		if err := mq.loadSentByAgent(ctx, query, nodes, nil,
-			func(n *Message, e *Agent) { n.Edges.SentByAgent = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := mq.withSentByUser; query != nil {
-		if err := mq.loadSentByUser(ctx, query, nodes, nil,
-			func(n *Message, e *User) { n.Edges.SentByUser = e }); err != nil {
+	if query := mq.withSentBy; query != nil {
+		if err := mq.loadSentBy(ctx, query, nodes, nil,
+			func(n *Message, e *User) { n.Edges.SentBy = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -540,6 +534,12 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 		if err := mq.loadBookmarks(ctx, query, nodes,
 			func(n *Message) { n.Edges.Bookmarks = []*Bookmark{} },
 			func(n *Message, e *Bookmark) { n.Edges.Bookmarks = append(n.Edges.Bookmarks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := mq.withResponse; query != nil {
+		if err := mq.loadResponse(ctx, query, nodes, nil,
+			func(n *Message, e *Response) { n.Edges.Response = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -558,39 +558,7 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 	return nodes, nil
 }
 
-func (mq *MessageQuery) loadSentByAgent(ctx context.Context, query *AgentQuery, nodes []*Message, init func(*Message), assign func(*Message, *Agent)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Message)
-	for i := range nodes {
-		if nodes[i].agent_messages == nil {
-			continue
-		}
-		fk := *nodes[i].agent_messages
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(agent.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "agent_messages" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
-func (mq *MessageQuery) loadSentByUser(ctx context.Context, query *UserQuery, nodes []*Message, init func(*Message), assign func(*Message, *User)) error {
+func (mq *MessageQuery) loadSentBy(ctx context.Context, query *UserQuery, nodes []*Message, init func(*Message), assign func(*Message, *User)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Message)
 	for i := range nodes {
@@ -680,6 +648,34 @@ func (mq *MessageQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery,
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "message_bookmarks" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (mq *MessageQuery) loadResponse(ctx context.Context, query *ResponseQuery, nodes []*Message, init func(*Message), assign func(*Message, *Response)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Message)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.Response(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(message.ResponseColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.message_response
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "message_response" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "message_response" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

@@ -8,25 +8,25 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (a *Agent) Messages(
-	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*MessageOrder, where *MessageWhereInput,
-) (*MessageConnection, error) {
-	opts := []MessagePaginateOption{
-		WithMessageOrder(orderBy),
-		WithMessageFilter(where.Filter),
+func (a *Agent) Responses(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ResponseOrder, where *ResponseWhereInput,
+) (*ResponseConnection, error) {
+	opts := []ResponsePaginateOption{
+		WithResponseOrder(orderBy),
+		WithResponseFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
 	totalCount, hasTotalCount := a.Edges.totalCount[0][alias]
-	if nodes, err := a.NamedMessages(alias); err == nil || hasTotalCount {
-		pager, err := newMessagePager(opts, last != nil)
+	if nodes, err := a.NamedResponses(alias); err == nil || hasTotalCount {
+		pager, err := newResponsePager(opts, last != nil)
 		if err != nil {
 			return nil, err
 		}
-		conn := &MessageConnection{Edges: []*MessageEdge{}, TotalCount: totalCount}
+		conn := &ResponseConnection{Edges: []*ResponseEdge{}, TotalCount: totalCount}
 		conn.build(nodes, pager, after, first, before, last)
 		return conn, nil
 	}
-	return a.QueryMessages().Paginate(ctx, after, first, before, last, opts...)
+	return a.QueryResponses().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (b *Bookmark) User(ctx context.Context) (*User, error) {
@@ -53,20 +53,12 @@ func (b *Bookmark) Message(ctx context.Context) (*Message, error) {
 	return result, MaskNotFound(err)
 }
 
-func (m *Message) SentByAgent(ctx context.Context) (*Agent, error) {
-	result, err := m.Edges.SentByAgentOrErr()
+func (m *Message) SentBy(ctx context.Context) (*User, error) {
+	result, err := m.Edges.SentByOrErr()
 	if IsNotLoaded(err) {
-		result, err = m.QuerySentByAgent().Only(ctx)
+		result, err = m.QuerySentBy().Only(ctx)
 	}
-	return result, MaskNotFound(err)
-}
-
-func (m *Message) SentByUser(ctx context.Context) (*User, error) {
-	result, err := m.Edges.SentByUserOrErr()
-	if IsNotLoaded(err) {
-		result, err = m.QuerySentByUser().Only(ctx)
-	}
-	return result, MaskNotFound(err)
+	return result, err
 }
 
 func (m *Message) Thread(ctx context.Context) (*Thread, error) {
@@ -85,7 +77,7 @@ func (m *Message) Bookmarks(
 		WithBookmarkFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := m.Edges.totalCount[3][alias]
+	totalCount, hasTotalCount := m.Edges.totalCount[2][alias]
 	if nodes, err := m.NamedBookmarks(alias); err == nil || hasTotalCount {
 		pager, err := newBookmarkPager(opts, last != nil)
 		if err != nil {
@@ -96,6 +88,51 @@ func (m *Message) Bookmarks(
 		return conn, nil
 	}
 	return m.QueryBookmarks().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (m *Message) Response(ctx context.Context) (*Response, error) {
+	result, err := m.Edges.ResponseOrErr()
+	if IsNotLoaded(err) {
+		result, err = m.QueryResponse().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (r *Response) SentBy(ctx context.Context) (*Agent, error) {
+	result, err := r.Edges.SentByOrErr()
+	if IsNotLoaded(err) {
+		result, err = r.QuerySentBy().Only(ctx)
+	}
+	return result, err
+}
+
+func (r *Response) Message(ctx context.Context) (*Message, error) {
+	result, err := r.Edges.MessageOrErr()
+	if IsNotLoaded(err) {
+		result, err = r.QueryMessage().Only(ctx)
+	}
+	return result, err
+}
+
+func (r *Response) Bookmarks(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BookmarkOrder, where *BookmarkWhereInput,
+) (*BookmarkConnection, error) {
+	opts := []BookmarkPaginateOption{
+		WithBookmarkOrder(orderBy),
+		WithBookmarkFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := r.Edges.totalCount[2][alias]
+	if nodes, err := r.NamedBookmarks(alias); err == nil || hasTotalCount {
+		pager, err := newBookmarkPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &BookmarkConnection{Edges: []*BookmarkEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return r.QueryBookmarks().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (t *Thread) CreatedBy(ctx context.Context) (*User, error) {

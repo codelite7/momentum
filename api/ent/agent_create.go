@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
-	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/google/uuid"
 )
 
@@ -50,15 +50,21 @@ func (ac *AgentCreate) SetNillableUpdatedAt(t *time.Time) *AgentCreate {
 	return ac
 }
 
-// SetName sets the "name" field.
-func (ac *AgentCreate) SetName(s string) *AgentCreate {
-	ac.mutation.SetName(s)
+// SetProvider sets the "provider" field.
+func (ac *AgentCreate) SetProvider(s string) *AgentCreate {
+	ac.mutation.SetProvider(s)
 	return ac
 }
 
 // SetModel sets the "model" field.
 func (ac *AgentCreate) SetModel(s string) *AgentCreate {
 	ac.mutation.SetModel(s)
+	return ac
+}
+
+// SetAPIKey sets the "api_key" field.
+func (ac *AgentCreate) SetAPIKey(s string) *AgentCreate {
+	ac.mutation.SetAPIKey(s)
 	return ac
 }
 
@@ -76,19 +82,19 @@ func (ac *AgentCreate) SetNillableID(u *uuid.UUID) *AgentCreate {
 	return ac
 }
 
-// AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (ac *AgentCreate) AddMessageIDs(ids ...uuid.UUID) *AgentCreate {
-	ac.mutation.AddMessageIDs(ids...)
+// AddResponseIDs adds the "responses" edge to the Response entity by IDs.
+func (ac *AgentCreate) AddResponseIDs(ids ...uuid.UUID) *AgentCreate {
+	ac.mutation.AddResponseIDs(ids...)
 	return ac
 }
 
-// AddMessages adds the "messages" edges to the Message entity.
-func (ac *AgentCreate) AddMessages(m ...*Message) *AgentCreate {
-	ids := make([]uuid.UUID, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// AddResponses adds the "responses" edges to the Response entity.
+func (ac *AgentCreate) AddResponses(r ...*Response) *AgentCreate {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return ac.AddMessageIDs(ids...)
+	return ac.AddResponseIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -148,11 +154,14 @@ func (ac *AgentCreate) check() error {
 	if _, ok := ac.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Agent.updated_at"`)}
 	}
-	if _, ok := ac.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Agent.name"`)}
+	if _, ok := ac.mutation.Provider(); !ok {
+		return &ValidationError{Name: "provider", err: errors.New(`ent: missing required field "Agent.provider"`)}
 	}
 	if _, ok := ac.mutation.Model(); !ok {
 		return &ValidationError{Name: "model", err: errors.New(`ent: missing required field "Agent.model"`)}
+	}
+	if _, ok := ac.mutation.APIKey(); !ok {
+		return &ValidationError{Name: "api_key", err: errors.New(`ent: missing required field "Agent.api_key"`)}
 	}
 	return nil
 }
@@ -197,23 +206,27 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 		_spec.SetField(agent.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := ac.mutation.Name(); ok {
-		_spec.SetField(agent.FieldName, field.TypeString, value)
-		_node.Name = value
+	if value, ok := ac.mutation.Provider(); ok {
+		_spec.SetField(agent.FieldProvider, field.TypeString, value)
+		_node.Provider = value
 	}
 	if value, ok := ac.mutation.Model(); ok {
 		_spec.SetField(agent.FieldModel, field.TypeString, value)
 		_node.Model = value
 	}
-	if nodes := ac.mutation.MessagesIDs(); len(nodes) > 0 {
+	if value, ok := ac.mutation.APIKey(); ok {
+		_spec.SetField(agent.FieldAPIKey, field.TypeString, value)
+		_node.APIKey = value
+	}
+	if nodes := ac.mutation.ResponsesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   agent.MessagesTable,
-			Columns: []string{agent.MessagesColumn},
+			Table:   agent.ResponsesTable,
+			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

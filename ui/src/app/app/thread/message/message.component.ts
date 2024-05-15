@@ -1,6 +1,6 @@
-import { Component, inject, Input } from '@angular/core'
+import { Component, ElementRef, inject, Input, ViewChild } from '@angular/core'
 import { AvatarModule } from 'primeng/avatar'
-import { DatePipe } from '@angular/common'
+import { DatePipe, TitleCasePipe, UpperCasePipe, ViewportScroller } from '@angular/common'
 import { AuthService } from '../../../auth.service'
 import { UserAvatarComponent } from '../../common/user-avatar/user-avatar.component'
 import { CardModule } from 'primeng/card'
@@ -14,6 +14,8 @@ import { Subscription } from 'rxjs'
 import { ThreadService } from '../../../services/thread.service'
 import { Router } from '@angular/router'
 import { MarkdownComponent, MarkdownModule } from 'ngx-markdown'
+import { AgentAvatarComponent } from '../../common/agent-avatar/agent-avatar.component'
+import { TypewriterComponent } from '../../common/typewriter/typewriter.component'
 
 @Component({
   selector: 'app-message',
@@ -27,13 +29,21 @@ import { MarkdownComponent, MarkdownModule } from 'ngx-markdown'
     TooltipModule,
     CdkCopyToClipboard,
     MarkdownModule,
+    UpperCasePipe,
+    TitleCasePipe,
+    AgentAvatarComponent,
+    TypewriterComponent
   ],
   templateUrl: './message.component.html',
   styleUrl: './message.component.css'
 })
 export class MessageComponent {
   @Input() message: ThreadMessageFragment | undefined
+  @Input() response: boolean = false;
   @Input() threadId?: string = ''
+  @Input() last: boolean = false;
+  // @ts-ignore
+  @ViewChild('stuff') stuff:ElementRef;
   bookmark: BookmarkFragment | undefined
   authService: AuthService = inject(AuthService)
   bookmarkService: BookmarkService = inject(BookmarkService)
@@ -43,7 +53,13 @@ export class MessageComponent {
   email: string = ''
   hover: boolean = false
   bookmarkDeletedSubscription?: Subscription
+
   async ngOnInit(): Promise<void> {
+    if (!this.message?.response?.content) {
+      setTimeout(() => {
+        this.message!.response!.content = "Some ai response"
+      }, 5000)
+    }
     this.email = await this.authService.email()
     if (this.message && this.message.bookmarks.edges && this.message.bookmarks.edges.length > 0) {
       this.bookmark = this.message.bookmarks.edges[0]?.node as BookmarkFragment
@@ -64,6 +80,13 @@ export class MessageComponent {
       return createdAtDate.toLocaleDateString()
     }
     return ''
+  }
+
+  get sentByName(): string {
+    if (!this.response) {
+      return 'me'
+    }
+    return `${this.message?.response?.sentBy.provider}`
   }
 
   wasSentToday(): boolean {
@@ -107,5 +130,12 @@ export class MessageComponent {
       this.toastService.error(`${e}`)
       console.error(e)
     }
+  }
+
+  get typewriterWords(): string[] {
+    if (this.message?.response?.content) {
+      return [this.message?.response?.content]
+    }
+    return []
   }
 }

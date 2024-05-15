@@ -1,6 +1,8 @@
 module github.com/codelite7/momentum/api
 
-go 1.21.0
+go 1.21.4
+
+toolchain go1.22.1
 
 require (
 	entgo.io/contrib v0.5.0
@@ -12,6 +14,8 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/labstack/echo/v4 v4.12.0
+	github.com/riverqueue/river v0.6.0
+	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.6.0
 	github.com/samber/lo v1.39.0
 	github.com/supertokens/supertokens-golang v0.18.0
 	github.com/urfave/cli/v2 v2.27.2
@@ -49,6 +53,8 @@ require (
 	github.com/nyaruka/phonenumbers v1.0.73 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/riverqueue/river/riverdriver v0.6.0 // indirect
+	github.com/riverqueue/river/rivertype v0.6.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sosodev/duration v1.2.0 // indirect
@@ -62,9 +68,9 @@ require (
 	github.com/zclconf/go-cty v1.8.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/exp v0.0.0-20221230185412-738e83a70c30 // indirect
-	golang.org/x/mod v0.16.0 // indirect
+	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect

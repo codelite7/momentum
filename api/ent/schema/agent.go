@@ -19,15 +19,15 @@ func (Agent) Mixin() []ent.Mixin {
 
 func (Agent) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name").Annotations(entgql.OrderField("NAME")),
-		// TODO: model enum?
+		field.String("provider").Annotations(entgql.OrderField("PROVIDER")),
 		field.String("model").Annotations(entgql.OrderField("MODEL")),
+		field.String("api_key"),
 	}
 }
 
 func (Agent) Edges() []ent.Edge {
 	return []ent.Edge{
-		// an agent can send many messages
-		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection()),
+		// an agent can respond to many messages
+		edge.To("responses", Response.Type).Annotations(entgql.RelayConnection()),
 	}
 }

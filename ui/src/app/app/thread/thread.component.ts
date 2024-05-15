@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, Input, ViewChild } from '@angular/core'
+import { ChangeDetectorRef, Component, ElementRef, inject, Input, ViewChild } from '@angular/core'
 import { ThreadService } from '../../services/thread.service'
 import { ToastService } from '../../services/toast.service'
 import { BaseComponent } from '../base/base.component'
@@ -17,7 +17,7 @@ import {
   OrderDirection,
   ThreadFragment, ThreadMessageFragment,
 } from '../../../../graphql/generated'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 
@@ -55,7 +55,6 @@ export class ThreadComponent {
   })
 
   constructor(private route: ActivatedRoute) {}
-
   async ngOnInit() {
     this.route.paramMap.subscribe(
       (async (params) => {
