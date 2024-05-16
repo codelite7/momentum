@@ -48,7 +48,7 @@
                 @if(message?.response?.content) {
                   <app-typewriter
                     [words]="[message?.response?.content ?? '']"
-                    [typeSpeed]="10"
+                    [typeSpeed]="getTypeSpeed()"
                   >
                   </app-typewriter>
                 } @else {

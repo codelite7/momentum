@@ -10,6 +10,7 @@ import { canActivateSignInGuard } from './guards/can-activate-sign-in.guard'
 import { HomeComponent } from './app/home/home.component'
 import { ThreadComponent } from './app/thread/thread.component'
 import { SignupComponent } from './auth/signup/signup.component'
+import { NewComponent } from './app/thread/new/new.component'
 
 export const routes: Routes = [
   {
@@ -47,7 +48,8 @@ export const routes: Routes = [
     children: [
       {path: '', pathMatch: 'full', redirectTo: 'home'},
       {path: 'home', component: HomeComponent},
-      {path: 'thread/:id', component: ThreadComponent}
+      {path: 'thread/new', component: NewComponent, pathMatch: 'full'},
+      {path: 'thread/:id', component: ThreadComponent, pathMatch: 'full'}
     ]
   },
   {path: '**', redirectTo: 'notfound'},

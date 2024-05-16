@@ -135,4 +135,22 @@ export class MessageComponent {
     }
     return []
   }
+
+  getTypeSpeed(): number {
+    return 10
+    // let length = this.message?.response?.content?.length
+    // if (length) {
+    //   // we want the total time to be 1 second regardless of size so we divide the content length by 1000 to get
+    //   // the type rate
+    //   let rate = length / 1000
+    //   console.log(`length: ${length}, rate: ${rate}`)
+    //   console.log(`rate: ${rate}`)
+    //   // if (rate < 0) {
+    //   //   return 1
+    //   // }
+    //   return rate
+    // }
+    // // default to 10
+    // return 10
+  }
 }
