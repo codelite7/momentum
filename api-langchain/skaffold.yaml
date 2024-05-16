@@ -2,7 +2,7 @@ apiVersion: skaffold/v2beta25
 kind: Config
 build:
   artifacts:
-    - image: api
+    - image: api-langchain
       custom:
         buildCommand: >
           DOCKER_BUILDKIT=1
@@ -16,13 +16,13 @@ build:
 deploy:
   helm:
     releases:
-      - name: api
+      - name: api-langchain
         namespace: api
         createNamespace: true
         chartPath: ./chart
         version: '>=1.0.0'
         artifactOverrides:
-          image: api
+          image: api-langchain
         imageStrategy:
           helm: {}
         valuesFiles:
@@ -35,7 +35,7 @@ profiles:
       - env: SKAFFOLD_ACTIONS=true
     build:
       artifacts:
-        - image: api
+        - image: api-langchain
           custom:
             buildCommand: >
               docker buildx build

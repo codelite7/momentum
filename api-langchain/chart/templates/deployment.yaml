@@ -36,36 +36,15 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PORT
+              value: {{ .Values.service.port | quote }}
+            - name: PERPLEXITY_API_KEY
+              value: {{ .Values.perplexity.apiKey }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          command:
-            - /main
-            - run
-          env:
-            - name: POSTGRES_URI
-              value: {{ .Values.app.postgresql.uri }}
-            - name: PORT
-              value: {{ .Values.service.port | quote }}
-            - name: SUPERTOKENS_URI
-              value: {{ .Values.supertokens.uri }}
-            - name: SUPERTOKENS_API_KEY
-              value: {{ .Values.supertokens.apiKey }}
-            - name: SUPERTOKENS_API_DOMAIN
-              value: {{ .Values.supertokens.apiDomain }}
-            - name: SUPERTOKENS_WEBSITE_DOMAIN
-              value: {{ .Values.supertokens.websiteDomain }}
-            - name: SUPERTOKENS_API_BASE_PATH
-              value: {{ .Values.supertokens.apiBasePath }}
-            - name: SUPERTOKENS_WEBSITE_BASE_PATH
-              value: {{ .Values.supertokens.websiteBasePath }}
-            - name: SUPERTOKENS_GOOGLE_CLIENT_ID
-              value: {{ .Values.supertokens.google.clientId }}
-            - name: SUPERTOKENS_GOOGLE_CLIENT_SECRET
-              value: {{ .Values.supertokens.google.clientSecret }}
-            - name: DEFAULT_AGENTS
-              value: {{ .Values.defaultAgents | quote }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:

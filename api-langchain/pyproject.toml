@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "api-langchain"
+version = "0.1.0"
+description = ""
+authors = ["Zack Stevens <zack.st7@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pyramid = "^2.0.2"
+langchain = "^0.1.20"
+openai = "^1.29.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

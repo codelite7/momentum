@@ -41,7 +41,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 3000
+  port: 6543
 
 ingress:
   enabled: false
@@ -105,23 +105,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-app:
-  postgresql:
-    uri: "postgres://postgres:postgres@api-postgresql:5432/postgres?sslmode=disable"
-bitnamiPostgres:
-  enabled: true
-postgresql:
-  auth:
-    postgresPassword: postgres
-supertokens:
-  uri: 'https://st-dev-7aa2ca90-0811-11ef-931c-a15363b6a96e.aws.supertokens.io'
+perplexity:
   apiKey: ''
-  apiDomain: 'http://localhost:3000'
-  websiteDomain: 'http://localhost:4200'
-  apiBasePath: '/auth'
-  websiteBasePath: '/auth'
-  google:
-    clientId: ''
-    clientSecret: ''
-defaultAgents: '[{"provider":"perplexity","model":"llama-3-sonar-large-32k-online","api_key":""}]'
