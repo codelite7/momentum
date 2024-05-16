@@ -4,14 +4,15 @@ import { LeftSidebarThreadsComponent } from './left-sidebar-threads/left-sidebar
 import { ThreadService } from '../../services/thread.service'
 import { ToastService } from '../../services/toast.service'
 import { LeftSidebarThreadsService } from '../../services/left-sidebar-threads.service'
-import { Router } from '@angular/router'
+import { Router, RouterLink } from '@angular/router'
 
 @Component({
   selector: 'app-left-sidebar',
   standalone: true,
   imports: [
     ButtonModule,
-    LeftSidebarThreadsComponent
+    LeftSidebarThreadsComponent,
+    RouterLink
   ],
   templateUrl: './left-sidebar.component.html',
   styleUrl: './left-sidebar.component.css'

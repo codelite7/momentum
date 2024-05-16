@@ -7,8 +7,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"github.com/codelite7/momentum/api/common"
 
-	gofakeit "github.com/brianvoe/gofakeit/v6"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/google/uuid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -21,7 +21,11 @@ func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThr
 		return nil, gqlerror.Errorf(err.Error())
 	}
 	input.CreatedByID = userUuid
-	input.Name = gofakeit.BeerName()
+	threadName, err := common.GetThreadName(input.Name)
+	if err != nil {
+		return nil, gqlerror.Errorf(err.Error())
+	}
+	input.Name = threadName
 	return ent.FromContext(ctx).Thread.Create().SetInput(input).Save(ctx)
 }
 

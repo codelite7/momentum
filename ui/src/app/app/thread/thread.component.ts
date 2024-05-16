@@ -94,7 +94,6 @@ export class ThreadComponent {
   messageInputDisabled = computed(() => {
     return this.loading() || (this.numMessages() > 0 && !this.lastMessageHasResponse())
   })
-  home: MenuItem = { icon: 'pi pi-home', routerLink: '/' }
   promptForm: FormGroup = new FormGroup<any>({
     prompt: new FormControl({value: '', disabled: true}, [Validators.required]),
   })

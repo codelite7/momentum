@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -9,6 +10,14 @@ import (
 	"github.com/google/uuid"
 	"time"
 )
+
+func GetThreadName(messageContent string) (string, error) {
+	prompt := fmt.Sprintf("Provide a concise 3 word summary of the following text:%s", messageContent)
+	return Prompt([]*ChatMessage{&ChatMessage{
+		Type: "human",
+		Data: ChatMessageData{Content: prompt},
+	}})
+}
 
 func Prompt(chatMessages []*ChatMessage) (string, error) {
 	client := resty.New()
