@@ -22,6 +22,12 @@ fragment Bookmark on Bookmark {
     createdAt
     updatedAt
     content
+    thread {
+      id
+      createdAt
+      updatedAt
+      name
+    }
   }
 }
 `

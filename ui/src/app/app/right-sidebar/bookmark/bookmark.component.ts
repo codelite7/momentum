@@ -27,12 +27,17 @@ export class BookmarkComponent {
   ngOnInit() {
   }
 
-  navigate() {
-    // if (this.bookmark?.message) {
-    //   this.router.navigate([`app/thread/${this.bookmark?.message.thread.edges[0].node.id}/message/${this.bookmark.node.message.id}`])
-    // } else if (this.bookmark.node.thread) {
-    //   this.router.navigate([`app/thread/${this.bookmark.node.thread.id}`])
-    // }
+  async navigate() {
+    try {
+      if (this.bookmark?.message) {
+        await this.router.navigate([`app/thread/${this.bookmark?.message.thread.id}`])
+      } else if (this.bookmark?.thread) {
+        await this.router.navigate([`app/thread/${this.bookmark.thread.id}`])
+      }
+    } catch(e) {
+      this.toastService.generalError()
+      console.error(e)
+    }
   }
 
   async removeBookmark() {
