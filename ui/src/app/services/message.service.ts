@@ -8,7 +8,7 @@ import {
   MessageFragment,
   MessageQuery,
   MessagesQuery,
-  MessagesQueryVariables,
+  MessagesQueryVariables, MostRecentMessageQueryVariables,
   ThreadFragment,
   ThreadMessageFragment,
   ThreadMessageQueryVariables,
@@ -69,6 +69,18 @@ export class MessageService {
   async threadMessage(vars: ThreadMessageQueryVariables): Promise<ThreadMessageFragment | undefined> {
     vars.userId = await this.authService.userId()
     let response =  await this.graphqlService.sdk.threadMessage(vars)
+    if (response.messages.edges && response.messages.edges.length == 1) {
+      let message = response.messages.edges.pop()
+      if (message && message.node) {
+        return message.node as ThreadMessageFragment
+      }
+    }
+    return undefined
+  }
+
+  async mostRecentMessage(vars: MostRecentMessageQueryVariables): Promise<ThreadMessageFragment | undefined> {
+    vars.userId = await this.authService.userId()
+    let response = await this.graphqlService.sdk.mostRecentMessage(vars)
     if (response.messages.edges && response.messages.edges.length == 1) {
       let message = response.messages.edges.pop()
       if (message && message.node) {

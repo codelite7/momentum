@@ -5,6 +5,11 @@ fragment ThreadMessage on Message {
   createdAt
   updatedAt
   content
+  thread {
+    id
+    createdAt
+    updatedAt
+  }
   sentBy {
     id
     createdAt
@@ -151,3 +156,14 @@ query threadMessage($id:ID!,$userId:ID!) {
   }
 }
 `
+
+export const mostRecentMessage = gql`
+query mostRecentMessage($userId:ID!) {
+  messages(first:1, orderBy:[{field:CREATED_AT, direction:DESC}]) {
+    edges {
+      node {
+        ...ThreadMessage
+      }
+    }
+  }
+}`

@@ -293,7 +293,7 @@ export type CreateMessageInput = {
  */
 export type CreateResponseInput = {
   bookmarkIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
-  content: Scalars['String']['input'];
+  content?: InputMaybe<Scalars['String']['input']>;
   createdAt?: InputMaybe<Scalars['Time']['input']>;
   messageID: Scalars['ID']['input'];
   sentByID: Scalars['ID']['input'];
@@ -607,7 +607,7 @@ export type QueryUsersArgs = {
 export type Response = Node & {
   __typename?: 'Response';
   bookmarks: BookmarkConnection;
-  content: Scalars['String']['output'];
+  content?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Time']['output'];
   id: Scalars['ID']['output'];
   message: Message;
@@ -675,10 +675,12 @@ export type ResponseWhereInput = {
   contentHasPrefix?: InputMaybe<Scalars['String']['input']>;
   contentHasSuffix?: InputMaybe<Scalars['String']['input']>;
   contentIn?: InputMaybe<Array<Scalars['String']['input']>>;
+  contentIsNil?: InputMaybe<Scalars['Boolean']['input']>;
   contentLT?: InputMaybe<Scalars['String']['input']>;
   contentLTE?: InputMaybe<Scalars['String']['input']>;
   contentNEQ?: InputMaybe<Scalars['String']['input']>;
   contentNotIn?: InputMaybe<Array<Scalars['String']['input']>>;
+  contentNotNil?: InputMaybe<Scalars['Boolean']['input']>;
   /** created_at field predicates */
   createdAt?: InputMaybe<Scalars['Time']['input']>;
   createdAtGT?: InputMaybe<Scalars['Time']['input']>;
@@ -913,6 +915,7 @@ export type UpdateMessageInput = {
 export type UpdateResponseInput = {
   addBookmarkIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
   clearBookmarks?: InputMaybe<Scalars['Boolean']['input']>;
+  clearContent?: InputMaybe<Scalars['Boolean']['input']>;
   content?: InputMaybe<Scalars['String']['input']>;
   messageID?: InputMaybe<Scalars['ID']['input']>;
   removeBookmarkIDs?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -1130,9 +1133,9 @@ export type DeleteBookmarkMutationVariables = Exact<{
 
 export type DeleteBookmarkMutation = { __typename?: 'Mutation', deleteBookmark: boolean };
 
-export type ThreadMessageFragment = { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string } | null } | null } | null> | null } };
+export type ThreadMessageFragment = { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any }, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string } | null } | null } | null> | null } };
 
-export type MessageFragment = { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null };
+export type MessageFragment = { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null };
 
 export type MessagesQueryVariables = Exact<{
   after?: InputMaybe<Scalars['Cursor']['input']>;
@@ -1144,14 +1147,14 @@ export type MessagesQueryVariables = Exact<{
 }>;
 
 
-export type MessagesQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null } | null } | null> | null } };
+export type MessagesQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null } | null } | null> | null } };
 
 export type MessageQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type MessageQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', edges?: Array<{ __typename?: 'MessageEdge', node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null } | null } | null> | null } };
+export type MessageQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', edges?: Array<{ __typename?: 'MessageEdge', node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null } | null } | null> | null } };
 
 export type CreateMessageMutationVariables = Exact<{
   input: CreateMessageInput;
@@ -1171,7 +1174,7 @@ export type ThreadMessagesQueryVariables = Exact<{
 }>;
 
 
-export type ThreadMessagesQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string } | null } | null } | null> | null } } | null } | null> | null } };
+export type ThreadMessagesQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any }, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string } | null } | null } | null> | null } } | null } | null> | null } };
 
 export type ThreadMessageQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1179,7 +1182,14 @@ export type ThreadMessageQueryVariables = Exact<{
 }>;
 
 
-export type ThreadMessageQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content: string, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string } | null } | null } | null> | null } } | null } | null> | null } };
+export type ThreadMessageQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any }, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string } | null } | null } | null> | null } } | null } | null> | null } };
+
+export type MostRecentMessageQueryVariables = Exact<{
+  userId: Scalars['ID']['input'];
+}>;
+
+
+export type MostRecentMessageQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', edges?: Array<{ __typename?: 'MessageEdge', node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any }, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string } | null } | null } | null> | null } } | null } | null> | null } };
 
 export type ThreadFragment = { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string, parent?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, children: { __typename?: 'ThreadConnection', edges?: Array<{ __typename?: 'ThreadEdge', node?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null } | null> | null } };
 
@@ -1240,6 +1250,11 @@ export const ThreadMessageFragmentDoc = gql`
   createdAt
   updatedAt
   content
+  thread {
+    id
+    createdAt
+    updatedAt
+  }
   sentBy {
     id
     createdAt
@@ -1453,6 +1468,17 @@ export const ThreadMessageDocument = gql`
   }
 }
     ${ThreadMessageFragmentDoc}`;
+export const MostRecentMessageDocument = gql`
+    query mostRecentMessage($userId: ID!) {
+  messages(first: 1, orderBy: [{field: CREATED_AT, direction: DESC}]) {
+    edges {
+      node {
+        ...ThreadMessage
+      }
+    }
+  }
+}
+    ${ThreadMessageFragmentDoc}`;
 export const ThreadsDocument = gql`
     query threads($after: Cursor, $first: Int, $before: Cursor, $last: Int, $orderBy: [ThreadOrder!], $where: ThreadWhereInput) {
   threads(
@@ -1531,6 +1557,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     threadMessage(variables: ThreadMessageQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<ThreadMessageQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ThreadMessageQuery>(ThreadMessageDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'threadMessage', 'query', variables);
+    },
+    mostRecentMessage(variables: MostRecentMessageQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<MostRecentMessageQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<MostRecentMessageQuery>(MostRecentMessageDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'mostRecentMessage', 'query', variables);
     },
     threads(variables?: ThreadsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<ThreadsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ThreadsQuery>(ThreadsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'threads', 'query', variables);

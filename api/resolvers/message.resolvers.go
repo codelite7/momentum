@@ -6,156 +6,62 @@ package resolvers
 
 import (
 	"context"
-	"time"
-
+	"entgo.io/ent/dialect/sql"
+	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
-	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/river"
-	resty "github.com/go-resty/resty/v2"
-	"github.com/google/uuid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"strings"
 )
 
 // CreateMessage is the resolver for the createMessage field.
 func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
+	// if the previous message doesn't have response content, don't allow creation of a new message
 	userUuid, err := getUserUuid(ctx)
 	if err != nil {
 		return nil, gqlerror.Errorf(err.Error())
 	}
 	input.SentByID = userUuid
 	client := ent.FromContext(ctx)
+	previousMessage, err := client.Message.Query().Where(message.HasThreadWith(thread.ID(input.ThreadID))).Order(message.ByCreatedAt(sql.OrderAsc())).First(ctx)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return nil, gqlerror.Errorf(err.Error())
+	}
+	if previousMessage != nil {
+		previousResponse, err := previousMessage.Response(ctx)
+		if err != nil {
+			return nil, gqlerror.Errorf(err.Error())
+		}
+		if previousResponse == nil || previousResponse.Content == "" {
+			return nil, gqlerror.Errorf("previous message response is empty, you must wait for a response before you can send another message")
+		}
+	}
+
 	message, err := client.Message.Create().SetInput(input).Save(ctx)
 	if err != nil {
 		return nil, gqlerror.Errorf(err.Error())
 	}
-	agent, err := getDefaultAgent(ctx, client)
+	agent, err := common.GetDefaultAgent(ctx, client)
 	if err != nil {
 		return nil, gqlerror.Errorf(err.Error())
 	}
-	response, err := client.Response.Create().SetMessage(message).SetSentBy(agent).Save(ctx)
+	response, err := client.Response.Create().SetMessage(message).SetSentBy(agent).SetContent("").Save(ctx)
 	if err != nil {
 		return nil, gqlerror.Errorf(err.Error())
 	}
 	_, err = river.RiverClient.Insert(ctx, river.MessageArgs{
-		MessageId:      message.ID,
-		ResponseId:     response.ID,
-		MessageContent: message.Content,
+		ThreadId:         input.ThreadID,
+		MessageId:        message.ID,
+		ResponseId:       response.ID,
+		MessageContent:   message.Content,
+		MessageCreatedAt: message.CreatedAt,
 	}, nil)
 	if err != nil {
 		return nil, gqlerror.Errorf(err.Error())
 	}
 	return client.Message.Get(ctx, message.ID)
-	//client := r.client
-	//tx, err := client.Tx(ctx)
-	//if err != nil {
-	//	return nil, gqlerror.Errorf(err.Error())
-	//}
-	//defer tx.Rollback()
-	//agent, err := getDefaultAgent(ctx, tx)
-	//if err != nil {
-	//	return nil, gqlerror.Errorf(err.Error())
-	//}
-	//message, err := tx.Message.Create().SetInput(input).Save(ctx)
-	//if err != nil {
-	//	return nil, gqlerror.Errorf(err.Error())
-	//}
-	//history, err := getMessageHistory(ctx, tx, input.ThreadID, message.CreatedAt)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//chatMessages, err := chatMessagesFromMessages(history)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//aiResponse, err := prompt(chatMessages)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if aiResponse == "" {
-	//	return nil, gqlerror.Errorf(errors.New("error getting llm response").Error())
-	//}
-	//responseInput := ent.CreateResponseInput{
-	//	MessageID: message.ID,
-	//	Content:   aiResponse,
-	//	SentByID:  agent.ID,
-	//}
-	//_, err = tx.Response.Create().SetInput(responseInput).Save(ctx)
-	//if err != nil {
-	//	return nil, gqlerror.Errorf(err.Error())
-	//}
-	//err = tx.Commit()
-	//return message, err
-}
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func getDefaultAgent(ctx context.Context, client *ent.Client) (*ent.Agent, error) {
-	return client.Agent.Query().Where(agent.Provider("perplexity"), agent.Model("llama-3-sonar-large-32k-online")).First(ctx)
-}
-func prompt(chatMessages []*ChatMessage) (string, error) {
-	client := resty.New()
-	resp, err := client.R().
-		SetBody(chatMessages).
-		Post("http://localhost:6543/perplexity")
-	if err != nil {
-		return "", err
-	}
-	return resp.String(), nil
-}
-func getMessageHistory(ctx context.Context, tx *ent.Tx, threadId uuid.UUID, lastMessageCreatedAt time.Time) ([]*ent.Message, error) {
-	return tx.Message.Query().Where(
-		message.HasThreadWith(thread.ID(threadId)),
-		message.CreatedAtLTE(lastMessageCreatedAt),
-	).All(ctx)
-}
-
-type ChatMessage struct {
-	Type string          `json:"type,omitempty"`
-	Data ChatMessageData `json:"data,omitempty"`
-}
-type ChatMessageData struct {
-	Content string `json:"content"`
-}
-
-func chatMessageFromMessage(message *ent.Message) (*ChatMessage, error) {
-	chatMessage := &ChatMessage{Data: ChatMessageData{Content: message.Content}}
-	chatMessage.Type = "human"
-
-	return chatMessage, nil
-}
-func chatMessageFromResponse(response *ent.Response) (*ChatMessage, error) {
-	chatMessage := &ChatMessage{Data: ChatMessageData{Content: response.Content}}
-	chatMessage.Type = "human"
-
-	return chatMessage, nil
-}
-func chatMessagesFromMessages(messages []*ent.Message) ([]*ChatMessage, error) {
-	chatMessages := make([]*ChatMessage, 0)
-	for _, message := range messages {
-		humanChatMessage, err := chatMessageFromMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		chatMessages = append(chatMessages, humanChatMessage)
-		response, err := message.Response(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		if response != nil {
-			aiMessage, err := chatMessageFromResponse(response)
-			if err != nil {
-				return nil, err
-			}
-			chatMessages = append(chatMessages, aiMessage)
-		}
-	}
-	return chatMessages, nil
 }
 
 type EntTx struct {

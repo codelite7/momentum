@@ -2,14 +2,12 @@ package run
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"entgo.io/contrib/entgql"
-	"entgo.io/ent/dialect"
-	entsql "entgo.io/ent/dialect/sql"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/config"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/agent"
@@ -31,7 +29,6 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword/tpepmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
 	"github.com/urfave/cli/v2"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -46,11 +43,12 @@ var RunCommand = &cli.Command{
 	},
 }
 
-var Client *ent.Client
-
 func run() error {
-	Client = initEntClient()
-	err := createSchema(Client)
+	err := common.InitializeEntClient()
+	if err != nil {
+		return err
+	}
+	err = createSchema(common.EntClient)
 	if err != nil {
 		return err
 	}
@@ -66,7 +64,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	graphqlServer := initGraphqlServer(Client)
+	graphqlServer := initGraphqlServer(common.EntClient)
 	err = runHttpServer(graphqlServer)
 	if err != nil {
 		return err
@@ -92,7 +90,7 @@ func ensureDefaultAgents() error {
 			return err
 		}
 		if existingAgent == nil {
-			_, err = Client.Agent.Create().
+			_, err = common.EntClient.Agent.Create().
 				SetProvider(agent.Provider).
 				SetModel(agent.Model).
 				SetAPIKey(agent.APIKey).
@@ -102,7 +100,7 @@ func ensureDefaultAgents() error {
 			}
 		} else {
 			existingAgent.APIKey = agent.APIKey
-			_, err = Client.Agent.UpdateOne(existingAgent).Save(context.Background())
+			_, err = common.EntClient.Agent.UpdateOne(existingAgent).Save(context.Background())
 			if err != nil {
 				return err
 			}
@@ -113,7 +111,7 @@ func ensureDefaultAgents() error {
 }
 
 func getAgentByProviderAndModel(provider, model string) (*ent.Agent, error) {
-	return Client.Agent.Query().Where(agent.Provider(provider), agent.Model(model)).First(context.Background())
+	return common.EntClient.Agent.Query().Where(agent.Provider(provider), agent.Model(model)).First(context.Background())
 }
 func runHttpServer(graphqlServer *handler.Server) error {
 	httpServer, err := initHttpServer(graphqlServer)
@@ -122,10 +120,6 @@ func runHttpServer(graphqlServer *handler.Server) error {
 	}
 	port := fmt.Sprintf(":%s", config.Port)
 	return httpServer.Start(port)
-}
-
-func initEntClient() *ent.Client {
-	return Open(config.PostgresUri)
 }
 
 func createSchema(client *ent.Client) error {
@@ -167,18 +161,6 @@ func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
 	return e, nil
 }
 
-// Open new connection
-func Open(databaseUrl string) *ent.Client {
-	db, err := sql.Open("pgx", databaseUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create an ent.Driver from `db`.
-	drv := entsql.OpenDB(dialect.Postgres, db)
-	return ent.NewClient(ent.Driver(drv))
-}
-
 func initSuperTokens() error {
 	return supertokens.Init(supertokens.TypeInput{
 		Supertokens: &supertokens.ConnectionInfo{
@@ -218,7 +200,7 @@ func initSuperTokens() error {
 								Email:     email,
 							}
 							var response tpepmodels.SignUpResponse
-							tx, err := Client.Tx(context.Background())
+							tx, err := common.EntClient.Tx(context.Background())
 							if err != nil {
 								return response, err
 							}

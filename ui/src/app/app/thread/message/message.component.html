@@ -47,8 +47,8 @@
               @if (last) {
                 @if(message?.response?.content) {
                   <app-typewriter
-                    [words]="[message!.response!.content]"
-                    [typeSpeed]="50"
+                    [words]="[message?.response?.content ?? '']"
+                    [typeSpeed]="10"
                   >
                   </app-typewriter>
                 } @else {
@@ -58,6 +58,10 @@
                     >
                     </app-typewriter>
                 }
+              } @else {
+                <div markdown>
+                  {{ message?.response?.content}}
+                </div>
               }
             }
           </div>

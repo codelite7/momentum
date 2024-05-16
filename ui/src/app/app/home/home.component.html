@@ -1,3 +1,7 @@
 <app-base>
-  <p>Home</p>
+  @if (!loading()) {
+    <div class="flex h-full w-full justify-content-center align-items-center">
+      Click the new thread button to create a new thread
+    </div>
+  }
 </app-base>

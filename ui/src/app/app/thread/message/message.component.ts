@@ -1,6 +1,6 @@
 import { Component, ElementRef, inject, Input, ViewChild } from '@angular/core'
 import { AvatarModule } from 'primeng/avatar'
-import { DatePipe, TitleCasePipe, UpperCasePipe, ViewportScroller } from '@angular/common'
+import { DatePipe, TitleCasePipe, UpperCasePipe } from '@angular/common'
 import { AuthService } from '../../../auth.service'
 import { UserAvatarComponent } from '../../common/user-avatar/user-avatar.component'
 import { CardModule } from 'primeng/card'
@@ -9,13 +9,14 @@ import { TooltipModule } from 'primeng/tooltip'
 import { CdkCopyToClipboard } from '@angular/cdk/clipboard'
 import { BookmarkService } from '../../../services/bookmark.service'
 import { ToastService } from '../../../services/toast.service'
-import { BookmarkFragment, MessageFragment, ThreadMessageFragment } from '../../../../../graphql/generated'
+import { BookmarkFragment, ThreadMessageFragment } from '../../../../../graphql/generated'
 import { Subscription } from 'rxjs'
 import { ThreadService } from '../../../services/thread.service'
 import { Router } from '@angular/router'
-import { MarkdownComponent, MarkdownModule } from 'ngx-markdown'
+import { MarkdownModule } from 'ngx-markdown'
 import { AgentAvatarComponent } from '../../common/agent-avatar/agent-avatar.component'
 import { TypewriterComponent } from '../../common/typewriter/typewriter.component'
+import { MessageService } from '../../../services/message.service'
 
 @Component({
   selector: 'app-message',
@@ -48,6 +49,7 @@ export class MessageComponent {
   authService: AuthService = inject(AuthService)
   bookmarkService: BookmarkService = inject(BookmarkService)
   threadService: ThreadService = inject(ThreadService)
+  messageService: MessageService = inject(MessageService)
   toastService: ToastService = inject(ToastService)
   router: Router = inject(Router)
   email: string = ''
@@ -55,11 +57,6 @@ export class MessageComponent {
   bookmarkDeletedSubscription?: Subscription
 
   async ngOnInit(): Promise<void> {
-    if (!this.message?.response?.content) {
-      setTimeout(() => {
-        this.message!.response!.content = "Some ai response"
-      }, 5000)
-    }
     this.email = await this.authService.email()
     if (this.message && this.message.bookmarks.edges && this.message.bookmarks.edges.length > 0) {
       this.bookmark = this.message.bookmarks.edges[0]?.node as BookmarkFragment

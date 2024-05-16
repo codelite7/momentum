@@ -1,4 +1,14 @@
-import { ChangeDetectorRef, Component, ElementRef, inject, Input, ViewChild } from '@angular/core'
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  Signal,
+  signal,
+  ViewChild,
+  WritableSignal
+} from '@angular/core'
 import { ThreadService } from '../../services/thread.service'
 import { ToastService } from '../../services/toast.service'
 import { BaseComponent } from '../base/base.component'
@@ -19,6 +29,7 @@ import {
 } from '../../../../graphql/generated'
 import { ActivatedRoute, Router } from '@angular/router'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { cloneDeep } from 'lodash'
 
 
 @Component({
@@ -45,46 +56,112 @@ export class ThreadComponent {
   threadService: ThreadService = inject(ThreadService)
   messageService: MessageService = inject(MessageService)
   toastService: ToastService = inject(ToastService)
-  thread: ThreadFragment | undefined
-  messages: ThreadMessageFragment[] = []
+  thread: WritableSignal<ThreadFragment | undefined> = signal(undefined)
+  messages: WritableSignal<ThreadMessageFragment[]> = signal([])
+  loading: WritableSignal<boolean> = signal(true)
+  responses = computed(() => {
+    let responses: any[] = []
+    this.messages().forEach(message => {
+      if (message.response) {
+        responses.push(message.response)
+      }
+    })
+    return responses
+  })
+  numMessages: Signal<number> = computed(() => {
+    return this.messages().length
+  })
+  lastMessage: Signal<ThreadMessageFragment | undefined> = computed(() => {
+    let messages = this.messages()
+    if (messages.length > 0) {
+      return messages[messages.length - 1]
+    }
+    return undefined
+  })
+  lastResponse = computed(() => {
+    let responses = this.responses()
+    if (responses.length > 0) {
+      return responses[responses.length - 1]
+    }
+    return undefined
+  })
+  lastResponseHasContent = computed(() => {
+    return this.lastResponse()?.content ?? '' != ''
+  })
+  lastMessageHasResponse = computed(() => {
+    return this.lastMessage()?.response?.content ?? '' != ''
+  })
+  messageInputDisabled = computed(() => {
+    return this.loading() || (this.numMessages() > 0 && !this.lastMessageHasResponse())
+  })
   home: MenuItem = { icon: 'pi pi-home', routerLink: '/' }
-
-  loading: boolean = false
   promptForm: FormGroup = new FormGroup<any>({
-    prompt: new FormControl({value: '', disabled: this.loading}, [Validators.required]),
+    prompt: new FormControl({value: '', disabled: true}, [Validators.required]),
   })
 
-  constructor(private route: ActivatedRoute) {}
-  async ngOnInit() {
-    this.route.paramMap.subscribe(
-      (async (params) => {
-        let id = params.get('id')
-        if (id) {
-          try {
-            this.thread = await this.threadService.thread(id)
-          } catch (e) {
-            this.toastService.error(`${e}`)
+  constructor(private route: ActivatedRoute) {
+    effect(() => {
+      console.log(`last response has content: ${this.lastResponseHasContent()}`)
+    })
+    effect(() => {
+      let messageInputDisabled = this.messageInputDisabled()
+      if (this.messageInputDisabled()) {
+        this.disableMessageInput()
+      } else {
+        this.enableMessageInput()
+      }
+    })
+    effect(async () => {
+      while (this.numMessages() > 0 && !this.lastResponseHasContent()) {
+        await new Promise(r => setTimeout(r, 1000));
+        try {
+          let message = await this.messageService.threadMessage({id: this.lastMessage()!.id, userId: ''})
+          let responseContent = message?.response?.content
+          if (responseContent) {
+            let messages = cloneDeep(this.messages())
+            messages[messages.length - 1].response!.content = responseContent
+            this.messages.set(messages)
           }
-          try {
-            this.messages = await this.messageService.threadMessages({userId: '', threadId: id, first: 50, orderBy: [{field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc}]})
-          } catch (e) {
-            this.toastService.error(`${e}`)
-          }
+        } catch (e) {
+          console.error(e)
         }
-
-      })
-    )
+      }
+    }, {allowSignalWrites: true})
+  }
+  async ngOnInit() {
+    this.loadingTrue()
+    try {
+      this.route.paramMap.subscribe(
+        (async (params) => {
+          let id = params.get('id')
+          if (id) {
+            try {
+              this.thread.set(await this.threadService.thread(id))
+            } catch (e) {
+              this.toastService.error(`${e}`)
+            }
+            try {
+              this.messages.set(await this.messageService.threadMessages({userId: '', threadId: id, first: 50, orderBy: [{field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc}]}))
+            } catch (e) {
+              this.toastService.error(`${e}`)
+            }
+          }
+        })
+      )
+    } finally {
+      this.loadingFalse()
+    }
 
   }
 
   async sendMessage(){
     try {
-      this.toggleTextareaDisable()
-      this.toggleLoading()
-      let newMessage = await this.messageService.createMessage(this.promptForm.value.prompt, this.thread!.id)
+      this.disableMessageInput()
+      this.loadingTrue()
+      let newMessage = await this.messageService.createMessage(this.promptForm.value.prompt, this.thread()!.id)
       let newThreadMessage = await this.messageService.threadMessage({id:newMessage.id, userId: ''})
       if (newThreadMessage) {
-        this.messages = await this.messageService.threadMessages({userId: '', threadId: this.thread!.id, first: 50, orderBy: [{field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc}]})
+        this.messages.set(await this.messageService.threadMessages({userId: '', threadId: this.thread()!.id, first: 50, orderBy: [{field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc}]}))
         let control = this.getPromptControl()
         control.setValue('')
         control.clearValidators()
@@ -94,10 +171,15 @@ export class ThreadComponent {
         throw new Error('error sending message')
       }
     } catch (e) {
-      this.toastService.error(`${e}`)
+      // @ts-ignore
+      if (e?.response?.errors[0].message.includes('wait for a response')) {
+        this.toastService.error('You must wait for a response to your previous message before sending another')
+      } else {
+        this.toastService.error(`${e}`)
+        console.error(e)
+      }
     } finally {
-      this.toggleTextareaDisable()
-      this.toggleLoading()
+      this.loadingFalse()
     }
   }
 
@@ -118,17 +200,20 @@ export class ThreadComponent {
     return this.promptForm.controls['prompt']
   }
 
-  toggleTextareaDisable() {
-    let control = this.getPromptControl()
-    if (control.disabled) {
-      control.enable()
-    } else {
-      control.disable()
-    }
+  disableMessageInput() {
+    this.getPromptControl().disable()
   }
 
-  toggleLoading() {
-    this.loading = !this.loading
+  enableMessageInput() {
+    this.getPromptControl().enable()
+  }
+
+  loadingTrue() {
+    this.loading.set(true)
+  }
+
+  loadingFalse() {
+    this.loading.set(false)
   }
 }
 
