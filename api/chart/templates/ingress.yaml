@@ -17,7 +17,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: /query
+            path: /
             backend:
               service:
                 name: api
