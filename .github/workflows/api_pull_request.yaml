@@ -28,7 +28,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ steps.login-ecr.outputs.registry }}/personal/api
+            ${{ steps.login-ecr.outputs.registry }}/personal
           tags: |
             type=sha
       - name: Build and push
