@@ -28,13 +28,12 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ steps.login-ecr.outputs.registry }}/personal
+            ${{ steps.login-ecr.outputs.registry }}/personal/api
           tags: |
             type=sha
-            type=ref,event=branch
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: "{{defaultContext}}:api-langchain"
+          context: "{{defaultContext}}:api"
           push: true
           tags: ${{ steps.meta.outputs.tags }}
