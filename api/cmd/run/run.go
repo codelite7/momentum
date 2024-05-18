@@ -150,13 +150,12 @@ func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
 		AllowCredentials:                         true,
 		UnsafeWildcardOriginWithAllowCredentials: true,
 	}))
-	e.Use(echo.WrapMiddleware(sessionMiddleware))
 	e.Use(echo.WrapMiddleware(supertokens.Middleware))
 	e.GET("/health", func(c echo.Context) error {
 		return nil
 	})
-	e.GET("/", echo.WrapHandler(playground.Handler("Todo", "/query")))
-	e.POST("/query", echo.WrapHandler(graphqlServer))
+	e.GET("/", echo.WrapHandler(playground.Handler("Todo", "/query")), echo.WrapMiddleware(sessionMiddleware))
+	e.POST("/query", echo.WrapHandler(graphqlServer), echo.WrapMiddleware(sessionMiddleware))
 
 	return e, nil
 }
