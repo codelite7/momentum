@@ -8,7 +8,6 @@ require (
 	entgo.io/contrib v0.5.0
 	entgo.io/ent v0.13.1
 	github.com/99designs/gqlgen v0.17.45
-	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/go-resty/resty/v2 v2.13.1
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -16,6 +15,7 @@ require (
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/riverqueue/river v0.6.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.6.0
+	github.com/riverqueue/river/rivertype v0.6.0
 	github.com/samber/lo v1.39.0
 	github.com/supertokens/supertokens-golang v0.18.0
 	github.com/urfave/cli/v2 v2.27.2
@@ -54,7 +54,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/riverqueue/river/riverdriver v0.6.0 // indirect
-	github.com/riverqueue/river/rivertype v0.6.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sosodev/duration v1.2.0 // indirect
