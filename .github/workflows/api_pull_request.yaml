@@ -28,7 +28,7 @@ jobs:
         with:
           context: "{{defaultContext}}:api"
           push: true
-          tags: '${{ steps.login-ecr.outputs.registry }}/personal:${{ github.sha }},${{ steps.login-ecr.outputs.registry }}/personal:${{ github.sha }}:latest'
+          tags: '${{ steps.login-ecr.outputs.registry }}/personal:${{ github.sha }},${{ steps.login-ecr.outputs.registry }}/personal:latest'
           cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/personal:${{ github.sha }}:latest
           cache-to: type=inline
 #      - name: Build, tag, and push docker image to Amazon ECR
