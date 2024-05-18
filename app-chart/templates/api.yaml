@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    namespace: api
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://github.com/codelite7/momentum
+    path: api/chart
+    targetRevision: {{ .Values.api.targetRevision }}
+    helm:
+      releaseName: api
+      {{- with .Values.api.values }}
+      values: |
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  syncPolicy:
+    {{- toYaml .Values.api.syncPolicy | nindent 4 }}

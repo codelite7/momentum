@@ -1,0 +1,57 @@
+name: Validate pull request
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  plan:
+    strategy:
+      # prevent all jobs from being cancelled if one fails
+      fail-fast: false
+      matrix:
+        include:
+          - environment: nonprod
+            eksClusterName: nonprod
+            roleArn: arn:aws:iam::941986904600:role/OrganizationAccountAccessRole
+          - environment: prod
+            eksClusterName: prod
+            roleArn: arn:aws:iam::378091611520:role/OrganizationAccountAccessRole
+          - environment: cloudflare
+    name: Plan ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      # need to get kubectl access first so that terraform can access the eks
+      # cluster, so assume the role to update the kubeconfig
+      - name: Configure AWS Credentials for kubectl access
+        if: ${{ matrix.eksClusterName != null }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-west-2
+          aws-access-key-id: ${{ secrets.TERRAFORM_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TERRAFORM_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ matrix.roleArn }}
+          role-skip-session-tagging: true
+          role-duration-seconds: 1200
+      - name: Setup kubectl access
+        if: ${{ matrix.eksClusterName != null }}
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ matrix.eksClusterName }} \
+            --role-arn ${{ matrix.roleArn }}
+          kubectl config current-context
+      # switch back to the terraform user to run terraform commands
+      - name: Configure AWS Credentials for terraform
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-west-2
+          aws-access-key-id: ${{ secrets.TERRAFORM_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TERRAFORM_AWS_SECRET_ACCESS_KEY }}
+      - name: Plan
+        uses: catalystsquad/action-terraform@v1
+        with:
+          command: plan
+          work-dir: ${{ matrix.environment }}
+          provider: aws
+          aws-region: us-west-2
+          aws-access-key-id: ${{ secrets.TERRAFORM_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TERRAFORM_AWS_SECRET_ACCESS_KEY }}

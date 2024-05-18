@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: emissary
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    namespace: emissary
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://app.getambassador.io
+    chart: emissary
+    targetRevision: {{ .Values.externalDns.targetRevision }}
+    helm:
+      releaseName: emissary
+      {{- with .Values.externalDns.values }}
+      values: |
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  syncPolicy:
+    {{- toYaml .Values.externalDns.syncPolicy | nindent 4 }}

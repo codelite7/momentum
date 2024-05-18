@@ -1,0 +1,8 @@
+configs:
+  repositories:
+    momentum:
+      type: git
+      url: 'https://github.com/codelite7/momentum.git'
+      project: default
+      username: ${pat}
+      password: ${pat}

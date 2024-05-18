@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"github.com/codelite7/momentum/api/config"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -23,7 +24,7 @@ func Prompt(chatMessages []*ChatMessage) (string, error) {
 	client := resty.New()
 	resp, err := client.R().
 		SetBody(chatMessages).
-		Post("http://localhost:6543/perplexity")
+		Post(fmt.Sprintf("%s/perplexity", config.ApiLangchainBaseUrl))
 	if err != nil {
 		return "", err
 	}

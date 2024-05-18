@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-cluster
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    namespace: argo-cd
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    targetRevision: {{ .Values.externalDns.targetRevision }}
+    helm:
+      releaseName: external-dns
+      {{- with .Values.externalDns.values }}
+      values: |
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  syncPolicy:
+    {{- toYaml .Values.externalDns.syncPolicy | nindent 4 }}

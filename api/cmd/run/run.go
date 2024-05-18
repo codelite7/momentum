@@ -354,6 +354,14 @@ var flags = []cli.Flag{
 		EnvVars:     []string{"DEFAULT_AGENTS"},
 		Destination: &config.DefaultAgents,
 	},
+	&cli.StringFlag{
+		Name:        "api-langchain-base-url",
+		Aliases:     []string{"albu"},
+		Value:       "http://localhost:6543",
+		Usage:       "base url to api-langchain",
+		EnvVars:     []string{"API_LANGCHAIN_BASE_URL"},
+		Destination: &config.ApiLangchainBaseUrl,
+	},
 }
 
 func sessionMiddleware(next http.Handler) http.Handler {

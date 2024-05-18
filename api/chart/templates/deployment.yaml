@@ -66,6 +66,8 @@ spec:
               value: {{ .Values.supertokens.google.clientSecret }}
             - name: DEFAULT_AGENTS
               value: {{ .Values.defaultAgents | quote }}
+            - name: API_LANGCHAIN_BASE_URL
+              value: {{ .Values.apiLangchain.baseUrl }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:

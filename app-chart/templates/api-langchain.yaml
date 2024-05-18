@@ -1,0 +1,24 @@
+api-langchainVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api-langchain
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    namespace: api-langchain
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://github.com/codelite7/momentum
+    path: api-langchain/chart
+    targetRevision: {{ .Values.apiLangchain.targetRevision }}
+    helm:
+      releaseName: api-langchain
+      {{- with .Values.apiLangchain.values }}
+      values: |
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  syncPolicy:
+    {{- toYaml .Values.apiLangchain.syncPolicy | nindent 4 }}
