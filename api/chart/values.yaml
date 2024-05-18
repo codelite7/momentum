@@ -127,3 +127,4 @@ supertokens:
 defaultAgents: '[{"provider":"perplexity","model":"llama-3-sonar-large-32k-online","api_key":""}]'
 apiLangchain:
   baseUrl: 'http://api-langchain:6543'
+sessionRequired: true

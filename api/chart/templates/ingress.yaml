@@ -11,9 +11,9 @@ spec:
   tls:
     - secretName: api
       hosts:
-        - api.manifold.derp.ninja
+        - derp.ninja
   rules:
-    - host: api.manifold.derp.ninja
+    - host: derp.ninja
       http:
         paths:
           - pathType: Prefix

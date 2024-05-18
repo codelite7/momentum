@@ -68,6 +68,8 @@ spec:
               value: {{ .Values.defaultAgents | quote }}
             - name: API_LANGCHAIN_BASE_URL
               value: {{ .Values.apiLangchain.baseUrl }}
+            - name: SESSION_REQUIRED
+              value: {{ .Values.sessionRequired | quote }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:

@@ -13,10 +13,8 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/resolvers"
 	"github.com/codelite7/momentum/api/river"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
@@ -28,7 +26,6 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword"
 	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword/tpepmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
-	"github.com/urfave/cli/v2"
 	"net/http"
 	"strings"
 	"time"
@@ -362,10 +359,18 @@ var flags = []cli.Flag{
 		EnvVars:     []string{"API_LANGCHAIN_BASE_URL"},
 		Destination: &config.ApiLangchainBaseUrl,
 	},
+	&cli.BoolFlag{
+		Name:        "session-required",
+		Aliases:     []string{"sr"},
+		Value:       true,
+		Usage:       "when true, a session is required to use the api",
+		EnvVars:     []string{"SESSION_REQUIRED"},
+		Destination: &config.SessionRequired,
+	},
 }
 
 func sessionMiddleware(next http.Handler) http.Handler {
-	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(false)}, next.ServeHTTP)
+	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: &config.SessionRequired}, next.ServeHTTP)
 }
 
 func runRiverMigrations() error {

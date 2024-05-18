@@ -5,6 +5,7 @@ var Port string
 var SuperTokensConfig = SuperTokensConfigg{}
 var DefaultAgents string
 var ApiLangchainBaseUrl string
+var SessionRequired bool
 
 type SuperTokensConfigg struct {
 	Uri                string
