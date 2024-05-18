@@ -1,39 +1,39 @@
-name: API Pull Request
-run-name: Build and push image
-on:
-  push:
-jobs:
-  image:
-    name: Build and push image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: us-west-2
-          aws-access-key-id: ${{ secrets.CICD_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.CICD_AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.CICD_ROLE_ARN }}
-          role-skip-session-tagging: true
-          role-duration-seconds: 1200
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ steps.login-ecr.outputs.registry }}/personal
-          tags: |
-            type=sha,prefix=api
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: "{{defaultContext}}:api"
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+#name: API Pull Request
+#run-name: Build and push image
+#on:
+#  push:
+#jobs:
+#  image:
+#    name: Build and push image
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-region: us-west-2
+#          aws-access-key-id: ${{ secrets.CICD_AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.CICD_AWS_SECRET_ACCESS_KEY }}
+#          role-to-assume: ${{ secrets.CICD_ROLE_ARN }}
+#          role-skip-session-tagging: true
+#          role-duration-seconds: 1200
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#      - name: Login to Amazon ECR
+#        id: login-ecr
+#        uses: aws-actions/amazon-ecr-login@v2
+#      - name: Docker meta
+#        id: meta
+#        uses: docker/metadata-action@v5
+#        with:
+#          images: |
+#            ${{ steps.login-ecr.outputs.registry }}/personal
+#          tags: |
+#            type=sha,prefix=api
+#      - name: Build and push
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: "{{defaultContext}}:api"
+#          push: true
+#          tags: ${{ steps.meta.outputs.tags }}
