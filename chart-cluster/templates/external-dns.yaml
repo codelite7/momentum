@@ -11,7 +11,7 @@ spec:
     namespace: external-dns
     server: https://kubernetes.default.svc
   source:
-    repoURL: oci://registry-1.docker.io/bitnamicharts
+    repoURL: registry-1.docker.io/bitnamicharts
     chart: external-dns
     targetRevision: {{ .Values.externalDns.targetRevision }}
     helm:
