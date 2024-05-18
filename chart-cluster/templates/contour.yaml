@@ -1,24 +1,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: emissary
+  name: contour
   namespace: argo-cd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   destination:
-    namespace: emissary
+    namespace: contour
     server: https://kubernetes.default.svc
   source:
-    repoURL: https://app.getambassador.io
-    chart: emissary-ingress
-    targetRevision: {{ .Values.emissary.targetRevision }}
+    repoURL: registry-1.docker.io/bitnamicharts
+    chart: contour
+    targetRevision: {{ .Values.contour.targetRevision }}
     helm:
-      releaseName: emissary
-      {{- with .Values.emissary.values }}
+      releaseName: contour
+      {{- with .Values.contour.values }}
       values: |
         {{- toYaml . | nindent 8 }}
       {{- end }}
   syncPolicy:
-    {{- toYaml .Values.emissary.syncPolicy | nindent 4 }}
+    {{- toYaml .Values.contour.syncPolicy | nindent 4 }}
