@@ -25,6 +25,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: personal
           IMAGE_TAG: ${{ github.sha }}
+        working-directory: api
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
