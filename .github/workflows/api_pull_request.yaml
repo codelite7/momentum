@@ -1,10 +1,6 @@
 name: API Pull Request
-on: # only trigger on prs to main closed
+on:
   push:
-    branches:
-      - init
-    paths:
-      - 'api/**'
 jobs:
   image:
     name: Build and push image
