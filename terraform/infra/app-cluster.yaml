@@ -11,14 +11,20 @@ spec:
     namespace: argo-cd
     server: https://kubernetes.default.svc
   source:
-    repoURL: https://kubernetes-sigs.github.io/external-dns/
-    chart: external-dns
-    targetRevision: {{ .Values.externalDns.targetRevision }}
-    helm:
-      releaseName: external-dns
-      {{- with .Values.externalDns.values }}
-      values: |
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+    repoURL: https://github.com/codelite7/momentum.git
+    path: chart-cluster
+    targetRevision: init
   syncPolicy:
-    {{- toYaml .Values.externalDns.syncPolicy | nindent 4 }}
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

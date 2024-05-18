@@ -41,9 +41,6 @@ resource "helm_release" "argo-cd" {
   ]
 }
 
-resource "helm_release" "cluster" {
-  depends_on = [helm_release.argo-cd]
-  name       = "cluster"
-  chart      = "../../chart-cluster"
-  namespace = "argo-cd"
+resource "kubernetes_manifest" "app-cluster" {
+  manifest = yamldecode(file("app-cluster.yaml"))
 }
