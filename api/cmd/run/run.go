@@ -370,7 +370,7 @@ var flags = []cli.Flag{
 }
 
 func sessionMiddleware(next http.Handler) http.Handler {
-	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: &config.SessionRequired}, next.ServeHTTP)
+	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(true)}, next.ServeHTTP)
 }
 
 func runRiverMigrations() error {
