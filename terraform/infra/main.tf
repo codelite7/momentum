@@ -41,6 +41,14 @@ resource "helm_release" "argo-cd" {
   ]
 }
 
-resource "kubernetes_manifest" "app-cluster" {
-  manifest = yamldecode(file("app-cluster.yaml"))
+module "argocd-application" {
+  source = "../modules/argocd-application"
+  name   = "cluster"
+  source_path = "chart-cluster"
+  source_repo_url = "https://github.com/codelite7/momentum.git"
+  source_target_revision = "init"
+  helm_values = templatefile("cluster-values.yaml", {
+    cloudflareApiToken: local.secrets.cloudflareApiToken
+  })
+  sync_policy = yamldecode(file("cluster-sync-policy.yaml"))
 }

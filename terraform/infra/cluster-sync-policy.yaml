@@ -1,0 +1,13 @@
+automated:
+  prune: true
+  selfHeal: true
+syncOptions:
+  - CreateNamespace=true
+  - PrunePropagationPolicy=foreground
+  - PruneLast=true
+retry:
+  limit: 5
+  backoff:
+    duration: 37s
+    factor: 2
+    maxDuration: 3m

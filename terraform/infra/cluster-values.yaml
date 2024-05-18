@@ -1,0 +1,6 @@
+externalDns:
+  values:
+    provider: cloudflare
+    cloudflare:
+      apiToken: ${cloudflareApiToken}
+      proxied: true
