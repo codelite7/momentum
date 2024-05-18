@@ -1,4 +1,4 @@
-name: API Pull Request
+name: API Langchain Pull Request
 run-name: Build and push image
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: personal
           IMAGE_TAG: ${{ github.sha }}
-        working-directory: api
+        working-directory: api-langchain
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
