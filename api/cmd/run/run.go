@@ -359,14 +359,6 @@ var flags = []cli.Flag{
 		EnvVars:     []string{"API_LANGCHAIN_BASE_URL"},
 		Destination: &config.ApiLangchainBaseUrl,
 	},
-	&cli.BoolFlag{
-		Name:        "session-required",
-		Aliases:     []string{"sr"},
-		Value:       true,
-		Usage:       "when true, a session is required to use the api",
-		EnvVars:     []string{"SESSION_REQUIRED"},
-		Destination: &config.SessionRequired,
-	},
 }
 
 func sessionMiddleware(next http.Handler) http.Handler {
