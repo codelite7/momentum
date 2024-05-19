@@ -8,13 +8,20 @@ on:
       - "terraform/infra/**"
       - "terraform/modules/eks/**"
       - "terraform/modules/argocd-application/**"
+defaults:
+  run:
+    shell: bash
+    working-directory: terraform/infra
 jobs:
-  update-infrastructure:
-    name: Infrastructure terraform plan
+  terraform:
+    name: Plan
     runs-on: ubuntu-latest
+    env:
+      TF_IN_AUTOMATION: true
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -24,101 +31,62 @@ jobs:
           role-to-assume: ${{ secrets.CICD_ROLE_ARN }}
           role-skip-session-tagging: true
           role-duration-seconds: 1200
+
       - name: Setup kubectl access
         run: |
           aws eks update-kubeconfig --name manifold 
           kubectl config current-context
+
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v3
-      - name: Terraform fmt
-        id: fmt
-        shell: bash
-        working-directory: terraform/infra
-        run: terraform fmt -check
-        continue-on-error: true
-      - name: Terraform init
-        id: init
-        shell: bash
-        working-directory: terraform/infra
-        run: terraform init
-      - name: Terraform validate
-        id: validate
-        shell: bash
-        working-directory: terraform/infra
-        run: terraform validate -no-color
-      - name: Validate result
-        uses: actions/github-script@v6
         with:
-          script: |
-            let output = '';
-            output = output + '#### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`\n';
-            
-            output = output + `#### Terraform Initialization: \`${{ steps.init.outcome }}\`
-            #### Terraform Validation: \`${{ steps.validate.outcome }}\`
-            <details><summary>Validation Output</summary>
-            
-            \`\`\`\n
-            ${{ steps.validate.outputs.stdout }}
-            \`\`\`
-            
-            </details>\n
-            
-            *Action: \`${{ github.event_name }}\`, Working Directory: \`terraform/infra\`, Workflow: \`${{ github.workflow }}\`*`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
+          terraform_version: "1.8.3"
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Post Format
+        if: always() && (steps.fmt.outcome == 'success' || steps.fmt.outcome == 'failure')
+        uses: robburger/terraform-pr-commenter@v1
+        with:
+          commenter_type: fmt
+          commenter_input: ${{ format('{0}{1}', steps.fmt.outputs.stdout, steps.fmt.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.fmt.outputs.exitcode }}
+          
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Post Init
+        if: always() && (steps.init.outcome == 'success' || steps.init.outcome == 'failure')
+        uses: robburger/terraform-pr-commenter@v1
+        with:
+          commenter_type: init
+          commenter_input: ${{ format('{0}{1}', steps.init.outputs.stdout, steps.init.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.init.outputs.exitcode }}
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      - name: Post Validate
+        if: always() && (steps.validate.outcome == 'success' || steps.validate.outcome == 'failure')
+        uses: robburger/terraform-pr-commenter@v1
+        with:
+          commenter_type: validate
+          commenter_input: ${{ format('{0}{1}', steps.validate.outputs.stdout, steps.validate.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.validate.outputs.exitcode }}
+
       - name: Terraform Plan
         id: plan
-        shell: bash
-        working-directory: terraform/infra
-        run: terraform plan -no-color
-      - name: Plan comment
-        uses: actions/github-script@v6
-        env:
-          PLAN_STDOUT: "${{ steps.plan.outputs.stdout }}"
-          PLAN_STDERR: "${{ steps.plan.outputs.stderr }}"
+        run: terraform plan -out workspace.plan
+
+      - name: Post Plan
+        if: always() && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure')
+        uses: robburger/terraform-pr-commenter@v1
         with:
-          script: |
-            let output = '';
-            output = output + '#### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`\n';
-            
-            output = output + '#### Terraform Initialization: \`${{ steps.init.outcome }}\`\n';
-            
-            output = output + `#### Terraform Validation: \`${{ steps.validate.outcome }}\`
-            <details><summary>Validation Output</summary>
-            
-            \`\`\`\n
-            ${{ steps.validate.outputs.stdout }}
-            \`\`\`
-            
-            </details>\n
-            `
-            
-            output = output + `#### Terraform Plan: \`${{ steps.plan.outcome }}\`
-            
-            <details><summary>Show Plan</summary>
-            
-            #### stdout
-            \`\`\`
-            ${process.env.PLAN_STDOUT}
-            \`\`\`
-            
-            #### stderr
-            \`\`\`
-            ${process.env.PLAN_STDERR}
-            \`\`\`
-            
-            </details>
-            
-            *Action: \`${{ github.event_name }}\`, Working Directory: \`terraform/infra\`, Workflow: \`${{ github.workflow }}\`*`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
+          commenter_type: plan
+          commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.plan.outputs.exitcode }}
