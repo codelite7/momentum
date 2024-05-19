@@ -1,0 +1,102 @@
+name: Infrastructure terraform plan
+run-name: Infrastructure terraform plan
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - "terraform/infra/**"
+      - "terraform/modules/eks/**"
+      - "terraform/modules/argocd-application/**"
+defaults:
+  run:
+    shell: bash
+    working-directory: terraform/infra
+jobs:
+  terraform:
+    name: Apply
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      TF_IN_AUTOMATION: true
+      TF_VERSION: "1.8.3"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-west-2
+          aws-access-key-id: ${{ secrets.CICD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CICD_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.CICD_ROLE_ARN }}
+          role-skip-session-tagging: true
+          role-duration-seconds: 1200
+
+      - name: Setup kubectl access
+        run: |
+          aws eks update-kubeconfig --name manifold 
+          kubectl config current-context
+          kubectl version
+          kubectl get namespaces
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Post TF Format
+        if: ${{ always() && (steps.fmt.outcome == 'success' || steps.fmt.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          commenter_type: fmt
+          commenter_input: ${{ format('{0}{1}', steps.fmt.outputs.stdout, steps.fmt.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.fmt.outputs.exitcode }}
+          
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Post TF Init
+        if: ${{ always() && (steps.init.outcome == 'success' || steps.init.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          commenter_type: init
+          commenter_input: ${{ format('{0}{1}', steps.init.outputs.stdout, steps.init.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.init.outputs.exitcode }}
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      - name: Post TF Validate
+        if: ${{ always() && (steps.validate.outcome == 'success' || steps.validate.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          commenter_type: validate
+          commenter_input: ${{ format('{0}{1}', steps.validate.outputs.stdout, steps.validate.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.validate.outputs.exitcode }}
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
+
+      - name: Post TF Apply
+        if: ${{ always() && (steps.apply.outcome == 'success' || steps.apply.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          commenter_type: apply
+          commenter_input: ${{ format('{0}{1}', steps.apply.outputs.stdout, steps.apply.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.apply.outputs.exitcode }}
