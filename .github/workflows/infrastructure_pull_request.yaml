@@ -90,12 +90,8 @@ jobs:
         id: plan
         run: terraform plan -out workspace.plan
 
-      - uses: actions/github-script@v6
+      - uses: GetTerminus/terraform-pr-commenter@v3
         with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '👋 Thanks for reporting!'
-            })
+          commenter_type: plan
+          commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.plan.outputs.exit }}
