@@ -45,6 +45,7 @@ service:
 
 ingress:
   enabled: false
+  clusterIssuer: letsencrypt-staging
   className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
