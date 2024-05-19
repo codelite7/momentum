@@ -17,7 +17,7 @@ jobs:
     name: Plan
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
       TF_IN_AUTOMATION: true
       TF_VERSION: "1.8.3"
     steps:
@@ -93,7 +93,7 @@ jobs:
           PLAN_STDOUT: "${{ steps.plan.outputs.stdout }}"
           PLAN_STDERR: "${{ steps.plan.outputs.stderr }}"
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
           script: |
             let output = '';
             output = output + '#### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`\n';
