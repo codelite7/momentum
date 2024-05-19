@@ -19,6 +19,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TF_IN_AUTOMATION: true
+      TF_VERSION: "1.8.3"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -43,16 +44,16 @@ jobs:
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.8.3"
+          terraform_version: ${{ env.TF_VERSION }}
 
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check -recursive
         continue-on-error: true
 
-      - name: Post Format
-        if: always() && (steps.fmt.outcome == 'success' || steps.fmt.outcome == 'failure')
-        uses: robburger/terraform-pr-commenter@v1
+      - name: Post Format Comment
+        if: ${{ always() && (steps.fmt.outcome == 'success' || steps.fmt.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
         with:
           commenter_type: fmt
           commenter_input: ${{ format('{0}{1}', steps.fmt.outputs.stdout, steps.fmt.outputs.stderr) }}
@@ -62,9 +63,9 @@ jobs:
         id: init
         run: terraform init
 
-      - name: Post Init
-        if: always() && (steps.init.outcome == 'success' || steps.init.outcome == 'failure')
-        uses: robburger/terraform-pr-commenter@v1
+      - name: Post Init Comment
+        if: ${{ always() && (steps.init.outcome == 'success' || steps.init.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
         with:
           commenter_type: init
           commenter_input: ${{ format('{0}{1}', steps.init.outputs.stdout, steps.init.outputs.stderr) }}
@@ -74,9 +75,9 @@ jobs:
         id: validate
         run: terraform validate
 
-      - name: Post Validate
-        if: always() && (steps.validate.outcome == 'success' || steps.validate.outcome == 'failure')
-        uses: robburger/terraform-pr-commenter@v1
+      - name: Post TF Validate Comment
+        if: ${{ always() && (steps.validate.outcome == 'success' || steps.validate.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
         with:
           commenter_type: validate
           commenter_input: ${{ format('{0}{1}', steps.validate.outputs.stdout, steps.validate.outputs.stderr) }}
@@ -86,10 +87,8 @@ jobs:
         id: plan
         run: terraform plan -out workspace.plan
 
-      - name: Post Plan
-        if: always() && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure')
-        uses: robburger/terraform-pr-commenter@v1
+      - uses: GetTerminus/terraform-pr-commenter@v3
         with:
           commenter_type: plan
-          commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
-          commenter_exitcode: ${{ steps.plan.outputs.exitcode }}
+          commenter_plan_path: tf_plan.txt
+          commenter_exitcode: ${{ steps.plan.outputs.exit }}
