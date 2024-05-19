@@ -93,6 +93,7 @@ jobs:
           PLAN_STDOUT: "${{ steps.plan.outputs.stdout }}"
           PLAN_STDERR: "${{ steps.plan.outputs.stderr }}"
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             let output = '';
             output = output + '#### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`\n';
