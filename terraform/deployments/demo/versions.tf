@@ -1,4 +1,10 @@
 terraform {
+  required_version = "~> 1.3"
+  backend "s3" {
+    bucket = "manifold-terraform"
+    key    = "deployments/demo/terraform.tfstate"
+    region = "us-west-2"
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -13,7 +19,7 @@ terraform {
       version = "~> 3.6.1"
     }
   }
-  required_version = "~> 1.3"
+
 }
 
 provider "helm" {
