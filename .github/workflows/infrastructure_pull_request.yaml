@@ -87,50 +87,10 @@ jobs:
         id: plan
         run: terraform plan -out workspace.plan
 
-      - if: always()
-        uses: actions/github-script@v6
-        env:
-          PLAN_STDOUT: "${{ steps.plan.outputs.stdout }}"
-          PLAN_STDERR: "${{ steps.plan.outputs.stderr }}"
+      - name: Post TF Plan Comment
+        if: ${{ always() && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
         with:
-          github-token: ${{ github.token }}
-          script: |
-            let output = '';
-            output = output + '#### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`\n';
-            
-            output = output + '#### Terraform Initialization: \`${{ steps.init.outcome }}\`\n';
-            
-            output = output + `#### Terraform Validation: \`${{ steps.validate.outcome }}\`
-            <details><summary>Validation Output</summary>
-            
-            \`\`\`\n
-            ${{ steps.validate.outputs.stdout }}
-            \`\`\`
-            
-            </details>\n
-            `
-            
-            output = output + `#### Terraform Plan: \`${{ steps.plan.outcome }}\`
-            
-            <details><summary>Show Plan</summary>
-            
-            #### stdout
-            \`\`\`
-            ${process.env.PLAN_STDOUT}
-            \`\`\`
-            
-            #### stderr
-            \`\`\`
-            ${process.env.PLAN_STDERR}
-            \`\`\`
-            
-            </details>
-            
-            *Action: \`${{ github.event_name }}\`, Working Directory: \`terraform/infra\`, Workflow: \`${{ github.workflow }}\`*`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
+          commenter_type: plan
+          commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.plan.outputs.exitcode }}
