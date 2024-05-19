@@ -90,7 +90,7 @@ jobs:
         id: plan
         run: terraform plan -out workspace.plan
 
-      - if: always() && github.event_name == 'pull_request' && inputs.comment-on-pr == 'true' && inputs.command == 'plan'
+      - if: always()
         uses: actions/github-script@v6
         env:
           PLAN_STDOUT: "${{ steps.plan.outputs.stdout }}"
