@@ -1,7 +1,9 @@
 name: Infrastructure terraform plan
 run-name: Infrastructure terraform plan
 on:
-  push:
+  pull_request:
+    branches:
+      - main
     paths:
       - "terraform/infra/**"
       - "terraform/modules/eks/**"
@@ -22,6 +24,10 @@ jobs:
           role-to-assume: ${{ secrets.CICD_ROLE_ARN }}
           role-skip-session-tagging: true
           role-duration-seconds: 1200
+      - name: Setup kubectl access
+        run: |
+          aws eks update-kubeconfig --name manifold 
+          kubectl config current-context
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v3
       - name: Terraform fmt
