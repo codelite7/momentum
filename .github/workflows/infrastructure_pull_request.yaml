@@ -51,7 +51,7 @@ jobs:
         run: terraform fmt -check -recursive
         continue-on-error: true
 
-      - name: Post Format Comment
+      - name: Post TF Format
         if: ${{ always() && (steps.fmt.outcome == 'success' || steps.fmt.outcome == 'failure') }}
         uses: GetTerminus/terraform-pr-commenter@v3
         with:
@@ -64,7 +64,7 @@ jobs:
         id: init
         run: terraform init
 
-      - name: Post Init Comment
+      - name: Post TF Init
         if: ${{ always() && (steps.init.outcome == 'success' || steps.init.outcome == 'failure') }}
         uses: GetTerminus/terraform-pr-commenter@v3
         with:
@@ -77,7 +77,7 @@ jobs:
         id: validate
         run: terraform validate
 
-      - name: Post TF Validate Comment
+      - name: Post TF Validate
         if: ${{ always() && (steps.validate.outcome == 'success' || steps.validate.outcome == 'failure') }}
         uses: GetTerminus/terraform-pr-commenter@v3
         with:
@@ -90,7 +90,7 @@ jobs:
         id: plan
         run: terraform plan -out workspace.plan
 
-      - name: Post TF Validate Comment
+      - name: Post TF Plan
         if: ${{ always() && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure') }}
         uses: GetTerminus/terraform-pr-commenter@v3
         with:
