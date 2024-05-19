@@ -1,4 +1,22 @@
 api:
   targetRevision: init
+  values:
+    image:
+      repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
+      tag: api7288808
+    defaultAgents: '${defaultAgents}'
+    supertokens:
+      apiKey: ${supertokensApiKey}
+    apiLangchain:
+      baseUrl: http://api-langchain.api-langchain:6543
+    ingress:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
 apiLangchain:
   targetRevision: init
+  values:
+    image:
+      repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
+      tag: api-langchain8859b81
+    perplexity:
+      apiKey: ${perplexityApiKey}

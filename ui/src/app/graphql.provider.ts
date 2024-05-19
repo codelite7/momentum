@@ -2,8 +2,9 @@ import { Apollo, APOLLO_OPTIONS } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
 import { ApplicationConfig, inject } from '@angular/core';
 import { ApolloClientOptions, InMemoryCache } from '@apollo/client/core';
+import { environment } from '../environments/environment'
 
-const uri = 'http://localhost:3000/query'; // <-- add the URL of the GraphQL server here
+const uri = environment.graphqlEndpoint; // <-- add the URL of the GraphQL server here
 export function apolloOptionsFactory(): ApolloClientOptions<any> {
   const httpLink = inject(HttpLink);
   return {

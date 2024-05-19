@@ -4,10 +4,11 @@ import { AppComponent } from './app/app.component';
 import SuperTokens from 'supertokens-web-js';
 import Session from 'supertokens-web-js/recipe/session';
 import ThirdPartyEmailPassword from 'supertokens-web-js/recipe/thirdpartyemailpassword'
+import { environment } from './environments/environment'
 
 SuperTokens.init({
   appInfo: {
-    apiDomain: "http://localhost:3000",
+    apiDomain: environment.supertokensApiDomain,
     apiBasePath: "/auth",
     appName: "momentum",
   },

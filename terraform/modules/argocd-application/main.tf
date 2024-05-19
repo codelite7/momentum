@@ -11,6 +11,7 @@ locals {
       "path"   = var.source_path
       "helm" = {
         "values"  = var.helm_values
+        "version" = "v3"
       }
       "targetRevision" = var.source_target_revision
     }

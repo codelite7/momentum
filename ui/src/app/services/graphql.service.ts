@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { GraphQLClient } from 'graphql-request'
 import { getSdk } from '../../../graphql/generated'
+import { environment } from '../../environments/environment'
 
 export interface listArgs {
   after?: string
@@ -34,7 +35,7 @@ export interface OrderBy {
   providedIn: 'root'
 })
 export class GraphqlService {
-  client: GraphQLClient = new GraphQLClient('http://localhost:3000/query');
+  client: GraphQLClient = new GraphQLClient(environment.graphqlEndpoint);
   sdk = getSdk(this.client)
   constructor() { }
 

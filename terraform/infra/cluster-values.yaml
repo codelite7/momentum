@@ -3,4 +3,7 @@ externalDns:
     provider: cloudflare
     cloudflare:
       apiToken: ${cloudflareApiToken}
-      proxied: true
+      proxied: false
+certManager:
+  values:
+    installCRDs: false
