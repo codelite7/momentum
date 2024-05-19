@@ -1,4 +1,4 @@
-externalDns:
+externalDns: #.
   values:
     provider: cloudflare
     cloudflare:

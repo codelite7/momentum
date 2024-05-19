@@ -1,0 +1,118 @@
+name: Infrastructure terraform plan
+run-name: Infrastructure terraform plan
+on:
+  push:
+    paths:
+      - "terraform/infra/**"
+      - "terraform/modules/eks/**"
+      - "terraform/modules/argocd-application/**"
+jobs:
+  update-infrastructure:
+    name: Infrastructure terraform plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-west-2
+          aws-access-key-id: ${{ secrets.CICD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CICD_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.CICD_ROLE_ARN }}
+          role-skip-session-tagging: true
+          role-duration-seconds: 1200
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform fmt
+        id: fmt
+        shell: bash
+        working-directory: terraform/infra
+        run: terraform fmt -check
+        continue-on-error: true
+      - name: Terraform init
+        id: init
+        shell: bash
+        working-directory: terraform/infra
+        run: terraform init
+      - name: Terraform validate
+        id: validate
+        shell: bash
+        working-directory: terraform/infra
+        run: terraform validate -no-color
+      - name: Validate result
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let output = '';
+            output = output + '#### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`\n';
+            
+            output = output + `#### Terraform Initialization: \`${{ steps.init.outcome }}\`
+            #### Terraform Validation: \`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+            
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+            
+            </details>\n
+            
+            *Action: \`${{ github.event_name }}\`, Working Directory: \`terraform/infra\`, Workflow: \`${{ github.workflow }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      - name: Terraform Plan
+        id: plan
+        shell: bash
+        working-directory: terraform/infra
+        run: terraform plan -no-color
+      - name: Plan comment
+        uses: actions/github-script@v6
+        env:
+          PLAN_STDOUT: "${{ steps.plan.outputs.stdout }}"
+          PLAN_STDERR: "${{ steps.plan.outputs.stderr }}"
+        with:
+          script: |
+            let output = '';
+            output = output + '#### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`\n';
+            
+            output = output + '#### Terraform Initialization: \`${{ steps.init.outcome }}\`\n';
+            
+            output = output + `#### Terraform Validation: \`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+            
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+            
+            </details>\n
+            `
+            
+            output = output + `#### Terraform Plan: \`${{ steps.plan.outcome }}\`
+            
+            <details><summary>Show Plan</summary>
+            
+            #### stdout
+            \`\`\`
+            ${process.env.PLAN_STDOUT}
+            \`\`\`
+            
+            #### stderr
+            \`\`\`
+            ${process.env.PLAN_STDERR}
+            \`\`\`
+            
+            </details>
+            
+            *Action: \`${{ github.event_name }}\`, Working Directory: \`terraform/infra\`, Workflow: \`${{ github.workflow }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
