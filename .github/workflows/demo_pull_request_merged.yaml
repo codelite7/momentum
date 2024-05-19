@@ -1,5 +1,5 @@
-name: Infrastructure terraform apply
-run-name: Infrastructure terraform apply
+name: Demo deployment terraform apply
+run-name: Demo deployment terraform apply
 on:
   pull_request:
     types:
@@ -7,13 +7,15 @@ on:
     branches:
       - main
     paths:
-      - "terraform/infra/**"
-      - "terraform/modules/eks/**"
+      - "terraform/deployments/demo/**"
+      - "terraform/modules/app/**"
+      - "terraform/modules/deployment/**"
       - "terraform/modules/argocd-application/**"
+      - "terraform/modules/ui-s3/**"
 defaults:
   run:
     shell: bash
-    working-directory: terraform/infra
+    working-directory: terraform/deployments/demo
 jobs:
   terraform:
     name: Apply
@@ -90,4 +92,4 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        run: terraform apply -auto-approve
+        run: terraform apply -out workspace.apply

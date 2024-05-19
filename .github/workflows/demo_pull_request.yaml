@@ -1,22 +1,22 @@
-name: Infrastructure terraform apply
-run-name: Infrastructure terraform apply
+name: Demo deployment terraform plan
+run-name: Demo deployment terraform plan
 on:
   pull_request:
-    types:
-      - closed
     branches:
       - main
     paths:
-      - "terraform/infra/**"
-      - "terraform/modules/eks/**"
+      - "terraform/deployments/demo/**"
+      - "terraform/modules/app/**"
+      - "terraform/modules/deployment/**"
       - "terraform/modules/argocd-application/**"
+      - "terraform/modules/ui-s3/**"
 defaults:
   run:
     shell: bash
-    working-directory: terraform/infra
+    working-directory: terraform/deployments/demo
 jobs:
   terraform:
-    name: Apply
+    name: Plan
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ github.token }}
@@ -88,6 +88,15 @@ jobs:
           commenter_input: ${{ format('{0}{1}', steps.validate.outputs.stdout, steps.validate.outputs.stderr) }}
           commenter_exitcode: ${{ steps.validate.outputs.exitcode }}
 
-      - name: Terraform Apply
-        id: apply
-        run: terraform apply -auto-approve
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out workspace.plan
+
+      - name: Post TF Plan
+        if: ${{ always() && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          commenter_type: plan
+          commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.plan.outputs.exitcode }}
