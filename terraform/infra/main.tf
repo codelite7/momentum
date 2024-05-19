@@ -27,28 +27,28 @@ module "eks" {
 }
 
 resource "helm_release" "argo-cd" {
-  depends_on = [module.eks]
-  name       = "argo-cd"
-  repository = "https://argoproj.github.io/argo-helm"
-  chart      = "argo-cd"
-  version = "6.9.2"
-  namespace = "argo-cd"
+  depends_on       = [module.eks]
+  name             = "argo-cd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  version          = "6.9.2"
+  namespace        = "argo-cd"
   create_namespace = true
   values = [
     templatefile("argocd-values.yaml", {
-      pat: local.secrets.pat
+      pat : local.secrets.pat
     })
   ]
 }
 
 module "argocd-application" {
-  source = "../modules/argocd-application"
-  name   = "cluster"
-  source_path = "chart-cluster"
-  source_repo_url = "https://github.com/codelite7/momentum.git"
+  source                 = "../modules/argocd-application"
+  name                   = "cluster"
+  source_path            = "chart-cluster"
+  source_repo_url        = "https://github.com/codelite7/momentum.git"
   source_target_revision = "init"
   helm_values = templatefile("cluster-values.yaml", {
-    cloudflareApiToken: local.secrets.cloudflareApiToken
+    cloudflareApiToken : local.secrets.cloudflareApiToken
   })
   sync_policy = yamldecode(file("cluster-sync-policy.yaml"))
 }
