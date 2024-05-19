@@ -90,11 +90,37 @@ jobs:
         id: plan
         run: terraform plan -out workspace.plan
 
-      - name: Post TF Plan Comment
-        if: ${{ always() && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure') }}
-        uses: GetTerminus/terraform-pr-commenter@v3
+      - if: always() && github.event_name == 'pull_request' && inputs.comment-on-pr == 'true' && inputs.command == 'plan'
+        uses: actions/github-script@v6
+        env:
+          PLAN_STDOUT: "${{ steps.plan.outputs.stdout }}"
+          PLAN_STDERR: "${{ steps.plan.outputs.stderr }}"
         with:
-          terraform_version: ${{ env.TF_VERSION }}
-          commenter_type: plan
-          commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
-          commenter_exitcode: ${{ steps.plan.outputs.exitcode }}
+          github-token: ${{ github.token }}
+          script: |
+            let output = '';
+            
+            output = output + '#### Terraform Initialization: \`${{ steps.init.outcome }}\`\n';
+            
+            output = output + `#### Terraform Plan: \`${{ steps.plan.outcome }}\`
+            
+            <details><summary>Show Plan</summary>
+            
+            #### stdout
+            \`\`\`
+            ${process.env.PLAN_STDOUT}
+            \`\`\`
+            
+            #### stderr
+            \`\`\`
+            ${process.env.PLAN_STDERR}
+            \`\`\`
+            
+            </details>
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
