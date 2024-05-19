@@ -87,8 +87,10 @@ jobs:
         id: plan
         run: terraform plan -out workspace.plan
 
-      - uses: GetTerminus/terraform-pr-commenter@v3
+      - name: Post TF Validate Comment
+        if: ${{ always() && (steps.plan.outcome == 'success' || steps.plan.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
         with:
           commenter_type: plan
-          commenter_plan_path: tf_plan.txt
-          commenter_exitcode: ${{ steps.plan.outputs.exit }}
+          commenter_input: ${{ format('{0}{1}', steps.plan.outputs.stdout, steps.plan.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.plan.outputs.exitcode }}
