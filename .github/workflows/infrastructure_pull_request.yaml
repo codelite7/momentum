@@ -99,25 +99,40 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             let output = '';
-            
+            if (${{ inputs.check-format }}) {
+              output = output + '#### Terraform Format and Style: \`${{ steps.fmt.outcome }}\`\n';
+            }
+
             output = output + '#### Terraform Initialization: \`${{ steps.init.outcome }}\`\n';
-            
+
+            if (${{ inputs.check-validate }}) {
+              output = output + `#### Terraform Validation: \`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+
+            </details>\n
+            `
+            }
+
             output = output + `#### Terraform Plan: \`${{ steps.plan.outcome }}\`
-            
+
             <details><summary>Show Plan</summary>
-            
+
             #### stdout
             \`\`\`
             ${process.env.PLAN_STDOUT}
             \`\`\`
-            
+
             #### stderr
             \`\`\`
             ${process.env.PLAN_STDERR}
             \`\`\`
-            
+
             </details>
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
