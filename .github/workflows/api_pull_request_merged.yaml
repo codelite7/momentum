@@ -18,7 +18,7 @@ jobs:
       - name: Chart App Version
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.appVersion = "api${{ steps.short-sha.outputs.sha }}"' api/chart/Chart.yaml
+          cmd: yq -i '.appVersion = "${{ steps.short-sha.outputs.sha }}"' api/chart/Chart.yaml
       - uses: stefanzweifel/git-auto-commit-action@v5
   image:
     name: Build image
