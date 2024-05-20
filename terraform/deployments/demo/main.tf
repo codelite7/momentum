@@ -1,5 +1,5 @@
 # manage secrets for this environment via aws secrets manager for secret
-# versioning and aws access control over secrets.
+# versioning and aws access control over secrets
 data "aws_secretsmanager_secret_version" "secret" {
   secret_id = "demo"
 }
