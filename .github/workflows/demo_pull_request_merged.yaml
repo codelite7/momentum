@@ -90,4 +90,4 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        run: terraform apply -out workspace.apply
+        run: terraform apply -auto-approve
