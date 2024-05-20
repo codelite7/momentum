@@ -1,5 +1,5 @@
-name: Api Pull Request
-run-name: Build api image
+name: UI Pull Request
+run-name: Build ui
 on:
   pull_request:
     branches:
@@ -17,6 +17,8 @@ jobs:
         uses: bahmutov/npm-install@v1
         with:
           node-version: 20
+          working-directory: ui
       - name: NPM Build
+        working-directory: ui
         run: |
           npm run build
