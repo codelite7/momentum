@@ -54,12 +54,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install NPM
+      - name: NPM Install
         uses: bahmutov/npm-install@v1
         with:
-          node-version: 20
+          working-directory: ui
 
       - name: NPM Build
+        working-directory: ui
         run: |
           npm run build-prod
 
