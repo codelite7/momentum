@@ -16,6 +16,5 @@ apiLangchain:
   values:
     image:
       repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
-      tag: api-langchain8859b81
     perplexity:
       apiKey: ${perplexityApiKey}
