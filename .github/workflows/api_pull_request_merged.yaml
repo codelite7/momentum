@@ -2,6 +2,8 @@ name: API Pull Request Merged
 run-name: Push api image
 on:
   pull_request:
+    types:
+      - closed
     branches:
       - main
     paths:
