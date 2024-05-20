@@ -1,0 +1,59 @@
+name: Api Pull Request Merged
+run-name: Deploy UI
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths:
+      - "ui/**"
+jobs:
+  image:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-west-2
+          aws-access-key-id: ${{ secrets.CICD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CICD_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.CICD_ROLE_ARN }}
+          role-skip-session-tagging: true
+          role-duration-seconds: 1200
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Post TF Init
+        if: ${{ always() && (steps.init.outcome == 'success' || steps.init.outcome == 'failure') }}
+        uses: GetTerminus/terraform-pr-commenter@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          commenter_type: init
+          commenter_input: ${{ format('{0}{1}', steps.init.outputs.stdout, steps.init.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.init.outputs.exitcode }}
+
+      - name: Install NPM
+        uses: bahmutov/npm-install@v1
+        with:
+          node-version: 20
+
+      - name: NPM Build
+        run: |
+          npm run build
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: terraform/deployments/demo
+        run: terraform apply -auto-approve
