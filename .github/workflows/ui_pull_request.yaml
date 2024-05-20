@@ -13,10 +13,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install NPM
-        uses: bahmutov/npm-install@v1
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: 20
+      - name: NPM Install
+        uses: bahmutov/npm-install@v1
+        with:
           working-directory: ui
       - name: NPM Build
         working-directory: ui
