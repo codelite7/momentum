@@ -8,7 +8,7 @@ on:
       - "ui/**"
 jobs:
   image:
-    name: Build image
+    name: Build ui
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
