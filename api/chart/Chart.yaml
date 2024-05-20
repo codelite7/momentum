@@ -3,7 +3,7 @@ name: api
 description: Manifold api helm chart
 type: application
 version: 1.0.0
-appVersion: "4d08837"
+appVersion: "f54e189"
 dependencies:
   - name: postgresql
     version: 15.2.8
