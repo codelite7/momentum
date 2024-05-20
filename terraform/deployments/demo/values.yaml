@@ -1,5 +1,5 @@
 api:
-  targetRevision: init
+  targetRevision: main
   values:
     image:
       repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
@@ -12,7 +12,7 @@ api:
       enabled: true
       clusterIssuer: letsencrypt-prod
 apiLangchain:
-  targetRevision: init
+  targetRevision: main
   values:
     image:
       repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
