@@ -3,7 +3,6 @@ api:
   values:
     image:
       repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
-      tag: api7288808
     defaultAgents: '${defaultAgents}'
     supertokens:
       apiKey: ${supertokensApiKey}
