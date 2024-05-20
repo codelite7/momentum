@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -43,11 +44,13 @@ type BookmarkEdges struct {
 	Thread *Thread `json:"thread,omitempty"`
 	// Message holds the value of the message edge.
 	Message *Message `json:"message,omitempty"`
+	// Response holds the value of the response edge.
+	Response *Response `json:"response,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -81,6 +84,17 @@ func (e BookmarkEdges) MessageOrErr() (*Message, error) {
 		return nil, &NotFoundError{label: message.Label}
 	}
 	return nil, &NotLoadedError{edge: "message"}
+}
+
+// ResponseOrErr returns the Response value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BookmarkEdges) ResponseOrErr() (*Response, error) {
+	if e.Response != nil {
+		return e.Response, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: response.Label}
+	}
+	return nil, &NotLoadedError{edge: "response"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -187,6 +201,11 @@ func (b *Bookmark) QueryThread() *ThreadQuery {
 // QueryMessage queries the "message" edge of the Bookmark entity.
 func (b *Bookmark) QueryMessage() *MessageQuery {
 	return NewBookmarkClient(b.config).QueryMessage(b)
+}
+
+// QueryResponse queries the "response" edge of the Bookmark entity.
+func (b *Bookmark) QueryResponse() *ResponseQuery {
+	return NewBookmarkClient(b.config).QueryResponse(b)
 }
 
 // Update returns a builder for updating this Bookmark.

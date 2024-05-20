@@ -4,6 +4,7 @@ import { MenuItem } from 'primeng/api/menuitem'
 import { ThreadFragment, ThreadQuery } from '../../../../../graphql/generated'
 import { DropdownChangeEvent, DropdownModule } from 'primeng/dropdown'
 import { Router } from '@angular/router'
+import { EllipsisService } from '../../../services/ellipsis.service'
 
 @Component({
   selector: 'app-breadcrumb',
@@ -17,7 +18,27 @@ import { Router } from '@angular/router'
 })
 export class BreadcrumbComponent {
   router: Router = inject(Router)
-  thread: InputSignal<ThreadFragment | undefined> = input<ThreadFragment | undefined>(undefined, {alias: 'thread'})
+  ellipsisService: EllipsisService = inject(EllipsisService)
+  thread: InputSignal<ThreadFragment | undefined> = input<ThreadFragment | undefined>(undefined, { alias: 'thread' })
+  threadName: Signal<string> = computed(() => {
+    return this.ellipsisService.ellipse(this.thread()?.name)
+  })
+  parent: Signal<any | undefined> = computed(() => {
+    return this.thread()?.parent
+  })
+  parentName: Signal<any> = computed(() => {
+    return this.ellipsisService.ellipse(this.parent()?.name)
+  })
+  firstChild: Signal<any | undefined> = computed((): any | undefined => {
+    let children: any[] = this.thread()?.children?.edges ?? []
+    if (children.length > 0) {
+      return children[0].node
+    }
+    return undefined
+  })
+  firstChildName: Signal<string> = computed(() => {
+    return this.ellipsisService.ellipse(this.firstChild()?.name)
+  })
   children = computed(() => {
     let thread = this.thread()
     let children: ThreadFragment[] = []
@@ -33,7 +54,7 @@ export class BreadcrumbComponent {
   childrenOptions = computed(() => {
     return this.children().map((child: ThreadFragment) => {
       return {
-        label: child.name,
+        label: this.ellipsisService.ellipse(child.name),
         value: child.id
       }
     })

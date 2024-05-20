@@ -14,6 +14,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -95,6 +96,25 @@ func (bu *BookmarkUpdate) SetMessage(m *Message) *BookmarkUpdate {
 	return bu.SetMessageID(m.ID)
 }
 
+// SetResponseID sets the "response" edge to the Response entity by ID.
+func (bu *BookmarkUpdate) SetResponseID(id uuid.UUID) *BookmarkUpdate {
+	bu.mutation.SetResponseID(id)
+	return bu
+}
+
+// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
+func (bu *BookmarkUpdate) SetNillableResponseID(id *uuid.UUID) *BookmarkUpdate {
+	if id != nil {
+		bu = bu.SetResponseID(*id)
+	}
+	return bu
+}
+
+// SetResponse sets the "response" edge to the Response entity.
+func (bu *BookmarkUpdate) SetResponse(r *Response) *BookmarkUpdate {
+	return bu.SetResponseID(r.ID)
+}
+
 // Mutation returns the BookmarkMutation object of the builder.
 func (bu *BookmarkUpdate) Mutation() *BookmarkMutation {
 	return bu.mutation
@@ -115,6 +135,12 @@ func (bu *BookmarkUpdate) ClearThread() *BookmarkUpdate {
 // ClearMessage clears the "message" edge to the Message entity.
 func (bu *BookmarkUpdate) ClearMessage() *BookmarkUpdate {
 	bu.mutation.ClearMessage()
+	return bu
+}
+
+// ClearResponse clears the "response" edge to the Response entity.
+func (bu *BookmarkUpdate) ClearResponse() *BookmarkUpdate {
+	bu.mutation.ClearResponse()
 	return bu
 }
 
@@ -255,6 +281,35 @@ func (bu *BookmarkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if bu.mutation.ResponseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   bookmark.ResponseTable,
+			Columns: []string{bookmark.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.ResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   bookmark.ResponseTable,
+			Columns: []string{bookmark.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{bookmark.Label}
@@ -338,6 +393,25 @@ func (buo *BookmarkUpdateOne) SetMessage(m *Message) *BookmarkUpdateOne {
 	return buo.SetMessageID(m.ID)
 }
 
+// SetResponseID sets the "response" edge to the Response entity by ID.
+func (buo *BookmarkUpdateOne) SetResponseID(id uuid.UUID) *BookmarkUpdateOne {
+	buo.mutation.SetResponseID(id)
+	return buo
+}
+
+// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
+func (buo *BookmarkUpdateOne) SetNillableResponseID(id *uuid.UUID) *BookmarkUpdateOne {
+	if id != nil {
+		buo = buo.SetResponseID(*id)
+	}
+	return buo
+}
+
+// SetResponse sets the "response" edge to the Response entity.
+func (buo *BookmarkUpdateOne) SetResponse(r *Response) *BookmarkUpdateOne {
+	return buo.SetResponseID(r.ID)
+}
+
 // Mutation returns the BookmarkMutation object of the builder.
 func (buo *BookmarkUpdateOne) Mutation() *BookmarkMutation {
 	return buo.mutation
@@ -358,6 +432,12 @@ func (buo *BookmarkUpdateOne) ClearThread() *BookmarkUpdateOne {
 // ClearMessage clears the "message" edge to the Message entity.
 func (buo *BookmarkUpdateOne) ClearMessage() *BookmarkUpdateOne {
 	buo.mutation.ClearMessage()
+	return buo
+}
+
+// ClearResponse clears the "response" edge to the Response entity.
+func (buo *BookmarkUpdateOne) ClearResponse() *BookmarkUpdateOne {
+	buo.mutation.ClearResponse()
 	return buo
 }
 
@@ -521,6 +601,35 @@ func (buo *BookmarkUpdateOne) sqlSave(ctx context.Context) (_node *Bookmark, err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if buo.mutation.ResponseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   bookmark.ResponseTable,
+			Columns: []string{bookmark.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.ResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   bookmark.ResponseTable,
+			Columns: []string{bookmark.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

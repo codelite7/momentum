@@ -62,6 +62,11 @@ export class RightSidebarComponent {
                     hasMessageWith: [{
                       contentContainsFold: this.query
                     }]
+                  },
+                  {
+                    hasResponseWith: [{
+                      contentContainsFold: this.query
+                    }]
                   }
                 ]
               }

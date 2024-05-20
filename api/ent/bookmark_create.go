@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/google/uuid"
@@ -113,6 +114,25 @@ func (bc *BookmarkCreate) SetNillableMessageID(id *uuid.UUID) *BookmarkCreate {
 // SetMessage sets the "message" edge to the Message entity.
 func (bc *BookmarkCreate) SetMessage(m *Message) *BookmarkCreate {
 	return bc.SetMessageID(m.ID)
+}
+
+// SetResponseID sets the "response" edge to the Response entity by ID.
+func (bc *BookmarkCreate) SetResponseID(id uuid.UUID) *BookmarkCreate {
+	bc.mutation.SetResponseID(id)
+	return bc
+}
+
+// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
+func (bc *BookmarkCreate) SetNillableResponseID(id *uuid.UUID) *BookmarkCreate {
+	if id != nil {
+		bc = bc.SetResponseID(*id)
+	}
+	return bc
+}
+
+// SetResponse sets the "response" edge to the Response entity.
+func (bc *BookmarkCreate) SetResponse(r *Response) *BookmarkCreate {
+	return bc.SetResponseID(r.ID)
 }
 
 // Mutation returns the BookmarkMutation object of the builder.
@@ -267,6 +287,23 @@ func (bc *BookmarkCreate) createSpec() (*Bookmark, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.message_bookmarks = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.ResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   bookmark.ResponseTable,
+			Columns: []string{bookmark.ResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.response_bookmarks = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

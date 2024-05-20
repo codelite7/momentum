@@ -9,3 +9,7 @@
 .container ::ng-deep .col-12 {
   padding: 0;
 }
+
+.content {
+  max-height: 65px;
+}

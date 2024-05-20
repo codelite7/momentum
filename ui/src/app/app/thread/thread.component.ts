@@ -100,9 +100,6 @@ export class ThreadComponent {
 
   constructor(private route: ActivatedRoute) {
     effect(() => {
-      console.log(`last response has content: ${this.lastResponseHasContent()}`)
-    })
-    effect(() => {
       let messageInputDisabled = this.messageInputDisabled()
       if (this.messageInputDisabled()) {
         this.disableMessageInput()

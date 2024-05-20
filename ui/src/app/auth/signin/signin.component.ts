@@ -73,7 +73,6 @@ export class SigninComponent {
       }
     } finally {
       this.loading = false;
-      console.log('finally')
     }
   }
 }

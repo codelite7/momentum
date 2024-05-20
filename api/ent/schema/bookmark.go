@@ -28,5 +28,7 @@ func (Bookmark) Edges() []ent.Edge {
 		edge.From("thread", Thread.Type).Ref("bookmarks").Unique(),
 		// a bookmark may be associated with a message
 		edge.From("message", Message.Type).Ref("bookmarks").Unique(),
+		// a bookmark may be associated with a response
+		edge.From("response", Response.Type).Ref("bookmarks").Unique(),
 	}
 }

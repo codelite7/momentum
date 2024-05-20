@@ -50,6 +50,14 @@ export class BookmarkService {
     return response.createBookmark as BookmarkFragment
   }
 
+  async bookmarkResponse(id: string): Promise<BookmarkFragment> {
+    let userId = await this.authService.userId()
+    let vars: CreateBookmarkMutationVariables = {input: {responseID: id, userID: userId}}
+    let response = await this.graphqlService.sdk.createBookmark(vars)
+    this.bookmarkCreatedEmitter.emit(response.createBookmark?.id)
+    return response.createBookmark as BookmarkFragment
+  }
+
   async bookmarkThread(id: string): Promise<BookmarkFragment> {
     let userId = await this.authService.userId()
     let vars: CreateBookmarkMutationVariables = {input: {threadID: id, userID: userId}}

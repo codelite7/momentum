@@ -45,6 +45,7 @@ export class MessageComponent {
   @Input() last: boolean = false;
   // @ts-ignore
   @ViewChild('stuff') stuff:ElementRef;
+  hasContent: boolean = false;
   bookmark: BookmarkFragment | undefined
   authService: AuthService = inject(AuthService)
   bookmarkService: BookmarkService = inject(BookmarkService)
@@ -57,6 +58,7 @@ export class MessageComponent {
   bookmarkDeletedSubscription?: Subscription
 
   async ngOnInit(): Promise<void> {
+    this.hasContent = this.message?.response?.content != ''
     this.email = await this.authService.email()
     if (this.message && this.message.bookmarks.edges && this.message.bookmarks.edges.length > 0) {
       this.bookmark = this.message.bookmarks.edges[0]?.node as BookmarkFragment
@@ -107,8 +109,13 @@ export class MessageComponent {
 
   async bookmarkMessage() {
     try {
+      let result
       if (this.message) {
-      let result = await this.bookmarkService.bookmarkMessage(this.message.id)
+        if (this.message.response && this.response) {
+          result = await this.bookmarkService.bookmarkResponse(this.message.response.id)
+        } else {
+          result = await this.bookmarkService.bookmarkMessage(this.message.id)
+        }
       this.toastService.success('Bookmarked message')
       this.bookmark = result
       }

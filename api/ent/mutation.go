@@ -682,21 +682,23 @@ func (m *AgentMutation) ResetEdge(name string) error {
 // BookmarkMutation represents an operation that mutates the Bookmark nodes in the graph.
 type BookmarkMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *uuid.UUID
-	created_at     *time.Time
-	updated_at     *time.Time
-	clearedFields  map[string]struct{}
-	user           *uuid.UUID
-	cleareduser    bool
-	thread         *uuid.UUID
-	clearedthread  bool
-	message        *uuid.UUID
-	clearedmessage bool
-	done           bool
-	oldValue       func(context.Context) (*Bookmark, error)
-	predicates     []predicate.Bookmark
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	created_at      *time.Time
+	updated_at      *time.Time
+	clearedFields   map[string]struct{}
+	user            *uuid.UUID
+	cleareduser     bool
+	thread          *uuid.UUID
+	clearedthread   bool
+	message         *uuid.UUID
+	clearedmessage  bool
+	response        *uuid.UUID
+	clearedresponse bool
+	done            bool
+	oldValue        func(context.Context) (*Bookmark, error)
+	predicates      []predicate.Bookmark
 }
 
 var _ ent.Mutation = (*BookmarkMutation)(nil)
@@ -992,6 +994,45 @@ func (m *BookmarkMutation) ResetMessage() {
 	m.clearedmessage = false
 }
 
+// SetResponseID sets the "response" edge to the Response entity by id.
+func (m *BookmarkMutation) SetResponseID(id uuid.UUID) {
+	m.response = &id
+}
+
+// ClearResponse clears the "response" edge to the Response entity.
+func (m *BookmarkMutation) ClearResponse() {
+	m.clearedresponse = true
+}
+
+// ResponseCleared reports if the "response" edge to the Response entity was cleared.
+func (m *BookmarkMutation) ResponseCleared() bool {
+	return m.clearedresponse
+}
+
+// ResponseID returns the "response" edge ID in the mutation.
+func (m *BookmarkMutation) ResponseID() (id uuid.UUID, exists bool) {
+	if m.response != nil {
+		return *m.response, true
+	}
+	return
+}
+
+// ResponseIDs returns the "response" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ResponseID instead. It exists only for internal usage by the builders.
+func (m *BookmarkMutation) ResponseIDs() (ids []uuid.UUID) {
+	if id := m.response; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetResponse resets all changes to the "response" edge.
+func (m *BookmarkMutation) ResetResponse() {
+	m.response = nil
+	m.clearedresponse = false
+}
+
 // Where appends a list predicates to the BookmarkMutation builder.
 func (m *BookmarkMutation) Where(ps ...predicate.Bookmark) {
 	m.predicates = append(m.predicates, ps...)
@@ -1142,7 +1183,7 @@ func (m *BookmarkMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BookmarkMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.user != nil {
 		edges = append(edges, bookmark.EdgeUser)
 	}
@@ -1151,6 +1192,9 @@ func (m *BookmarkMutation) AddedEdges() []string {
 	}
 	if m.message != nil {
 		edges = append(edges, bookmark.EdgeMessage)
+	}
+	if m.response != nil {
+		edges = append(edges, bookmark.EdgeResponse)
 	}
 	return edges
 }
@@ -1171,13 +1215,17 @@ func (m *BookmarkMutation) AddedIDs(name string) []ent.Value {
 		if id := m.message; id != nil {
 			return []ent.Value{*id}
 		}
+	case bookmark.EdgeResponse:
+		if id := m.response; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BookmarkMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	return edges
 }
 
@@ -1189,7 +1237,7 @@ func (m *BookmarkMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BookmarkMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.cleareduser {
 		edges = append(edges, bookmark.EdgeUser)
 	}
@@ -1198,6 +1246,9 @@ func (m *BookmarkMutation) ClearedEdges() []string {
 	}
 	if m.clearedmessage {
 		edges = append(edges, bookmark.EdgeMessage)
+	}
+	if m.clearedresponse {
+		edges = append(edges, bookmark.EdgeResponse)
 	}
 	return edges
 }
@@ -1212,6 +1263,8 @@ func (m *BookmarkMutation) EdgeCleared(name string) bool {
 		return m.clearedthread
 	case bookmark.EdgeMessage:
 		return m.clearedmessage
+	case bookmark.EdgeResponse:
+		return m.clearedresponse
 	}
 	return false
 }
@@ -1229,6 +1282,9 @@ func (m *BookmarkMutation) ClearEdge(name string) error {
 	case bookmark.EdgeMessage:
 		m.ClearMessage()
 		return nil
+	case bookmark.EdgeResponse:
+		m.ClearResponse()
+		return nil
 	}
 	return fmt.Errorf("unknown Bookmark unique edge %s", name)
 }
@@ -1245,6 +1301,9 @@ func (m *BookmarkMutation) ResetEdge(name string) error {
 		return nil
 	case bookmark.EdgeMessage:
 		m.ResetMessage()
+		return nil
+	case bookmark.EdgeResponse:
+		m.ResetResponse()
 		return nil
 	}
 	return fmt.Errorf("unknown Bookmark edge %s", name)

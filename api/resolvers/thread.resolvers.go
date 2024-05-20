@@ -7,8 +7,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"github.com/codelite7/momentum/api/common"
 
+	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/google/uuid"
 	"github.com/vektah/gqlparser/v2/gqlerror"

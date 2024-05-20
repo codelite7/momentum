@@ -1874,6 +1874,63 @@ func (ec *executionContext) fieldContext_Bookmark_message(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Bookmark_response(ctx context.Context, field graphql.CollectedField, obj *ent.Bookmark) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Bookmark_response(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Response(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Response)
+	fc.Result = res
+	return ec.marshalOResponse2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Bookmark_response(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Bookmark",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Response_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Response_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Response_updatedAt(ctx, field)
+			case "content":
+				return ec.fieldContext_Response_content(ctx, field)
+			case "sentBy":
+				return ec.fieldContext_Response_sentBy(ctx, field)
+			case "message":
+				return ec.fieldContext_Response_message(ctx, field)
+			case "bookmarks":
+				return ec.fieldContext_Response_bookmarks(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Response", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BookmarkConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.BookmarkConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_BookmarkConnection_edges(ctx, field)
 	if err != nil {
@@ -2067,6 +2124,8 @@ func (ec *executionContext) fieldContext_BookmarkEdge_node(ctx context.Context, 
 				return ec.fieldContext_Bookmark_thread(ctx, field)
 			case "message":
 				return ec.fieldContext_Bookmark_message(ctx, field)
+			case "response":
+				return ec.fieldContext_Bookmark_response(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
 		},
@@ -6104,7 +6163,7 @@ func (ec *executionContext) unmarshalInputBookmarkWhereInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "hasUser", "hasUserWith", "hasThread", "hasThreadWith", "hasMessage", "hasMessageWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "hasUser", "hasUserWith", "hasThread", "hasThreadWith", "hasMessage", "hasMessageWith", "hasResponse", "hasResponseWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6342,6 +6401,20 @@ func (ec *executionContext) unmarshalInputBookmarkWhereInput(ctx context.Context
 				return it, err
 			}
 			it.HasMessageWith = data
+		case "hasResponse":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasResponse"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasResponse = data
+		case "hasResponseWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasResponseWith"))
+			data, err := ec.unmarshalOResponseWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐResponseWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasResponseWith = data
 		}
 	}
 
@@ -6417,7 +6490,7 @@ func (ec *executionContext) unmarshalInputCreateBookmarkInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"createdAt", "updatedAt", "userID", "threadID", "messageID"}
+	fieldsInOrder := [...]string{"createdAt", "updatedAt", "userID", "threadID", "messageID", "responseID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6459,6 +6532,13 @@ func (ec *executionContext) unmarshalInputCreateBookmarkInput(ctx context.Contex
 				return it, err
 			}
 			it.MessageID = data
+		case "responseID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("responseID"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ResponseID = data
 		}
 	}
 
@@ -8006,7 +8086,7 @@ func (ec *executionContext) unmarshalInputUpdateBookmarkInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"updatedAt", "userID", "threadID", "clearThread", "messageID", "clearMessage"}
+	fieldsInOrder := [...]string{"updatedAt", "userID", "threadID", "clearThread", "messageID", "clearMessage", "responseID", "clearResponse"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8055,6 +8135,20 @@ func (ec *executionContext) unmarshalInputUpdateBookmarkInput(ctx context.Contex
 				return it, err
 			}
 			it.ClearMessage = data
+		case "responseID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("responseID"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ResponseID = data
+		case "clearResponse":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearResponse"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearResponse = data
 		}
 	}
 
@@ -9154,6 +9248,39 @@ func (ec *executionContext) _Bookmark(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Bookmark_message(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "response":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bookmark_response(ctx, field, obj)
 				return res
 			}
 

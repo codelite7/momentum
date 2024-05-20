@@ -364,7 +364,7 @@ var flags = []cli.Flag{
 	&cli.BoolFlag{
 		Name:        "session-required",
 		Aliases:     []string{"sr"},
-		Value:       true,
+		Value:       false,
 		Usage:       "when true a session is required to reach the api",
 		EnvVars:     []string{"SESSION_REQUIRED"},
 		Destination: &config.SessionRequired,
@@ -372,7 +372,7 @@ var flags = []cli.Flag{
 }
 
 func sessionMiddleware(next http.Handler) http.Handler {
-	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(true)}, next.ServeHTTP)
+	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(config.SessionRequired)}, next.ServeHTTP)
 }
 
 func runRiverMigrations() error {
