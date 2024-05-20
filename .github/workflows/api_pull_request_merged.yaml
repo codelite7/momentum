@@ -2,11 +2,26 @@ name: API Pull Request Merged
 run-name: Push api image
 on:
   pull_request:
+    types:
+      - closed
     branches:
       - main
     paths:
       - "api/**"
 jobs:
+  update-chart-app-version:
+    name: Update chart app version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: benjlevesque/short-sha@v3.0
+        id: short-sha
+      - name: Chart App Version
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.appVersion = "${{ steps.short-sha.outputs.sha }}"' api/chart/Chart.yaml
+      - uses: stefanzweifel/git-auto-commit-action@v5
   image:
     name: Build image
     runs-on: ubuntu-latest
