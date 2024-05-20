@@ -1,4 +1,4 @@
-name: Api Pull Request Merged
+name: UI Pull Request Merged
 run-name: Deploy UI
 on:
   pull_request:
@@ -33,6 +33,7 @@ jobs:
 
       - name: Terraform Init
         id: init
+        working-directory: terraform/deployments/demo
         run: terraform init
 
       - name: Post TF Init
@@ -44,6 +45,11 @@ jobs:
           commenter_input: ${{ format('{0}{1}', steps.init.outputs.stdout, steps.init.outputs.stderr) }}
           commenter_exitcode: ${{ steps.init.outputs.exitcode }}
 
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
       - name: Install NPM
         uses: bahmutov/npm-install@v1
         with:
@@ -51,7 +57,7 @@ jobs:
 
       - name: NPM Build
         run: |
-          npm run build
+          npm run build-prod
 
       - name: Terraform Apply
         id: apply
