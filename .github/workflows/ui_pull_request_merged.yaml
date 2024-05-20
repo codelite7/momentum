@@ -30,6 +30,11 @@ jobs:
           role-skip-session-tagging: true
           role-duration-seconds: 1200
 
+      - name: Setup kubectl access
+        run: |
+          aws eks update-kubeconfig --name manifold 
+          kubectl config current-context
+
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v3
         with:

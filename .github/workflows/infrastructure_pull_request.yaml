@@ -38,8 +38,6 @@ jobs:
         run: |
           aws eks update-kubeconfig --name manifold 
           kubectl config current-context
-          kubectl version
-          kubectl get namespaces
 
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v3
