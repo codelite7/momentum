@@ -13,7 +13,7 @@ locals {
 module "app" {
   source = "../../modules/app"
   name = "demo"
-  targetRevision = "init"
+  targetRevision = "main"
   syncPolicy = yamldecode(file("syncPolicy.yaml"))
   values = templatefile("values.yaml", {
     defaultAgents: local.secrets.defaultAgents,

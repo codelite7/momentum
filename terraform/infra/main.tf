@@ -46,7 +46,7 @@ module "argocd-application" {
   name                   = "cluster"
   source_path            = "chart-cluster"
   source_repo_url        = "https://github.com/codelite7/momentum.git"
-  source_target_revision = "init"
+  source_target_revision = "main"
   helm_values = templatefile("cluster-values.yaml", {
     cloudflareApiToken : local.secrets.cloudflareApiToken
   })
