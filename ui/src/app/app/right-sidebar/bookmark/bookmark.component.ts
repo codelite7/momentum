@@ -6,6 +6,7 @@ import { Router } from '@angular/router'
 import { BookmarkService } from '../../../services/bookmark.service'
 import { ToastService } from '../../../services/toast.service'
 import { BookmarkFragment } from '../../../../../graphql/generated'
+import { EllipsisModule } from 'ngx-ellipsis'
 
 @Component({
   selector: 'app-bookmark',
@@ -13,7 +14,8 @@ import { BookmarkFragment } from '../../../../../graphql/generated'
   imports: [
     ButtonModule,
     TooltipModule,
-    CardModule
+    CardModule,
+    EllipsisModule
   ],
   templateUrl: './bookmark.component.html',
   styleUrl: './bookmark.component.css'
@@ -33,6 +35,8 @@ export class BookmarkComponent {
         await this.router.navigate([`app/thread/${this.bookmark?.message.thread.id}`])
       } else if (this.bookmark?.thread) {
         await this.router.navigate([`app/thread/${this.bookmark.thread.id}`])
+      } else if (this.bookmark?.response) {
+        await this.router.navigate([`app/thread/${this.bookmark.response.message.thread.id}`])
       }
     } catch(e) {
       this.toastService.generalError()

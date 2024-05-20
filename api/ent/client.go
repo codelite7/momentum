@@ -551,6 +551,22 @@ func (c *BookmarkClient) QueryMessage(b *Bookmark) *MessageQuery {
 	return query
 }
 
+// QueryResponse queries the response edge of a Bookmark.
+func (c *BookmarkClient) QueryResponse(b *Bookmark) *ResponseQuery {
+	query := (&ResponseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(bookmark.Table, bookmark.FieldID, id),
+			sqlgraph.To(response.Table, response.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.ResponseTable, bookmark.ResponseColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *BookmarkClient) Hooks() []Hook {
 	return c.hooks.Bookmark

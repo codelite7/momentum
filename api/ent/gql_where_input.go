@@ -441,6 +441,10 @@ type BookmarkWhereInput struct {
 	// "message" edge predicates.
 	HasMessage     *bool                `json:"hasMessage,omitempty"`
 	HasMessageWith []*MessageWhereInput `json:"hasMessageWith,omitempty"`
+
+	// "response" edge predicates.
+	HasResponse     *bool                 `json:"hasResponse,omitempty"`
+	HasResponseWith []*ResponseWhereInput `json:"hasResponseWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -640,6 +644,24 @@ func (i *BookmarkWhereInput) P() (predicate.Bookmark, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, bookmark.HasMessageWith(with...))
+	}
+	if i.HasResponse != nil {
+		p := bookmark.HasResponse()
+		if !*i.HasResponse {
+			p = bookmark.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasResponseWith) > 0 {
+		with := make([]predicate.Response, 0, len(i.HasResponseWith))
+		for _, w := range i.HasResponseWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasResponseWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, bookmark.HasResponseWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

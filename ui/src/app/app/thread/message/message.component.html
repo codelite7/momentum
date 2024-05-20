@@ -44,7 +44,7 @@
             @if (!response) {
               {{ message?.content }}
             } @else {
-              @if (last) {
+              @if (last && !hasContent) {
                 @if(message?.response?.content) {
                   <app-typewriter
                     [words]="[message?.response?.content ?? '']"

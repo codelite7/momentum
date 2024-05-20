@@ -90,11 +90,12 @@ func (c *AgentUpdateOne) SetInput(i UpdateAgentInput) *AgentUpdateOne {
 
 // CreateBookmarkInput represents a mutation input for creating bookmarks.
 type CreateBookmarkInput struct {
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
-	UserID    uuid.UUID
-	ThreadID  *uuid.UUID
-	MessageID *uuid.UUID
+	CreatedAt  *time.Time
+	UpdatedAt  *time.Time
+	UserID     uuid.UUID
+	ThreadID   *uuid.UUID
+	MessageID  *uuid.UUID
+	ResponseID *uuid.UUID
 }
 
 // Mutate applies the CreateBookmarkInput on the BookmarkMutation builder.
@@ -112,6 +113,9 @@ func (i *CreateBookmarkInput) Mutate(m *BookmarkMutation) {
 	if v := i.MessageID; v != nil {
 		m.SetMessageID(*v)
 	}
+	if v := i.ResponseID; v != nil {
+		m.SetResponseID(*v)
+	}
 }
 
 // SetInput applies the change-set in the CreateBookmarkInput on the BookmarkCreate builder.
@@ -122,12 +126,14 @@ func (c *BookmarkCreate) SetInput(i CreateBookmarkInput) *BookmarkCreate {
 
 // UpdateBookmarkInput represents a mutation input for updating bookmarks.
 type UpdateBookmarkInput struct {
-	UpdatedAt    *time.Time
-	UserID       *uuid.UUID
-	ClearThread  bool
-	ThreadID     *uuid.UUID
-	ClearMessage bool
-	MessageID    *uuid.UUID
+	UpdatedAt     *time.Time
+	UserID        *uuid.UUID
+	ClearThread   bool
+	ThreadID      *uuid.UUID
+	ClearMessage  bool
+	MessageID     *uuid.UUID
+	ClearResponse bool
+	ResponseID    *uuid.UUID
 }
 
 // Mutate applies the UpdateBookmarkInput on the BookmarkMutation builder.
@@ -149,6 +155,12 @@ func (i *UpdateBookmarkInput) Mutate(m *BookmarkMutation) {
 	}
 	if v := i.MessageID; v != nil {
 		m.SetMessageID(*v)
+	}
+	if i.ClearResponse {
+		m.ClearResponse()
+	}
+	if v := i.ResponseID; v != nil {
+		m.SetResponseID(*v)
 	}
 }
 

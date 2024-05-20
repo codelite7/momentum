@@ -68,6 +68,7 @@ type ComplexityRoot struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Message   func(childComplexity int) int
+		Response  func(childComplexity int) int
 		Thread    func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		User      func(childComplexity int) int
@@ -327,6 +328,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Bookmark.Message(childComplexity), true
+
+	case "Bookmark.response":
+		if e.complexity.Bookmark.Response == nil {
+			break
+		}
+
+		return e.complexity.Bookmark.Response(childComplexity), true
 
 	case "Bookmark.thread":
 		if e.complexity.Bookmark.Thread == nil {
@@ -1308,6 +1316,7 @@ type Bookmark implements Node {
   user: User!
   thread: Thread
   message: Message
+  response: Response
 }
 """
 A connection to a list of items.
@@ -1415,6 +1424,11 @@ input BookmarkWhereInput {
   """
   hasMessage: Boolean
   hasMessageWith: [MessageWhereInput!]
+  """
+  response edge predicates
+  """
+  hasResponse: Boolean
+  hasResponseWith: [ResponseWhereInput!]
 }
 """
 CreateAgentInput is used for create Agent object.
@@ -1438,6 +1452,7 @@ input CreateBookmarkInput {
   userID: ID!
   threadID: ID
   messageID: ID
+  responseID: ID
 }
 """
 CreateMessageInput is used for create Message object.
@@ -2341,6 +2356,8 @@ input UpdateBookmarkInput {
   clearThread: Boolean
   messageID: ID
   clearMessage: Boolean
+  responseID: ID
+  clearResponse: Boolean
 }
 """
 UpdateMessageInput is used for update Message object.

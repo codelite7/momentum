@@ -29,6 +29,24 @@ fragment Bookmark on Bookmark {
       name
     }
   }
+  response {
+    id
+    createdAt
+    updatedAt
+    content
+    message {
+      id
+      createdAt
+      updatedAt
+      content
+      thread {
+        id
+        createdAt
+        updatedAt
+        name
+      }
+    }
+  }
 }
 `
 

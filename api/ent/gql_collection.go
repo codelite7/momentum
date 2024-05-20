@@ -277,6 +277,17 @@ func (b *BookmarkQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 				return err
 			}
 			b.withMessage = query
+
+		case "response":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ResponseClient{config: b.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, responseImplementors)...); err != nil {
+				return err
+			}
+			b.withResponse = query
 		case "createdAt":
 			if _, ok := fieldSeen[bookmark.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, bookmark.FieldCreatedAt)

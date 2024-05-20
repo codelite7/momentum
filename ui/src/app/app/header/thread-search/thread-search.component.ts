@@ -53,7 +53,18 @@ export class ThreadSearchComponent {
                 },
                 {
                   hasMessagesWith: [{
-                    contentContainsFold: this.query
+                    or: [
+                      {
+                        contentContainsFold: this.query
+                      },
+                      {
+                        hasResponseWith: [
+                          {
+                            contentContainsFold: this.query
+                          }
+                        ]
+                      }
+                    ]
                   }]
                 }
               ]
@@ -88,7 +99,6 @@ export class ThreadSearchComponent {
 
   async goToSearchResult(thread: ThreadFragment) {
     let url = `/app/thread/${thread.id}`
-    console.log(url)
     try {
       await this.router.navigate([url])
     } catch (e) {

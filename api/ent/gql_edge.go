@@ -53,6 +53,14 @@ func (b *Bookmark) Message(ctx context.Context) (*Message, error) {
 	return result, MaskNotFound(err)
 }
 
+func (b *Bookmark) Response(ctx context.Context) (*Response, error) {
+	result, err := b.Edges.ResponseOrErr()
+	if IsNotLoaded(err) {
+		result, err = b.QueryResponse().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (m *Message) SentBy(ctx context.Context) (*User, error) {
 	result, err := m.Edges.SentByOrErr()
 	if IsNotLoaded(err) {

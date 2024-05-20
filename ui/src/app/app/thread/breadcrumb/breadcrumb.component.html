@@ -1,15 +1,15 @@
 <div class="flex align-items-center breadcrumb-container w-full border-bottom-1 surface-border">
   <i routerLink="/" class="pi pi-home ml-3"></i>
   <i class="pi pi-angle-right ml-3"></i>
-  @if (thread()?.parent?.id) {
-    <a [routerLink]="'/app/thread/' + thread()?.parent?.id" class="ml-3">{{ thread()?.parent?.name }}</a>
+  @if (parent()?.id) {
+    <a [routerLink]="'/app/thread/' + parent()?.id" class="ml-3">{{ parentName() }}</a>
     <i class="pi pi-angle-right ml-3"></i>
   }
-  <span>{{ thread()?.name }}</span>
-  @if (children().length > 0) {
+  <span>{{ threadName() }}</span>
+  @if (firstChild()) {
     <i class="pi pi-angle-right ml-3"></i>
     @if(children().length == 1) {
-      <a [routerLink]="'/app/thread/' + children()[0].id" class="ml-3">{{ children()[0].name }}</a>
+      <a [routerLink]="'/app/thread/' + firstChild()?.id" class="ml-3">{{ firstChildName() }}</a>
     } @else {
       <div class="ml-3">
         <p-dropdown

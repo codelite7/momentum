@@ -244,6 +244,8 @@ func (ec *executionContext) fieldContext_Mutation_createBookmark(ctx context.Con
 				return ec.fieldContext_Bookmark_thread(ctx, field)
 			case "message":
 				return ec.fieldContext_Bookmark_message(ctx, field)
+			case "response":
+				return ec.fieldContext_Bookmark_response(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
 		},

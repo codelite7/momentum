@@ -16,12 +16,16 @@
     </ng-template>
     <!-- content -->
     @if (bookmark && bookmark.message) {
-      <div class="col-12">
+      <div class="col-12" ellipsis>
         {{ bookmark.message.content }}
       </div>
     } @else if (bookmark && bookmark.thread) {
-      <div class="col-12">
+      <div class="col-12" ellipsis>
         {{ bookmark.thread.name }}
+      </div>
+    } @else if (bookmark && bookmark.response) {
+      <div class="col=12 content"  ellipsis>
+        {{ bookmark.response.content }}
       </div>
     }
   </p-card>
