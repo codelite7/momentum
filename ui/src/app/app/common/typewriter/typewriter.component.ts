@@ -1,4 +1,14 @@
-import { Component, computed, Input, signal } from '@angular/core'
+import {
+  Component,
+  effect,
+  ElementRef, input,
+  Input, InputSignal,
+  signal,
+  ViewChild,
+  viewChild
+} from '@angular/core'
+// @ts-ignore
+import TypeWriter from 'typewriter-effect/dist/core'
 
 @Component({
   selector: 'app-typewriter',
@@ -8,47 +18,32 @@ import { Component, computed, Input, signal } from '@angular/core'
   styleUrl: './typewriter.component.css'
 })
 export class TypewriterComponent {
-  @Input() words = ['|'];
-  @Input() typeSpeed = 80;
-  @Input() deleteSpeed = 50;
-  @Input() panelClass = '';
-  complete: boolean = false;
+  text: InputSignal<string | null | undefined> = input<string | null | undefined>('')
+  @ViewChild('content') content: ElementRef | undefined = undefined
+  writer: any = undefined
 
-  wordIndex = signal(0);
-  word = computed(() => this.words[this.wordIndex()]);
+  constructor() {
 
-  textIndex = signal(0);
-  text = computed(() => this.word().slice(0, this.textIndex()));
-
-  ngOnInit(): void {
-      this.type();
+    effect(() => {
+      const text = this.text()
+      this.type(text)
+    })
   }
 
-  type() {
-    const int = setInterval(() => {
-      this.textIndex.update((v) => v + 1);
-      if (this.textIndex() > this.word().length) {
-        clearInterval(int);
-        if (this.words.length == 1 && this.words[0] == '|') {
-          this.delete()
-        } else {
-          this.complete = true;
+  type(text: string | null | undefined) {
+    try {
+      const el = this.content?.nativeElement
+      if (el) {
+        if (this.writer) {
+          this.writer.stop()
         }
+        this.writer = new TypeWriter(el, {
+          delay: 0
+        })
+        this.writer.typeString(text).start();
       }
-    }, this.typeSpeed);
-  }
-
-  delete() {
-    const int = setInterval(() => {
-      this.textIndex.update((v) => v - 1);
-      if (this.textIndex() < 0) {
-        this.wordIndex.update((v) => (v + 1) % this.words.length);
-        clearInterval(int);
-        this.textIndex.set(0);
-        if (this.words.length == 1 && this.words[0] == '|') {
-          this.type();
-        }
-      }
-    }, this.deleteSpeed);
+    } catch (e) {
+      console.error(`typewriter error: ${e}`)
+    }
   }
 }

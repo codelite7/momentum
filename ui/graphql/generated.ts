@@ -1183,6 +1183,16 @@ export type ThreadMessagesQueryVariables = Exact<{
 
 export type ThreadMessagesQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any }, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } } | null, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, message: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } } } | null } | null } | null> | null } } | null } | null> | null } };
 
+export type ThreadMessagesStartingFromQueryVariables = Exact<{
+  first?: InputMaybe<Scalars['Int']['input']>;
+  threadId: Scalars['ID']['input'];
+  startFrom: Scalars['Time']['input'];
+  userId: Scalars['ID']['input'];
+}>;
+
+
+export type ThreadMessagesStartingFromQuery = { __typename?: 'Query', messages: { __typename?: 'MessageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: any | null, endCursor?: any | null }, edges?: Array<{ __typename?: 'MessageEdge', cursor: any, node?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any }, sentBy: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, sentBy: { __typename?: 'Agent', id: string, provider: string, model: string } } | null, bookmarks: { __typename?: 'BookmarkConnection', edges?: Array<{ __typename?: 'BookmarkEdge', node?: { __typename?: 'Bookmark', id: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', id: string, createdAt: any, updatedAt: any, email: string }, thread?: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } | null, message?: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } } | null, response?: { __typename?: 'Response', id: string, createdAt: any, updatedAt: any, content?: string | null, message: { __typename?: 'Message', id: string, createdAt: any, updatedAt: any, content: string, thread: { __typename?: 'Thread', id: string, createdAt: any, updatedAt: any, name: string } } } | null } | null } | null> | null } } | null } | null> | null } };
+
 export type ThreadMessageQueryVariables = Exact<{
   id: Scalars['ID']['input'];
   userId: Scalars['ID']['input'];
@@ -1480,6 +1490,29 @@ export const ThreadMessagesDocument = gql`
   }
 }
     ${ThreadMessageFragmentDoc}`;
+export const ThreadMessagesStartingFromDocument = gql`
+    query threadMessagesStartingFrom($first: Int, $threadId: ID!, $startFrom: Time!, $userId: ID!) {
+  messages(
+    first: $first
+    orderBy: [{field: CREATED_AT, direction: ASC}]
+    where: {hasThreadWith: {id: $threadId}, createdAtGTE: $startFrom}
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    edges {
+      node {
+        ...ThreadMessage
+      }
+      cursor
+    }
+  }
+}
+    ${ThreadMessageFragmentDoc}`;
 export const ThreadMessageDocument = gql`
     query threadMessage($id: ID!, $userId: ID!) {
   messages(where: {id: $id}) {
@@ -1585,6 +1618,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     threadMessages(variables: ThreadMessagesQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<ThreadMessagesQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ThreadMessagesQuery>(ThreadMessagesDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'threadMessages', 'query', variables);
+    },
+    threadMessagesStartingFrom(variables: ThreadMessagesStartingFromQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<ThreadMessagesStartingFromQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<ThreadMessagesStartingFromQuery>(ThreadMessagesStartingFromDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'threadMessagesStartingFrom', 'query', variables);
     },
     threadMessage(variables: ThreadMessageQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<ThreadMessageQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<ThreadMessageQuery>(ThreadMessageDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'threadMessage', 'query', variables);

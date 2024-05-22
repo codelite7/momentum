@@ -32,11 +32,11 @@ export class BookmarkComponent {
   async navigate() {
     try {
       if (this.bookmark?.message) {
-        await this.router.navigate([`app/thread/${this.bookmark?.message.thread.id}`])
+        await this.router.navigate([`app/thread/${this.bookmark?.message.thread.id}`], {queryParams: {messageId: this.bookmark?.message.id}})
       } else if (this.bookmark?.thread) {
         await this.router.navigate([`app/thread/${this.bookmark.thread.id}`])
       } else if (this.bookmark?.response) {
-        await this.router.navigate([`app/thread/${this.bookmark.response.message.thread.id}`])
+        await this.router.navigate([`app/thread/${this.bookmark.response.message.thread.id}`], {fragment: this.bookmark.response.id})
       }
     } catch(e) {
       this.toastService.generalError()

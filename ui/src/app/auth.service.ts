@@ -17,7 +17,8 @@ export class AuthService {
   }
 
   async userId(): Promise<string> {
-    return Session.getUserId()
+    let userId: string = await Session.getUserId()
+    return userId
   }
 
   async payload(): Promise<any> {

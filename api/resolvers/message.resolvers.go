@@ -6,6 +6,7 @@ package resolvers
 
 import (
 	"context"
+	"github.com/codelite7/momentum/api/queue"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -13,7 +14,6 @@ import (
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
-	"github.com/codelite7/momentum/api/river"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -52,13 +52,13 @@ func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMe
 	if err != nil {
 		return nil, gqlerror.Errorf(err.Error())
 	}
-	_, err = river.RiverClient.Insert(ctx, river.MessageArgs{
+	err = queue.QueuePrompt(ctx, queue.PromptQueueArgs{
 		ThreadId:         input.ThreadID,
 		MessageId:        message.ID,
 		ResponseId:       response.ID,
 		MessageContent:   message.Content,
 		MessageCreatedAt: message.CreatedAt,
-	}, nil)
+	})
 	if err != nil {
 		return nil, gqlerror.Errorf(err.Error())
 	}

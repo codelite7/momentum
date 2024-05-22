@@ -10,12 +10,13 @@ import { BookmarkComponent } from './bookmark/bookmark.component'
 import {
   BookmarkFragment,
   BookmarkOrderField,
-  BookmarksQuery,
+  BookmarksQuery, BookmarksQueryVariables,
   OrderDirection,
   ThreadFragment
 } from '../../../../graphql/generated'
 import { debounce } from 'lodash'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ActivatedRoute } from '@angular/router'
 
 @Component({
   selector: 'app-right-sidebar',
@@ -36,7 +37,7 @@ export class RightSidebarComponent {
   bookmarks: WritableSignal<BookmarkFragment[] | undefined> = signal(undefined)
   bookmarkService: BookmarkService = inject(BookmarkService)
   toastService: ToastService = inject(ToastService)
-
+  route: ActivatedRoute = inject(ActivatedRoute)
   bookmarkDeletedSubscription?: Subscription
   bookmarkCreatedSubscription?: Subscription
   searchResults: WritableSignal<BookmarkFragment[] | undefined> = signal(undefined)
@@ -85,7 +86,13 @@ export class RightSidebarComponent {
 
   async ngOnInit() {
     try {
-      await this.loadBookmarks()
+      this.route.paramMap.subscribe(
+        async (params) => {
+          let id = params.get('id')
+          if (id) {}
+          await this.loadBookmarks(id)
+        }
+      )
     } catch (e) {
       this.toastService.error(`${e}`)
       console.error(e)
@@ -120,11 +127,35 @@ export class RightSidebarComponent {
     )
   }
 
-  async loadBookmarks() {
-    this.bookmarks.set(await this.bookmarkService.bookmarks({
+  async loadBookmarks(threadId: string | null) {
+    let vars: BookmarksQueryVariables = {
       first: 50,
-      orderBy: [{ field: BookmarkOrderField.CreatedAt, direction: OrderDirection.Desc }]
-    }))
+      orderBy: [{ field: BookmarkOrderField.CreatedAt, direction: OrderDirection.Desc }],
+    }
+    if (threadId) {
+      vars.where = {
+        or: [
+          {
+            hasMessageWith: [{
+              hasThreadWith: [{
+                id: threadId
+              }]
+            }]
+          },
+          {
+            hasResponseWith: [{
+              hasMessageWith: [{
+                hasThreadWith: [{
+                  id: threadId
+                }]
+              }]
+            }]
+          }
+        ]
+
+      }
+    }
+    this.bookmarks.set(await this.bookmarkService.bookmarks(vars))
   }
 
   search(query: string) {

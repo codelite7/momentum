@@ -1,5 +1,5 @@
 import { ApplicationConfig, importProvidersFrom } from '@angular/core'
-import { provideRouter, withComponentInputBinding } from '@angular/router'
+import { provideRouter, withComponentInputBinding, withRouterConfig } from '@angular/router'
 
 import { routes } from './app.routes';
 import { provideAnimations } from '@angular/platform-browser/animations'
@@ -11,7 +11,9 @@ import { MarkdownModule } from 'ngx-markdown'
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes, withComponentInputBinding()),
+    provideRouter(routes, withComponentInputBinding(), withRouterConfig({
+      paramsInheritanceStrategy: 'always'
+    })),
     provideAnimations(),
     MessageService, // the toast service needs the message service, this instantiates the message services so the injector works in the toast service
     GraphqlService, // individual object services inject the graphql service so it gets instantiated here

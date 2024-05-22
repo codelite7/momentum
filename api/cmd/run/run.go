@@ -11,15 +11,11 @@ import (
 	"github.com/codelite7/momentum/api/config"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/agent"
+	"github.com/codelite7/momentum/api/queue"
 	"github.com/codelite7/momentum/api/resolvers"
-	"github.com/codelite7/momentum/api/river"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
-	"github.com/riverqueue/river/rivermigrate"
 	"github.com/samber/lo"
 	"github.com/supertokens/supertokens-golang/recipe/dashboard"
 	"github.com/supertokens/supertokens-golang/recipe/session"
@@ -52,11 +48,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	err = runRiverMigrations()
-	if err != nil {
-		return err
-	}
-	err = river.StartRiverClient()
+	err = queue.InitializeQueue()
 	if err != nil {
 		return err
 	}
@@ -70,7 +62,6 @@ func run() error {
 		return err
 	}
 
-	err = river.StopRiverClient()
 	if err != nil {
 		return err
 	}
@@ -373,35 +364,4 @@ var flags = []cli.Flag{
 
 func sessionMiddleware(next http.Handler) http.Handler {
 	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(config.SessionRequired)}, next.ServeHTTP)
-}
-
-func runRiverMigrations() error {
-	ctx := context.Background()
-
-	dbPool, err := pgxpool.New(context.Background(), config.PostgresUri)
-	if err != nil {
-		return err
-	}
-	defer dbPool.Close()
-
-	tx, err := dbPool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	migrator := rivermigrate.New[pgx.Tx](riverpgxv5.New(dbPool), nil)
-
-	printVersions := func(res *rivermigrate.MigrateResult) {
-		for _, version := range res.Versions {
-			fmt.Printf("Migrated [%s] version %d\n", strings.ToUpper(string(res.Direction)), version.Version)
-		}
-	}
-
-	res, err := migrator.MigrateTx(ctx, tx, rivermigrate.DirectionUp, nil)
-	if err != nil {
-		return err
-	}
-	printVersions(res)
-	return tx.Commit(ctx)
 }

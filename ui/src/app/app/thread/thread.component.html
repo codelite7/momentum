@@ -4,27 +4,29 @@
       <app-breadcrumb [thread]="thread()"></app-breadcrumb>
     </div>
     <div class="col-12 container">
-      <div class="flex flex-column justify-content-end h-full">
-        <!-- messages -->
-        <div #messagesContainer class="mb-3 mt-3 overflow-y-auto" [scrollTop]="messagesContainer.scrollHeight">
-          @if (messages().length == 0) {
-            <div class="flex w-full justify-content-center mb-3 pl-3 pr-3">
-              <span class="explore">What do you want to talk about?</span>
-            </div>
-          } @else {
-            <div class="pl-3 pr-3">
-              @for (message of messages(); track message.id) {
-                <app-message [last]="$index == messages().length - 1" [threadId]="thread()?.id" [message]="message"></app-message>
-                @if(message.response) {
-                  <app-message [last]="$index == messages().length - 1" [threadId]="thread()?.id" [message]="message" [response]="true"></app-message>
-                }
+      <div class="grid grid-nogutter border-1 border-red-900">
+        <div class="col-12">
+          <div class="flex-column border-1 border-red-900">
+            <!-- messages -->
+            <div #messagesContainer class="mb-3 mt-3 overflow-y-scroll" infinite-scroll (scrolled)="scrollDown()" (scrolledUp)="scrollUp()" [scrollWindow]="false">
+              @if (messages().length == 0) {
+                <div class="flex w-full justify-content-center mb-3 pl-3 pr-3">
+                  <span class="explore">What do you want to talk about?</span>
+                </div>
+              } @else {
+                <div class="pl-3 pr-3">
+                  @for (message of messages(); track message.id) {
+                    <app-message [last]="$index == messages().length - 1" [threadId]="thread()?.id" [message]="message" [id]="'id' + message.id"></app-message>
+                    @if(message.response) {
+                      <app-message [last]="$index == messages().length - 1" [threadId]="thread()?.id" [message]="message" [response]="true" [id]="'id' + message.response.id"></app-message>
+                    }
+                  }
+                </div>
               }
             </div>
-          }
-        </div>
-        <!-- prompt input -->
-        <div class="mb-3 pl-3 pr-3">
-          <form [formGroup]="promptForm" (ngSubmit)="sendMessage()" class="w-full">
+            <!-- prompt input -->
+            <div class="mb-3 pl-3 pr-3">
+              <form [formGroup]="promptForm" (ngSubmit)="sendMessage()" class="w-full">
           <textarea
             #promptInput
             formControlName="prompt"
@@ -34,12 +36,15 @@
             (keydown)="keyPressed($event)"
           >
         </textarea>
-            <div class="flex justify-content-end">
-              <p-button label="Enter" icon="pi pi-arrow-down" [disabled]="!promptForm.valid" [loading]="loading()" type="submit"></p-button>
+                <div class="flex justify-content-end">
+                  <p-button label="Enter" icon="pi pi-arrow-down" [disabled]="!promptForm.valid" [loading]="loading()" type="submit"></p-button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 </app-base>

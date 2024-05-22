@@ -17,6 +17,9 @@ textarea {
 }
 
 .messages-container {
+  max-height: 100%;
   overflow-y: auto;
-  background-color: #75A5FD;
+  /*max-height: 20rem;*/
+  /*max-height: 320px;*/
+  /*max-height: calc(100vh - 110px) !important;*/
 }

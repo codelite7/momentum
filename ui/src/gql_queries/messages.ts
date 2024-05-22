@@ -135,6 +135,39 @@ query threadMessages($after: Cursor, $first: Int, $before: Cursor, $last: Int, $
   }
 }
 `
+
+export const threadMessagesStartinFrom = gql`
+query threadMessagesStartingFrom($first: Int, $threadId: ID!, $startFrom:Time!, $userId:ID!) {
+  messages(
+    first: $first
+    orderBy: [
+      {
+        field:CREATED_AT,
+        direction:ASC
+      }
+    ]
+    where: {
+      hasThreadWith: {id: $threadId},
+      createdAtGTE:$startFrom
+    }
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    edges {
+      node {
+        ...ThreadMessage
+      }
+      cursor
+    }
+  }
+}
+`
+
 export const threadMessage = gql`
 query threadMessage($id:ID!,$userId:ID!) {
   messages(

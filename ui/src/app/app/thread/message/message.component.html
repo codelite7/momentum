@@ -14,7 +14,7 @@
             </div>
           }
           <div class="action" pTooltip="Copy to clipboard" tooltipPosition="bottom">
-            <p-button icon="pi pi-clipboard" [rounded]="true" [text]="true" [cdkCopyToClipboard]="message!.content" />
+            <p-button icon="pi pi-clipboard" [rounded]="true" [text]="true" [cdkCopyToClipboard]="getClipboardText()" />
           </div>
           <div class="action" pTooltip="New thread" tooltipPosition="bottom">
             <p-button icon="pi pi-arrow-right" [rounded]="true" [text]="true" (onClick)="newThread()" />
@@ -45,19 +45,8 @@
               {{ message?.content }}
             } @else {
               @if (last && !hasContent) {
-                @if(message?.response?.content) {
-                  <app-typewriter
-                    [words]="[message?.response?.content ?? '']"
-                    [typeSpeed]="getTypeSpeed()"
-                  >
-                  </app-typewriter>
-                } @else {
-                    <app-typewriter
-                      [words]="['|']"
-                      [typeSpeed]="1000"
-                    >
-                    </app-typewriter>
-                }
+                <app-typewriter [text]="message?.response?.content">
+                </app-typewriter>
               } @else {
                 <div markdown>
                   {{ message?.response?.content}}

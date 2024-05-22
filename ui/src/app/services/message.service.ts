@@ -13,7 +13,7 @@ import {
   ThreadMessageFragment,
   ThreadMessageQueryVariables,
   ThreadMessagesQuery,
-  ThreadMessagesQueryVariables,
+  ThreadMessagesQueryVariables, ThreadMessagesStartingFromQueryVariables,
   ThreadQuery,
   ThreadsQuery,
   ThreadsQueryVariables
@@ -43,7 +43,7 @@ export class MessageService {
   async message(id:string): Promise<MessageFragment | undefined> {
     let response = await this.graphqlService.sdk.message({id:id})
     if (response.messages.edges) {
-      return response.messages.edges[0] as MessageFragment
+      return response.messages.edges[0]?.node as MessageFragment
     }
     return undefined
   }
@@ -58,6 +58,17 @@ export class MessageService {
   async threadMessages(vars: ThreadMessagesQueryVariables): Promise<ThreadMessageFragment[]> {
     vars.userId = await this.authService.userId()
     let response =  await this.graphqlService.sdk.threadMessages(vars)
+    if (response.messages.edges) {
+      let messages: ThreadMessageFragment[] = []
+      response.messages.edges.forEach(edge => messages.push(edge?.node as ThreadMessageFragment))
+      return messages
+    }
+    return []
+  }
+
+  async threadMessagesStartingFrom(vars: ThreadMessagesStartingFromQueryVariables): Promise<ThreadMessageFragment[]> {
+    vars.userId = await this.authService.userId()
+    let response =  await this.graphqlService.sdk.threadMessagesStartingFrom(vars)
     if (response.messages.edges) {
       let messages: ThreadMessageFragment[] = []
       response.messages.edges.forEach(edge => messages.push(edge?.node as ThreadMessageFragment))

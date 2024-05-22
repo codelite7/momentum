@@ -17,6 +17,8 @@ import { MarkdownModule } from 'ngx-markdown'
 import { AgentAvatarComponent } from '../../common/agent-avatar/agent-avatar.component'
 import { TypewriterComponent } from '../../common/typewriter/typewriter.component'
 import { MessageService } from '../../../services/message.service'
+// @ts-ignore
+import TypeWriter from 'typewriter-effect/dist/core'
 
 @Component({
   selector: 'app-message',
@@ -44,7 +46,7 @@ export class MessageComponent {
   @Input() threadId?: string = ''
   @Input() last: boolean = false;
   // @ts-ignore
-  @ViewChild('stuff') stuff:ElementRef;
+  @ViewChild('typity') typity :ElementRef;
   hasContent: boolean = false;
   bookmark: BookmarkFragment | undefined
   authService: AuthService = inject(AuthService)
@@ -136,28 +138,12 @@ export class MessageComponent {
     }
   }
 
-  get typewriterWords(): string[] {
-    if (this.message?.response?.content) {
-      return [this.message?.response?.content]
+  getClipboardText(): string {
+    if (this.response) {
+      return this.message?.response?.content ?? ''
+    } else {
+      return this.message?.content ?? ''
     }
-    return []
   }
 
-  getTypeSpeed(): number {
-    return 10
-    // let length = this.message?.response?.content?.length
-    // if (length) {
-    //   // we want the total time to be 1 second regardless of size so we divide the content length by 1000 to get
-    //   // the type rate
-    //   let rate = length / 1000
-    //   console.log(`length: ${length}, rate: ${rate}`)
-    //   console.log(`rate: ${rate}`)
-    //   // if (rate < 0) {
-    //   //   return 1
-    //   // }
-    //   return rate
-    // }
-    // // default to 10
-    // return 10
-  }
 }

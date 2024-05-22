@@ -3,7 +3,7 @@ import {
   computed,
   effect,
   ElementRef,
-  inject,
+  inject, Input, InputSignal,
   Signal,
   signal,
   ViewChild,
@@ -25,11 +25,14 @@ import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component'
 import {
   MessageOrderField,
   OrderDirection,
-  ThreadFragment, ThreadMessageFragment,
+  ThreadFragment, ThreadMessageFragment
 } from '../../../../graphql/generated'
 import { ActivatedRoute, Router } from '@angular/router'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { cloneDeep } from 'lodash'
+import { injectQueryParams } from 'ngxtension/inject-query-params'
+import { injectParams } from 'ngxtension/inject-params'
+import { InfiniteScrollModule } from 'ngx-infinite-scroll'
 
 
 @Component({
@@ -46,13 +49,17 @@ import { cloneDeep } from 'lodash'
     UserMessageComponent,
     MessageComponent,
     BreadcrumbComponent,
-    ProgressSpinnerModule
+    ProgressSpinnerModule,
+    InfiniteScrollModule
   ],
   templateUrl: './thread.component.html',
   styleUrl: './thread.component.css'
 })
 export class ThreadComponent {
-  @ViewChild('promptInput') promptInput!:ElementRef
+  @ViewChild('promptInput') promptInput!: ElementRef
+  idParam = injectParams('id')
+  messageIdParam = injectQueryParams('messageId')
+  responseIdParam = injectQueryParams('responseId')
   threadService: ThreadService = inject(ThreadService)
   messageService: MessageService = inject(MessageService)
   toastService: ToastService = inject(ToastService)
@@ -95,7 +102,7 @@ export class ThreadComponent {
     return this.loading() || (this.numMessages() > 0 && !this.lastMessageHasResponse())
   })
   promptForm: FormGroup = new FormGroup<any>({
-    prompt: new FormControl({value: '', disabled: true}, [Validators.required]),
+    prompt: new FormControl({ value: '', disabled: true }, [Validators.required])
   })
 
   constructor(private route: ActivatedRoute) {
@@ -109,9 +116,9 @@ export class ThreadComponent {
     })
     effect(async () => {
       while (this.numMessages() > 0 && !this.lastResponseHasContent()) {
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 1000))
         try {
-          let message = await this.messageService.threadMessage({id: this.lastMessage()!.id, userId: ''})
+          let message = await this.messageService.threadMessage({ id: this.lastMessage()!.id, userId: '' })
           let responseContent = message?.response?.content
           if (responseContent) {
             let messages = cloneDeep(this.messages())
@@ -122,42 +129,54 @@ export class ThreadComponent {
           console.error(e)
         }
       }
-    }, {allowSignalWrites: true})
-  }
-  async ngOnInit() {
-    this.loadingTrue()
-    try {
-      this.route.paramMap.subscribe(
-        (async (params) => {
-          let id = params.get('id')
-          if (id) {
-            try {
-              this.thread.set(await this.threadService.thread(id))
-            } catch (e) {
-              this.toastService.error(`${e}`)
+    }, { allowSignalWrites: true })
+    effect(async () => {
+      let id = this.idParam()
+      let messageId = this.messageIdParam()
+      this.loadingTrue()
+      try {
+        if (id) {
+          this.thread.set(await this.threadService.thread(id))
+          let messages: ThreadMessageFragment[] = []
+          if (messageId) {
+            let message = await this.messageService.message(messageId)
+            if (message) {
+              messages = await this.messageService.threadMessagesStartingFrom({threadId: id, startFrom: message.createdAt, userId: ''})
+            } else {
+              // TODO: 404?
             }
-            try {
-              this.messages.set(await this.messageService.threadMessages({userId: '', threadId: id, first: 50, orderBy: [{field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc}]}))
-            } catch (e) {
-              this.toastService.error(`${e}`)
-            }
+          } else {
+            messages = await this.messageService.threadMessages({
+              userId: '',
+              threadId: id,
+              first: 50,
+              orderBy: [{ field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc }]
+            })
           }
-        })
-      )
-    } finally {
-      this.loadingFalse()
-    }
-
+          this.messages.set(messages)
+        }
+      } catch(e) {
+        this.toastService.generalError()
+        console.error(e)
+      } finally {
+        this.loadingFalse()
+      }
+    }, { allowSignalWrites: true })
   }
 
-  async sendMessage(){
+  async sendMessage() {
     try {
       this.disableMessageInput()
       this.loadingTrue()
       let newMessage = await this.messageService.createMessage(this.promptForm.value.prompt, this.thread()!.id)
-      let newThreadMessage = await this.messageService.threadMessage({id:newMessage.id, userId: ''})
+      let newThreadMessage = await this.messageService.threadMessage({ id: newMessage.id, userId: '' })
       if (newThreadMessage) {
-        this.messages.set(await this.messageService.threadMessages({userId: '', threadId: this.thread()!.id, first: 50, orderBy: [{field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc}]}))
+        this.messages.set(await this.messageService.threadMessages({
+          userId: '',
+          threadId: this.thread()!.id,
+          first: 50,
+          orderBy: [{ field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc }]
+        }))
         let control = this.getPromptControl()
         control.setValue('')
         control.clearValidators()
@@ -184,7 +203,7 @@ export class ThreadComponent {
       event.preventDefault()
       if (event.shiftKey) {
         let value = this.promptForm.value.prompt
-        value += "\n"
+        value += '\n'
         this.promptForm.controls['prompt'].setValue(value)
       } else {
         this.sendMessage()
@@ -210,6 +229,14 @@ export class ThreadComponent {
 
   loadingFalse() {
     this.loading.set(false)
+  }
+
+  scrollDown() {
+    console.log('scroll down')
+  }
+
+  scrollUp() {
+    console.log('scroll up')
   }
 }
 
