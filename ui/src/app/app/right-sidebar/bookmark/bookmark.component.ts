@@ -7,6 +7,9 @@ import { BookmarkService } from '../../../services/bookmark.service'
 import { ToastService } from '../../../services/toast.service'
 import { BookmarkFragment } from '../../../../../graphql/generated'
 import { EllipsisModule } from 'ngx-ellipsis'
+import { bookmarks } from '../../../../gql_queries/bookmarks'
+import { NgxCutModule } from 'ngx-cut'
+import { NestedEllipsisModule } from 'ngx-nested-ellipsis'
 
 @Component({
   selector: 'app-bookmark',
@@ -15,7 +18,9 @@ import { EllipsisModule } from 'ngx-ellipsis'
     ButtonModule,
     TooltipModule,
     CardModule,
-    EllipsisModule
+    EllipsisModule,
+    NgxCutModule,
+    NestedEllipsisModule
   ],
   templateUrl: './bookmark.component.html',
   styleUrl: './bookmark.component.css'
@@ -53,4 +58,6 @@ export class BookmarkComponent {
       console.error(e)
     }
   }
+
+  protected readonly bookmarks = bookmarks
 }

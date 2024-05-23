@@ -1,32 +1,35 @@
-<!-- container -->
-<div class="container mb-2 border-1 surface-border border-round cursor-pointer" (click)="navigate()">
-  <p-card>
-    <ng-template pTemplate="header">
-      <div class="flex justify-content-between mb-2">
-        <!-- icons -->
-        <div>
-          <i class="pi pi-bookmark mr-2" [style]="{color: '#4280FC'}"></i>
-          <i class="pi pi-home" [style]="{color: '#4280FC'}"></i>
+<div class="wrapper">
+  <div class="mb-3 card-container cursor-pointer">
+    <p-card>
+      <ng-template pTemplate="header">
+        <div class="flex justify-content-between mb-2">
+          <!-- icons -->
+          <div>
+            <i class="pi pi-bookmark mr-2" [style]="{color: '#4280FC'}"></i>
+            <i class="pi pi-home" [style]="{color: '#4280FC'}"></i>
+          </div>
+          <!-- remove button -->
+          <div>
+            <i class="pi pi-times cursor-pointer" [style]="{color: '#FFFFFF80'}" pTooltip="Remove bookmark"
+               (click)="removeBookmark()"></i>
+          </div>
         </div>
-        <!-- remove button -->
-        <div>
-          <i class="pi pi-times cursor-pointer" [style]="{color: '#FFFFFF80'}" pTooltip="Remove bookmark" (click)="removeBookmark()"></i>
+      </ng-template>
+      <!-- content -->
+      @if (bookmark && bookmark.message) {
+        <div class="overflow-hidden max-h-5rem" ellipsis>
+          {{ bookmark.message.content }}
         </div>
-      </div>
-    </ng-template>
-    <!-- content -->
-    @if (bookmark && bookmark.message) {
-      <div class="col-12" ellipsis>
-        {{ bookmark.message.content }}
-      </div>
-    } @else if (bookmark && bookmark.thread) {
-      <div class="col-12" ellipsis>
-        {{ bookmark.thread.name }}
-      </div>
-    } @else if (bookmark && bookmark.response) {
-      <div class="col=12 content"  ellipsis>
-        {{ bookmark.response.content }}
-      </div>
-    }
-  </p-card>
+      } @else if (bookmark && bookmark.thread) {
+        <div class="overflow-hidden max-h-5rem" ellipsis>
+          {{ bookmark.thread.name }}
+        </div>
+      } @else if (bookmark && bookmark.response) {
+        <div class="overflow-hidden max-h-5rem" ellipsis>
+          {{ bookmark.response.content }}
+        </div>
+      }
+    </p-card>
+  </div>
 </div>
+

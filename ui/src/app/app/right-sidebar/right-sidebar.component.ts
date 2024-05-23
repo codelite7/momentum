@@ -33,8 +33,9 @@ import { ActivatedRoute } from '@angular/router'
   styleUrl: './right-sidebar.component.css'
 })
 export class RightSidebarComponent {
+  numbers = Array(30).fill(1)
   query: string = ''
-  bookmarks: WritableSignal<BookmarkFragment[] | undefined> = signal(undefined)
+  bookmarks: WritableSignal<BookmarkFragment[] | undefined> = signal(Array(30).fill({message: {content: 'A bookmark that spans a couple lines but is too long and will get truncated some day when it gets too long'}} as BookmarkFragment))
   bookmarkService: BookmarkService = inject(BookmarkService)
   toastService: ToastService = inject(ToastService)
   route: ActivatedRoute = inject(ActivatedRoute)
@@ -128,34 +129,34 @@ export class RightSidebarComponent {
   }
 
   async loadBookmarks(threadId: string | null) {
-    let vars: BookmarksQueryVariables = {
-      first: 50,
-      orderBy: [{ field: BookmarkOrderField.CreatedAt, direction: OrderDirection.Desc }],
-    }
-    if (threadId) {
-      vars.where = {
-        or: [
-          {
-            hasMessageWith: [{
-              hasThreadWith: [{
-                id: threadId
-              }]
-            }]
-          },
-          {
-            hasResponseWith: [{
-              hasMessageWith: [{
-                hasThreadWith: [{
-                  id: threadId
-                }]
-              }]
-            }]
-          }
-        ]
-
-      }
-    }
-    this.bookmarks.set(await this.bookmarkService.bookmarks(vars))
+    // let vars: BookmarksQueryVariables = {
+    //   first: 50,
+    //   orderBy: [{ field: BookmarkOrderField.CreatedAt, direction: OrderDirection.Desc }],
+    // }
+    // if (threadId) {
+    //   vars.where = {
+    //     or: [
+    //       {
+    //         hasMessageWith: [{
+    //           hasThreadWith: [{
+    //             id: threadId
+    //           }]
+    //         }]
+    //       },
+    //       {
+    //         hasResponseWith: [{
+    //           hasMessageWith: [{
+    //             hasThreadWith: [{
+    //               id: threadId
+    //             }]
+    //           }]
+    //         }]
+    //       }
+    //     ]
+    //
+    //   }
+    // }
+    // this.bookmarks.set(await this.bookmarkService.bookmarks(vars))
   }
 
   search(query: string) {

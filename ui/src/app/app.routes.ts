@@ -11,8 +11,13 @@ import { HomeComponent } from './app/home/home.component'
 import { ThreadComponent } from './app/thread/thread.component'
 import { SignupComponent } from './auth/signup/signup.component'
 import { NewComponent } from './app/thread/new/new.component'
+import { TestComponent } from './test/test.component'
 
 export const routes: Routes = [
+  {
+    path: 'test',
+    component: TestComponent
+  },
   {
     path: '',
     pathMatch: 'full',

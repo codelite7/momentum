@@ -1,0 +1,7 @@
+.wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  border: 4px solid blue;
+  overflow: hidden;
+  height: 100%;
+}

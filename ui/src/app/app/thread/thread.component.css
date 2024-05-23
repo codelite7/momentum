@@ -1,25 +1,52 @@
-.explore {
-  font-size: 1.375rem;
-  font-weight: 500;
-  letter-spacing: 0.01375rem;
+/*.explore {*/
+/*  font-size: 1.375rem;*/
+/*  font-weight: 500;*/
+/*  letter-spacing: 0.01375rem;*/
+/*}*/
+
+/*textarea {*/
+/*  resize: none;*/
+/*}*/
+
+/*::ng-deep .p-breadcrumb {*/
+/*  background-color: transparent;*/
+/*}*/
+
+/*.container {*/
+/*  height: calc(100vh - 110px);*/
+/*}*/
+
+/*.messages-container {*/
+/*  max-height: 100%;*/
+/*  overflow-y: auto;*/
+/*  !*max-height: 20rem;*!*/
+/*  !*max-height: 320px;*!*/
+/*  !*max-height: calc(100vh - 110px) !important;*!*/
+/*}*/
+
+.wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 45px auto;
+  border: 4px solid green;
+  overflow: hidden;
 }
 
-textarea {
-  resize: none;
+.messages-wrapper {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  align-content: end;
+  border: 4px solid red;
+  overflow: hidden;
 }
 
-::ng-deep .p-breadcrumb {
-  background-color: transparent;
-}
-
-.container {
-  height: calc(100vh - 110px);
-}
-
-.messages-container {
-  max-height: 100%;
+.messages {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  border: 4px solid orange;
   overflow-y: auto;
-  /*max-height: 20rem;*/
-  /*max-height: 320px;*/
-  /*max-height: calc(100vh - 110px) !important;*/
+}
+
+.input {
+  border: 4px solid blue;
 }

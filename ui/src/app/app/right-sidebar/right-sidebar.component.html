@@ -1,22 +1,17 @@
-<!-- layout -->
-<div class="grid grid-nogutter">
-  <!-- title header -->
-  <div class="col-12">
-    <div class="flex align-items-center title">
-      <i class="pi pi-bookmark mr-2"></i>
-      Bookmarks
-    </div>
-  </div>
-  <!-- search bar -->
-  <div class="col-12">
-    <div class="mb-2">
-      <p-iconField iconPosition="left" class="search-input">
-        <p-inputIcon styleClass="pi pi-search" />
-        <input type="text" pInputText placeholder="Search all bookmarks" (ngModelChange)="search($event)" [(ngModel)]="query"
-               class="w-full" />
-      </p-iconField>
-    </div>
-  </div>
+<div class="flex align-items-center title">
+  <i class="pi pi-bookmark mr-2"></i>
+  Bookmarks
+</div>
+<!-- search bar -->
+<div class="mb-2">
+  <p-iconField iconPosition="left" class="search-input">
+    <p-inputIcon styleClass="pi pi-search" />
+    <input type="text" pInputText placeholder="Search all bookmarks" (ngModelChange)="search($event)"
+           [(ngModel)]="query"
+           class="w-full" />
+  </p-iconField>
+</div>
+<div class="h-full overflow-y-auto">
   <!-- search results -->
   @if (searchLoading()) {
     <div class="flex w-full justify-content-center align-items-center mt-3">
@@ -44,25 +39,20 @@
       @if (!searchLoading() && bookmarks() !== undefined) {
         <!-- no bookmarks placeholder -->
         @if (bookmarks()?.length == 0) {
-          <div class="col-12">
-            <div class="bookmark-stub p-2 border">
-              <div class="inner">
-                <div class="flex justify-content-center">
-                  <i class="pi pi-bookmark mr-2 icon"></i>
-                </div>
-                Bookmark important pieces of your conversation to collect them here
+          <div class="bookmark-stub p-2 border">
+            <div class="inner">
+              <div class="flex justify-content-center">
+                <i class="pi pi-bookmark mr-2 icon"></i>
               </div>
+              Bookmark important pieces of your conversation to collect them here
             </div>
           </div>
         } @else {
           @for (bookmark of bookmarks(); track bookmark.id) {
-            <div class="w-full">
-              <app-bookmark [bookmark]="bookmark"></app-bookmark>
-            </div>
+            <app-bookmark [bookmark]="bookmark"></app-bookmark>
           }
         }
       }
     }
   }
-
 </div>

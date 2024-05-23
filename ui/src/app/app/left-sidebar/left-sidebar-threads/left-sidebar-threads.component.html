@@ -1,3 +1,6 @@
-@for (thread of threads; track thread.id) {
-  <app-thread-button [thread]="thread"/>
-}
+<div class="h-full overflow-y-auto">
+  @for (thread of threads; track thread.id) {
+    <app-thread-button [thread]="thread" />
+  }
+</div>
+

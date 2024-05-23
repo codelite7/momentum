@@ -3,3 +3,7 @@
   background-color: transparent;
   color: white;
 }
+
+:host {
+  display: contents;
+}

@@ -23,6 +23,7 @@ import { UserMessageComponent } from './user-message/user-message.component'
 import { MessageComponent } from './message/message.component'
 import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component'
 import {
+  BookmarkFragment,
   MessageOrderField,
   OrderDirection,
   ThreadFragment, ThreadMessageFragment
@@ -64,7 +65,7 @@ export class ThreadComponent {
   messageService: MessageService = inject(MessageService)
   toastService: ToastService = inject(ToastService)
   thread: WritableSignal<ThreadFragment | undefined> = signal(undefined)
-  messages: WritableSignal<ThreadMessageFragment[]> = signal([])
+  messages: WritableSignal<ThreadMessageFragment[]> = signal(Array(100).fill({content: 'Some message hooray'} as ThreadMessageFragment))
   loading: WritableSignal<boolean> = signal(true)
   responses = computed(() => {
     let responses: any[] = []
@@ -123,7 +124,7 @@ export class ThreadComponent {
           if (responseContent) {
             let messages = cloneDeep(this.messages())
             messages[messages.length - 1].response!.content = responseContent
-            this.messages.set(messages)
+            // this.messages.set(messages)
           }
         } catch (e) {
           console.error(e)
@@ -153,7 +154,7 @@ export class ThreadComponent {
               orderBy: [{ field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc }]
             })
           }
-          this.messages.set(messages)
+          // this.messages.set(messages)
         }
       } catch(e) {
         this.toastService.generalError()
@@ -171,12 +172,12 @@ export class ThreadComponent {
       let newMessage = await this.messageService.createMessage(this.promptForm.value.prompt, this.thread()!.id)
       let newThreadMessage = await this.messageService.threadMessage({ id: newMessage.id, userId: '' })
       if (newThreadMessage) {
-        this.messages.set(await this.messageService.threadMessages({
-          userId: '',
-          threadId: this.thread()!.id,
-          first: 50,
-          orderBy: [{ field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc }]
-        }))
+        // this.messages.set(await this.messageService.threadMessages({
+        //   userId: '',
+        //   threadId: this.thread()!.id,
+        //   first: 50,
+        //   orderBy: [{ field: MessageOrderField.CreatedAt, direction: OrderDirection.Asc }]
+        // }))
         let control = this.getPromptControl()
         control.setValue('')
         control.clearValidators()

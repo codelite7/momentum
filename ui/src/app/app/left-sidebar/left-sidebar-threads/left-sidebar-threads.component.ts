@@ -3,7 +3,13 @@ import { ThreadService } from '../../../services/thread.service'
 import { ToastService } from '../../../services/toast.service'
 import { NgForOf, NgIf } from '@angular/common'
 import { ThreadButtonComponent } from './thread-button/thread-button.component'
-import { MessageOrderField, OrderDirection, ThreadFragment, ThreadsQuery } from '../../../../../graphql/generated'
+import {
+  BookmarkFragment,
+  MessageOrderField,
+  OrderDirection,
+  ThreadFragment,
+  ThreadsQuery
+} from '../../../../../graphql/generated'
 import { Subscription } from 'rxjs'
 import { ActivatedRoute } from '@angular/router'
 
@@ -21,7 +27,7 @@ import { ActivatedRoute } from '@angular/router'
 export class LeftSidebarThreadsComponent {
   threadService: ThreadService = inject(ThreadService)
   toastService: ToastService = inject(ToastService)
-  threads: ThreadFragment[] = []
+  threads: ThreadFragment[] = Array(30).fill({name: 'Some thread name that is longer than it should be and should be truncated'} as ThreadFragment)
   threadCreatedSubscription: Subscription
 
   constructor(private route: ActivatedRoute) {
@@ -41,7 +47,7 @@ export class LeftSidebarThreadsComponent {
 
   async loadThreads() {
     try {
-      this.threads = await this.threadService.threads({first: 50})
+      // this.threads = await this.threadService.threads({first: 50})
     } catch (e) {
       this.toastService.error(`${e}`)
     }

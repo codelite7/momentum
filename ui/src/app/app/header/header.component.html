@@ -1,11 +1,24 @@
-<div class="grid grid-nogutter h-full">
-  <div class="col-1">
-    <app-logo></app-logo>
+<!--<div class="grid grid-nogutter h-full">-->
+<!--  <div class="col-1">-->
+<!--    <app-logo></app-logo>-->
+<!--  </div>-->
+<!--  <div class="col">-->
+<!--    <app-thread-search></app-thread-search>-->
+<!--  </div>-->
+<!--  <div class="col-1">-->
+<!--    <app-user-avatar [showMenu]="true"></app-user-avatar>-->
+<!--  </div>-->
+<!--</div>-->
+<div class="wrapper">
+  <div class="item">
+    <a routerLink="/">
+      <img ngSrc="assets/logo.svg" alt="manifold q" height="26" width="119">
+    </a>
   </div>
-  <div class="col">
+  <div class="item">
     <app-thread-search></app-thread-search>
   </div>
-  <div class="col-1">
-    <app-user-avatar [showMenu]="true"></app-user-avatar>
+  <div class="item">
+    <app-user-avatar></app-user-avatar>
   </div>
 </div>

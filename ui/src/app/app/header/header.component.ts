@@ -7,7 +7,7 @@ import { IconFieldModule } from 'primeng/iconfield'
 import { InputIconModule } from 'primeng/inputicon'
 import { UserAvatarComponent } from '../common/user-avatar/user-avatar.component'
 import { ThreadSearchComponent } from './thread-search/thread-search.component'
-import { LogoComponent } from './logo/logo.component'
+import { RouterLink } from '@angular/router'
 
 @Component({
   selector: 'app-header',
@@ -21,7 +21,7 @@ import { LogoComponent } from './logo/logo.component'
     InputIconModule,
     UserAvatarComponent,
     ThreadSearchComponent,
-    LogoComponent
+    RouterLink
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css'

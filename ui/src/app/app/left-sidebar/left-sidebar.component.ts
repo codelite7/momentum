@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core'
+import { Component, inject, ViewEncapsulation } from '@angular/core'
 import { ButtonModule } from 'primeng/button'
 import { LeftSidebarThreadsComponent } from './left-sidebar-threads/left-sidebar-threads.component'
 import { ThreadService } from '../../services/thread.service'
@@ -15,7 +15,10 @@ import { Router, RouterLink } from '@angular/router'
     RouterLink
   ],
   templateUrl: './left-sidebar.component.html',
-  styleUrl: './left-sidebar.component.css'
+  styleUrl: './left-sidebar.component.css',
+  // host: {
+    // style: "display: contents"
+  // }
 })
 
 export class LeftSidebarComponent {
@@ -23,6 +26,7 @@ export class LeftSidebarComponent {
   toastService: ToastService = inject(ToastService)
   leftSidebarThreadsService: LeftSidebarThreadsService = inject(LeftSidebarThreadsService)
   router: Router = inject(Router)
+  numbers = Array(100).fill(1)
 
   async createNewThread() {
     try {

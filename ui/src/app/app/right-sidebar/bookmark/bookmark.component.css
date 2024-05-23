@@ -1,15 +1,13 @@
-.container ::ng-deep .p-card {
+.card-container ::ng-deep .p-card {
   padding: 8px;
 }
 
-.container ::ng-deep .p-card-body {
+.card-container ::ng-deep .p-card-body {
   padding: 0;
 }
 
-.container ::ng-deep .col-12 {
-  padding: 0;
-}
 
-.content {
-  max-height: 65px;
+.wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
 }

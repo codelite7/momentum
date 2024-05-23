@@ -1,27 +1,20 @@
-<!-- full screen container -->
-<div class="grid grid-nogutter h-full">
-  <!-- full width header -->
-  <div class="col-12 header border-bottom-1 surface-border pl-3 pr-3">
-    <div class="h-full">
-      <app-header></app-header>
+<div class="wrapper">
+  <div class="header">
+    <app-header></app-header>
+  </div>
+  <div class="left-sidebar">
+    <div class="h-full overflow-hidden">
+      <app-left-sidebar></app-left-sidebar>
     </div>
   </div>
-  <!-- full width body container -->
-  <div class="col-12 container">
-    <!-- 3 column layout -->
-    <div class="grid grid-nogutter h-full">
-      <!-- left sidebar -->
-      <div class="col-1 border-right-1 surface-border left-sidebar pt-4 pb-4 pl-2 pr-2">
-        <app-left-sidebar></app-left-sidebar>
-      </div>
-      <!-- main body -->
-      <div class="col">
-        <ng-content></ng-content>
-      </div>
-      <!-- right sidebar -->
-      <div class="col-2 border-left-1 surface-border right-sidebar pl-2 pr-2">
-        <app-right-sidebar></app-right-sidebar>
-      </div>
+  <div class="content">
+    <ng-content></ng-content>
+  </div>
+  <div class="right-sidebar">
+    <div class="h-full overflow-hidden">
+      <app-right-sidebar></app-right-sidebar>
     </div>
   </div>
 </div>
+
+
