@@ -1,16 +1,16 @@
-/*.explore {*/
-/*  font-size: 1.375rem;*/
-/*  font-weight: 500;*/
-/*  letter-spacing: 0.01375rem;*/
-/*}*/
+.explore {
+  font-size: 1.375rem;
+  font-weight: 500;
+  letter-spacing: 0.01375rem;
+}
 
-/*textarea {*/
-/*  resize: none;*/
-/*}*/
+textarea {
+  resize: none;
+}
 
-/*::ng-deep .p-breadcrumb {*/
-/*  background-color: transparent;*/
-/*}*/
+::ng-deep .p-breadcrumb {
+  background-color: transparent;
+}
 
 /*.container {*/
 /*  height: calc(100vh - 110px);*/
@@ -28,7 +28,7 @@
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 45px auto;
-  border: 4px solid green;
+  /*border: 4px solid green;*/
   overflow: hidden;
 }
 
@@ -36,17 +36,21 @@
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   align-content: end;
-  border: 4px solid red;
+  /*border: 4px solid red;*/
   overflow: hidden;
 }
 
 .messages {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
-  border: 4px solid orange;
+  /*border: 4px solid orange;*/
   overflow-y: auto;
 }
 
 .input {
-  border: 4px solid blue;
+  /*border: 4px solid blue;*/
+}
+
+:host {
+  display: contents;
 }
