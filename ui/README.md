@@ -1,36 +1,53 @@
-# Ui
+# Next.js & NextUI Template
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.6.
+This is a template for creating applications using Next.js 14 (app directory) and NextUI (v2).
 
-## Design principals
-### API Interaction
-All api interactions go through services, there is one service for each graphql type. There is a base graphl service that makes the requests.
-### Emitters
-Mutations don't return values, instead they emit the id of the thing that was mutated. This is because various components have different requirements 
-for fields and child objects that they care about. Each component that cares about mutations listens to the emitter it cares about and fetches the data
-it needs to render. This reduces bugs and brittle code by allowing each component to only care about the fields it needs without tyring to modify
-objects to make them look the way the component wants.
+[Try it on CodeSandbox](https://githubbox.com/nextui-org/next-app-template)
 
-## Development server
+## Technologies Used
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- [Next.js 14](https://nextjs.org/docs/getting-started)
+- [NextUI v2](https://nextui.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Tailwind Variants](https://tailwind-variants.org)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Framer Motion](https://www.framer.com/motion/)
+- [next-themes](https://github.com/pacocoursey/next-themes)
 
-## Code scaffolding
+## How to Use
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### Use the template with create-next-app
 
-## Build
+To create a new project based on this template using `create-next-app`, run the following command:
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+npx create-next-app -e https://github.com/nextui-org/next-app-template
+```
 
-## Running unit tests
+### Install dependencies
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+You can use one of them `npm`, `yarn`, `pnpm`, `bun`, Example using `npm`:
 
-## Running end-to-end tests
+```bash
+npm install
+```
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+### Run the development server
 
-## Further help
+```bash
+npm run dev
+```
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+### Setup pnpm (optional)
+
+If you are using `pnpm`, you need to add the following code to your `.npmrc` file:
+
+```bash
+public-hoist-pattern[]=*@nextui-org/*
+```
+
+After modifying the `.npmrc` file, you need to run `pnpm install` again to ensure that the dependencies are installed correctly.
+
+## License
+
+Licensed under the [MIT license](https://github.com/nextui-org/next-app-template/blob/main/LICENSE).
