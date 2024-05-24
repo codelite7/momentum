@@ -21,6 +21,7 @@ module "eks" {
       min_size       = 1
       max_size       = 3
       desired_size   = 1
+      subnet_ids = [module.eks.private_subnets[0]] // single az node group
     }
   }
   region = "us-west-2"
