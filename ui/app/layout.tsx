@@ -1,14 +1,13 @@
 import "@/styles/globals.css";
-import { Metadata, Viewport } from "next";
-import { Link } from "@nextui-org/link";
+import 'primeicons/primeicons.css';
+import {Metadata, Viewport} from "next";
 import clsx from "clsx";
+import {Providers} from "./providers";
 
-import { Providers } from "./providers";
-
-import { siteConfig } from "@/config/site";
-import { fontSans } from "@/config/fonts";
-import { Navbar } from "@/components/navbar";
-import { getUser } from "@workos-inc/authkit-nextjs";
+import {siteConfig} from "@/config/site";
+import {fontSatoshi} from "@/config/fonts";
+import {getUser} from "@workos-inc/authkit-nextjs";
+import LeftSidbar from "@/components/left-sidebar/left-sidbar";
 
 export const metadata: Metadata = {
   title: {
@@ -23,47 +22,49 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
+    {media: "(prefers-color-scheme: light)", color: "white"},
+    {media: "(prefers-color-scheme: dark)", color: "black"},
   ],
 };
 
 export default async function RootLayout({
-  children,
-}: {
+                                           children,
+                                         }: {
   children: React.ReactNode;
 }) {
-  const { user } = await getUser({ ensureSignedIn: true });
+  const {user} = await getUser({ensureSignedIn: true});
 
   return (
     <html suppressHydrationWarning lang="en">
-      <head />
-      <body
-        className={clsx(
-          "min-h-screen bg-background font-sans antialiased",
-          fontSans.variable,
-        )}
-      >
-        <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <div className="relative flex flex-col h-screen">
-            <Navbar />
-            <main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
-              {children}
-            </main>
-            <footer className="w-full flex items-center justify-center py-3">
-              <Link
-                isExternal
-                className="flex items-center gap-1 text-current"
-                href="https://nextui-docs-v2.vercel.app?utm_source=next-app-template"
-                title="nextui.org homepage"
-              >
-                <span className="text-default-600">Powered by</span>
-                <p className="text-primary">NextUI</p>
-              </Link>
-            </footer>
-          </div>
-        </Providers>
-      </body>
+    <head/>
+    <body
+      className={clsx(
+        "bg-background font-satoshi antialiased",
+        fontSatoshi.variable,
+      )}
+    >
+    <Providers themeProps={{attribute: "class", defaultTheme: "dark"}}>
+      <div className="flex border-1 border-sky-500 h-screen w-screen">
+        <div className="flex flex-col h-full border-1 border-red-500">
+          <LeftSidbar user={user}/>
+        </div>
+        <div className="w-full border-1 border-yellow-500">
+          {children}
+        </div>
+        <div className="w-60 border-1 border-red-500">
+          Right Sidebar
+        </div>
+      </div>
+      {/*<div className="flex w-full h-full">*/}
+      {/*  <div className="h-screen border-solid border-1 border-sky-500">*/}
+      {/*    <LeftSidebar/>*/}
+      {/*  </div>*/}
+      {/*  <div className="h-full border-solid border-1 border-sky-500">*/}
+      {/*    {children}*/}
+      {/*  </div>*/}
+      {/*</div>*/}
+    </Providers>
+    </body>
     </html>
   );
 }

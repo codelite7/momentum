@@ -20,11 +20,6 @@ import (
 // CreateMessage is the resolver for the createMessage field.
 func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
 	// if the previous message doesn't have response content, don't allow creation of a new message
-	userUuid, err := getUserUuid(ctx)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	input.SentByID = userUuid
 	client := ent.FromContext(ctx)
 	previousMessage, err := client.Message.Query().Where(message.HasThreadWith(thread.ID(input.ThreadID))).Order(message.ByCreatedAt(sql.OrderAsc())).First(ctx)
 	if err != nil && !strings.Contains(err.Error(), "not found") {

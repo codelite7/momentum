@@ -9,16 +9,10 @@ import (
 
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/google/uuid"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateBookmark is the resolver for the createBookmark field.
 func (r *mutationResolver) CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.Bookmark, error) {
-	userUuid, err := getUserUuid(ctx)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	input.UserID = userUuid
 	return ent.FromContext(ctx).Bookmark.Create().SetInput(input).Save(ctx)
 }
 

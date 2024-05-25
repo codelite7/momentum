@@ -16,11 +16,6 @@ import (
 
 // CreateThread is the resolver for the createThread field.
 func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error) {
-	userUuid, err := getUserUuid(ctx)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	input.CreatedByID = userUuid
 	threadName, err := common.GetThreadName(input.Name)
 	if err != nil {
 		return nil, gqlerror.Errorf(err.Error())
