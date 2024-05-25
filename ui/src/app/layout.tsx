@@ -1,8 +1,8 @@
-import "@/styles/globals.css";
+import "@/src/styles/globals.css";
 import 'primeicons/primeicons.css';
 import {Metadata, Viewport} from "next";
 import clsx from "clsx";
-import {Providers} from "./providers";
+import {_app} from "./_app";
 
 import {siteConfig} from "@/config/site";
 import {fontSatoshi} from "@/config/fonts";
@@ -43,7 +43,7 @@ export default async function RootLayout({
         fontSatoshi.variable,
       )}
     >
-    <Providers themeProps={{attribute: "class", defaultTheme: "dark"}}>
+    <_app themeProps={{attribute: "class", defaultTheme: "dark"}}>
       <div className="flex border-1 border-sky-500 h-screen w-screen">
         <div className="flex flex-col h-full border-1 border-red-500">
           <LeftSidbar user={user}/>
@@ -63,7 +63,7 @@ export default async function RootLayout({
       {/*    {children}*/}
       {/*  </div>*/}
       {/*</div>*/}
-    </Providers>
+    </_app>
     </body>
     </html>
   );
