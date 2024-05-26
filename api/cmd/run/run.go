@@ -129,6 +129,7 @@ func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
 	e := echo.New()
 	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.CORS())
 	e.GET("/health", func(c echo.Context) error {
 		return nil
 	})
