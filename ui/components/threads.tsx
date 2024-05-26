@@ -35,9 +35,9 @@ export default function Threads() {
     const data = useLazyLoadQuery<threadsQuery>(ThreadsQuery, {})
 
     return (
-        <div>
-            {/*Threads: <span>{JSON.stringify(data.threads, null, 2)}</span>*/}
-            Threads: <span>{data.threads.totalCount}</span>
+        <div className="h-full overflow-y-auto">
+            Threads: <span>{JSON.stringify(data.threads, null, 2)}</span>
+            {/*Threads: <span>{data.threads.totalCount}</span>*/}
         </div>
 
     )

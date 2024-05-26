@@ -18,7 +18,7 @@ export function Providers({children, themeProps}: ProvidersProps) {
     const environment = getCurrentEnvironment();
 
     return (
-        <NextUIProvider navigate={router.push}>
+        <NextUIProvider navigate={router.push} className="h-screen w-screen overflow-hidden">
             <NextThemesProvider {...themeProps}>
                 <RelayEnvironmentProvider environment={environment}>
                     {children}

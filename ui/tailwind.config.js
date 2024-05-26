@@ -8,10 +8,12 @@ module.exports = {
     './node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}'
   ],
   theme: {
+    letterSpacing: {
+      widest: '.15em'
+    },
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)"],
-        mono: ["var(--font-geist-mono)"],
+        satoshi: ["var(--font-satoshi)"],
       },
     },
   },
