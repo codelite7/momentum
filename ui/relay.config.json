@@ -1,7 +1,7 @@
 {
   "root": ".",
   "sources": {
-    "src": "my_app",
+    "components": "my_app",
     "app": "my_app"
   },
   "projects": {
