@@ -60,8 +60,7 @@ export default function LeftSidebar() {
                                         className="w-full mt-2"
                                         color="primary"
                                         size="sm"
-                                        onPress={() => {
-                                        }}
+                                        onClick={() => isOpen}
                                     >
                                         <img alt="search" className="h-4 w-4" src="/layers.svg"/>
                                     </Button>
@@ -136,7 +135,7 @@ export default function LeftSidebar() {
                                     // className="min-w-8 w-8 h-8 rounded mr-4"
                                     color="primary"
                                     size="sm"
-                                    onClick={() => isOpen}
+                                    onPress={onOpen}
                                 >
                                     <img
                                         alt="avatar"
@@ -152,7 +151,7 @@ export default function LeftSidebar() {
                             className="min-w-8 w-8 h-8 rounded mr-4"
                             color="primary"
                             size="sm"
-                            onClick={() => isOpen}
+                            onPress={onOpen}
                         >
                             <img
                                 alt="avatar"
@@ -189,11 +188,11 @@ export default function LeftSidebar() {
                                         <div className="flex justify-between items-center">
                                             <div>System</div>
                                             <div/>
-                                            <div>
+                                            <div className="flex gap-1">
                                                 <Button
                                                     size="sm"
                                                     startContent={
-                                                        <i className="pi pi-trash color-danger"/>
+                                                        <i className="pi pi-trash text-danger"/>
                                                     }
                                                     variant="light"
                                                 >
@@ -213,7 +212,7 @@ export default function LeftSidebar() {
                                 <Card>
                                     <CardBody>
                                         <div className="text-center">
-                                            <p>&copy;2024 STRATIFI</p>
+                                            <p>&copy; 2024 <span className="tracking-widest">STRATIFI</span></p>
                                         </div>
                                     </CardBody>
                                 </Card>
