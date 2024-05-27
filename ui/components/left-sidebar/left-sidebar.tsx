@@ -21,7 +21,7 @@ export default function LeftSidebar() {
     }, [collapsed]);
     return (
         <>
-            <Card className={`h-full ${width} rounded-none !transition-all !duration-1000`} disableAnimation>
+            <Card className={`h-full ${width} rounded-none !transition-all !duration-1000`}>
                 <CardBody className="h-full overflow-hidden p-0">
                     {collapsed ? (
                         <>
@@ -83,17 +83,20 @@ export default function LeftSidebar() {
                                         />
                                         <span className="tracking-widest">STRATIFI</span>
                                     </div>
-                                    <Button
-                                        isIconOnly
-                                        className="min-w-6 w-6 h-6 rounded"
-                                        variant="light"
-                                        onPress={() => {
-                                            setCollapsed(true);
-                                            setWidth("w-16");
-                                        }}
-                                    >
-                                        <img alt="collapse" src="/chevron-left.svg"/>
-                                    </Button>
+                                    <Tooltip showArrow content="Collapse" placement="right">
+                                        <Button
+                                            isIconOnly
+                                            className="min-w-6 w-6 h-6 rounded"
+                                            variant="light"
+                                            onPress={() => {
+                                                setCollapsed(true);
+                                                setWidth("w-16");
+                                            }}
+                                        >
+                                            <i className="pi pi-chevron-left"/>
+                                        </Button>
+                                    </Tooltip>
+
                                 </div>
                                 {/* search box */}
                                 <Button

@@ -7,6 +7,7 @@ import { Providers } from "./providers";
 import { siteConfig } from "@/config/site";
 import localFont from "next/font/local";
 import LeftSidebar from "@/components/left-sidebar/left-sidebar";
+import {RightSidebar} from "@/components/right-sidebar/right-sidebar";
 
 export const metadata: Metadata = {
   title: {
@@ -45,6 +46,7 @@ export default function RootLayout({
           <div className="flex h-full w-full overflow-hidden">
             <div className="h-full"><LeftSidebar /></div>
             <div className="h-full w-full">{children}</div>
+            <div className="h-full"><RightSidebar /></div>
           </div>
         </Providers>
       </body>
