@@ -1,11 +1,12 @@
 "use client"
 import {graphql, useLazyLoadQuery} from "react-relay";
 import {threadButtonsQuery} from "@/__generated__/threadButtonsQuery.graphql";
-import { Button } from "@nextui-org/react";
+import ThreadButton from "@/components/left-sidebar/thread-button";
+import { ScrollShadow } from "@nextui-org/react";
 
 const ThreadButtonsQuery = graphql`
     query threadButtonsQuery {
-        threads(first: 10) {
+        threads {
             edges {
                 node {
                     id
@@ -19,20 +20,14 @@ export default function threadButtons() {
     const data = useLazyLoadQuery<threadButtonsQuery>(ThreadButtonsQuery, {})
 
     return (
-        <div className="w-full h-full overflow-x-hidden overflow-y-auto">
+        <ScrollShadow hideScrollBar>
             {
                 data.threads.edges?.map(edge => {
                     return (
-                        <Button
-                            fullWidth
-                            size="sm"
-                            className="mb-2"
-                        >
-                            {edge?.node?.name}
-                        </Button>
+                        <ThreadButton key={edge?.node?.id} edge={edge} />
                     )
                 })
             }
-        </div>
+        </ScrollShadow>
     )
 }
