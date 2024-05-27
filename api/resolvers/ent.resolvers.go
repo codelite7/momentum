@@ -6,7 +6,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/contrib/entgql"
 	"github.com/codelite7/momentum/api/ent"
@@ -40,7 +39,7 @@ func (r *queryResolver) Messages(ctx context.Context, after *entgql.Cursor[uuid.
 
 // Responses is the resolver for the responses field.
 func (r *queryResolver) Responses(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ResponseOrder, where *ent.ResponseWhereInput) (*ent.ResponseConnection, error) {
-	panic(fmt.Errorf("not implemented: Responses - responses"))
+	return r.client.Response.Query().Paginate(ctx, after, first, before, last, ent.WithResponseOrder(orderBy), ent.WithResponseFilter(where.Filter))
 }
 
 // Threads is the resolver for the threads field.

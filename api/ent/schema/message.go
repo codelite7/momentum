@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -30,8 +31,8 @@ func (Message) Edges() []ent.Edge {
 		// a message belongs to a thread
 		edge.From("thread", Thread.Type).Ref("messages").Unique().Required(),
 		// a message may have many bookmarks
-		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection()),
+		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)),
 		// a message has a response from an agent
-		edge.To("response", Response.Type).Unique(),
+		edge.To("response", Response.Type).Annotations(entsql.OnDelete(entsql.Cascade)).Unique(),
 	}
 }

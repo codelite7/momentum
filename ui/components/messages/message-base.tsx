@@ -14,7 +14,6 @@ export default function MessageBase({content, sentAt, user}: props) {
     const sentToday = new Date(sentAt).setHours(0,0,0,0) == new Date().setHours(0,0,0,0)
     const sentAtDisplay = sentToday ? sentAtDate.toLocaleTimeString() : sentAtDate.toLocaleString()
     const [hovered, setHovered] = useState(false)
-    console.log(`sentToday: ${sentToday}`)
     return (
         <Card className="mb-6 bg-black hover:bg-default-100 mr-2" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
             <CardHeader className="justify-between">

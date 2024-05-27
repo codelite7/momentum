@@ -8,6 +8,9 @@ import { siteConfig } from "@/config/site";
 import localFont from "next/font/local";
 import LeftSidebar from "@/components/left-sidebar/left-sidebar";
 import {RightSidebar} from "@/components/right-sidebar/right-sidebar";
+import AccountSettingsModal from "@/components/account/settings-modal/account-settings-modal";
+import SearchModal from "@/components/search/search-modal";
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
   title: {
@@ -48,6 +51,16 @@ export default function RootLayout({
             <div className="h-full w-full">{children}</div>
             <div className="h-full"><RightSidebar /></div>
           </div>
+          <AccountSettingsModal />
+          <SearchModal />
+          <Toaster toastOptions={{
+            classNames: {
+              error: 'bg-danger border-0',
+              success: 'bg-success  border-0',
+              warning: 'bg-warning  border-0',
+              info: 'bg-primary  border-0',
+            }
+          }}/>
         </Providers>
       </body>
     </html>

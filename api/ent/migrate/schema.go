@@ -43,7 +43,7 @@ var (
 				Symbol:     "bookmarks_messages_bookmarks",
 				Columns:    []*schema.Column{BookmarksColumns[3]},
 				RefColumns: []*schema.Column{MessagesColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "bookmarks_responses_bookmarks",
@@ -55,7 +55,7 @@ var (
 				Symbol:     "bookmarks_threads_bookmarks",
 				Columns:    []*schema.Column{BookmarksColumns[5]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "bookmarks_users_bookmarks",
@@ -84,7 +84,7 @@ var (
 				Symbol:     "messages_threads_messages",
 				Columns:    []*schema.Column{MessagesColumns[4]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "messages_users_messages",
@@ -119,7 +119,7 @@ var (
 				Symbol:     "responses_messages_response",
 				Columns:    []*schema.Column{ResponsesColumns[5]},
 				RefColumns: []*schema.Column{MessagesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -142,7 +142,7 @@ var (
 				Symbol:     "threads_threads_children",
 				Columns:    []*schema.Column{ThreadsColumns[4]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "threads_users_threads",

@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -28,10 +29,10 @@ func (Thread) Edges() []ent.Edge {
 		// a thread is created by a user
 		edge.From("created_by", User.Type).Ref("threads").Unique().Required(),
 		// a thread may have many messages
-		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection()),
+		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)),
 		// a thread may be bookmarked many times
-		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection()),
+		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)),
 		// a thread may have a parent thread and many child threads
-		edge.To("children", Thread.Type).Annotations(entgql.RelayConnection()).From("parent").Unique(),
+		edge.To("children", Thread.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)).From("parent").Unique(),
 	}
 }

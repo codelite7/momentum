@@ -24,6 +24,12 @@ func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThr
 	return ent.FromContext(ctx).Thread.Create().SetInput(input).Save(ctx)
 }
 
+// DeleteThread is the resolver for the deleteThread field.
+func (r *mutationResolver) DeleteThread(ctx context.Context, id uuid.UUID) (bool, error) {
+	err := ent.FromContext(ctx).Thread.DeleteOneID(id).Exec(ctx)
+	return err == nil, err
+}
+
 // !!! WARNING !!!
 // The code below was going to be deleted when updating resolvers. It has been copied here so you have
 // one last chance to move it out of harms way if you want. There are two reasons this happens:

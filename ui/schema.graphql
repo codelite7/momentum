@@ -497,6 +497,7 @@ type Mutation {
   deleteBookmark(id: ID!): Boolean!
   createMessage(input: CreateMessageInput!): Message
   createThread(input: CreateThreadInput!): Thread
+  deleteThread(id: ID!): Boolean!
   createUser(input: CreateUserInput!): User
 }
 

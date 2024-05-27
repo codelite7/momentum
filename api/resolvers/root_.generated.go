@@ -114,6 +114,7 @@ type ComplexityRoot struct {
 		CreateThread   func(childComplexity int, input ent.CreateThreadInput) int
 		CreateUser     func(childComplexity int, input ent.CreateUserInput) int
 		DeleteBookmark func(childComplexity int, id uuid.UUID) int
+		DeleteThread   func(childComplexity int, id uuid.UUID) int
 	}
 
 	PageInfo struct {
@@ -559,6 +560,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteBookmark(childComplexity, args["id"].(uuid.UUID)), true
+
+	case "Mutation.deleteThread":
+		if e.complexity.Mutation.DeleteThread == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteThread_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteThread(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -2654,6 +2667,7 @@ input UserWhereInput {
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/thread.graphql", Input: `extend type Mutation {
     createThread(input: CreateThreadInput!): Thread
+    deleteThread(id: ID!):Boolean!
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/user.graphql", Input: `extend type Mutation {
     createUser(input: CreateUserInput!): User
