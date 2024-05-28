@@ -11051,6 +11051,10 @@ func (ec *executionContext) unmarshalNResponseWhereInput2ᚖgithubᚗcomᚋcodel
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNThread2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThread(ctx context.Context, sel ast.SelectionSet, v ent.Thread) graphql.Marshaler {
+	return ec._Thread(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNThread2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThread(ctx context.Context, sel ast.SelectionSet, v *ent.Thread) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {

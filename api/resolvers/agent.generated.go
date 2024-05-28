@@ -23,7 +23,7 @@ type MutationResolver interface {
 	DeleteBookmark(ctx context.Context, id uuid.UUID) (bool, error)
 	CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error)
 	CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error)
-	DeleteThread(ctx context.Context, id uuid.UUID) (bool, error)
+	DeleteThread(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error)
 }
 
@@ -426,11 +426,14 @@ func (ec *executionContext) _Mutation_createThread(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*ent.Thread)
 	fc.Result = res
-	return ec.marshalOThread2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThread(ctx, field.Selections, res)
+	return ec.marshalNThread2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThread(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createThread(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -503,9 +506,9 @@ func (ec *executionContext) _Mutation_deleteThread(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(uuid.UUID)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteThread(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -515,7 +518,7 @@ func (ec *executionContext) fieldContext_Mutation_deleteThread(ctx context.Conte
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	defer func() {
@@ -654,6 +657,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createThread(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "deleteThread":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteThread(ctx, field)

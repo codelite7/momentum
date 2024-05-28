@@ -2666,8 +2666,8 @@ input UserWhereInput {
     createMessage(input: CreateMessageInput!): Message
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/thread.graphql", Input: `extend type Mutation {
-    createThread(input: CreateThreadInput!): Thread
-    deleteThread(id: ID!):Boolean!
+    createThread(input: CreateThreadInput!): Thread!
+    deleteThread(id: ID!):ID!
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/user.graphql", Input: `extend type Mutation {
     createUser(input: CreateUserInput!): User

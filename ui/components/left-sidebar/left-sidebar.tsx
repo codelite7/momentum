@@ -7,7 +7,6 @@ import ThreadButtons from "./ThreadButtons";
 
 import useAccountSettingsModalStore from "@/stores/account-settings-modal-store";
 import useSearchModalStore from "@/stores/search-modal-store";
-import Threads from "./Threads";
 
 export default function LeftSidebar() {
   const toggleAccountSettings = useAccountSettingsModalStore(
@@ -132,8 +131,7 @@ export default function LeftSidebar() {
                 </Button>
               </div>
               {/* thread buttons */}
-              <Threads />
-              {/*<ThreadButtons />*/}
+              <ThreadButtons />
             </>
           )}
         </CardBody>

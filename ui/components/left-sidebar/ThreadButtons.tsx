@@ -1,59 +1,36 @@
 "use client";
-
 import {
   graphql,
   useFragment,
   useLazyLoadQuery,
   usePaginationFragment,
 } from "react-relay";
+import { useRef } from "react";
 
-import {
-    ThreadButtonsQuery as ThreadButtonsQueryType,
-    ThreadButtonsQuery$data
-} from "@/__generated__/ThreadButtonsQuery.graphql";
-import ThreadButton from "./ThreadButton";
-import Derp from "@/components/left-sidebar/Derp";
-
-// working
-// const ThreadButtonsQuery = graphql`
-//   query ThreadButtonsQuery($first:Int=3)
-//   {
-//     threads(first: $first) {
-//       edges {
-//         node {
-//           id
-//           name
-//         }
-//       }
-//     }
-//   }
-// `;
+import { ThreadButtonsQuery as ThreadButtonsQueryType } from "@/__generated__/ThreadButtonsQuery.graphql";
+import { ThreadButtonsPaginationFragment$key } from "@/__generated__/ThreadButtonsPaginationFragment.graphql";
+import ThreadButton from "@/components/left-sidebar/ThreadButton";
+import InfiniteScroller from "@/components/common/scroll/infinite-scroller";
 
 const ThreadButtonsQuery = graphql`
   query ThreadButtonsQuery {
-    ...ThreadButtons_threads
-  }
-`;
-
-const ThreadButtonsThreadFragment = graphql`
-  fragment ThreadButtonsThreadFragment on Thread {
-    id
-    name
+    ...ThreadButtonsPaginationFragment
   }
 `;
 
 const ThreadButtonsPaginationFragment = graphql`
-  fragment ThreadButtons_threads on Query
+  fragment ThreadButtonsPaginationFragment on Query
+  @refetchable(queryName: "ThreadButtonsPaginationQuery")
   @argumentDefinitions(
-    first: { type: "Int", defaultValue: 10 }
+    first: { type: "Int", defaultValue: 50 }
     after: { type: "Cursor" }
-  )
-  @refetchable(queryName: "ThreadButtonsPaginationQuery") {
+  ) {
     threads(first: $first, after: $after) @connection(key: "Query_threads") {
       totalCount
       edges {
         node {
-          ...ThreadButtonsThreadFragment
+          id
+          ...ThreadButtonFragment
         }
       }
       pageInfo {
@@ -65,38 +42,35 @@ const ThreadButtonsPaginationFragment = graphql`
 `;
 
 export default function ThreadButtons() {
+  const loaderRef = useRef(null);
   const queryData = useLazyLoadQuery<ThreadButtonsQueryType>(
     ThreadButtonsQuery,
     {},
   );
-  const { data, loadNext, hasNext } = usePaginationFragment(
+  const { loadNext, hasNext } = usePaginationFragment(
     ThreadButtonsPaginationFragment,
     queryData,
   );
-
-  console.log("data ", data);
+  const data = useFragment<ThreadButtonsPaginationFragment$key>(
+    ThreadButtonsPaginationFragment,
+    queryData,
+  );
+  const maybeLoadMore = (num: number) => {
+    if (hasNext) {
+      loadNext(num);
+    }
+  };
 
   return (
-    <>
-      {
-        data.threads.edges.map((edge) => (
-            <Derp derp={edge.node} key={edge.node.id} />
-        ))
-      }
-      </>
+    <InfiniteScroller
+      hideScrollBar
+      onScrollDown={() => maybeLoadMore(50)}
+      // onScrollUp={() => console.log("up")}
+    >
+      {data.threads.edges?.map(
+        (edge) =>
+          edge?.node && <ThreadButton key={edge.node?.id} thread={edge.node} />,
+      )}
+    </InfiniteScroller>
   );
 }
-
-// export default function threadButtons() {
-//   const threads = useLazyLoadQuery()
-//   const data = useLazyLoadQuery<ThreadButtonsQueryType>(ThreadButtonsQuery, {first: 1});
-//   const threads = data.threads.edges;
-//
-//   return (
-//     <ScrollShadow hideScrollBar>
-//       {threads?.map((thread) => {
-//         return <ThreadButton key={thread?.node?.id} thread={thread?.node} />;
-//       })}
-//     </ScrollShadow>
-//   );
-// }

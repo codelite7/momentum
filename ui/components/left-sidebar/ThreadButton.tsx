@@ -8,10 +8,24 @@ import {
 } from "@nextui-org/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { graphql, useFragment } from "react-relay";
 
 import DeleteThreadButton from "@/components/left-sidebar/delete-thread-button";
+import { ThreadButtonFragment$key } from "@/__generated__/ThreadButtonFragment.graphql";
 
-export default function ThreadButton({ thread }: any) {
+type props = {
+  thread: ThreadButtonFragment$key;
+};
+
+export const ThreadButtonFragment = graphql`
+  fragment ThreadButtonFragment on Thread {
+    id
+    name
+  }
+`;
+
+export default function ThreadButton({ thread }: props) {
+  const data = useFragment(ThreadButtonFragment, thread);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const router = useRouter();
@@ -27,10 +41,10 @@ export default function ThreadButton({ thread }: any) {
           <Button
             className="flex flex-row start w-full"
             size="sm"
-            onClick={() => router.push(`/thread/${thread.id}`)}
+            onClick={() => router.push(`/thread/${data.id}`)}
           >
             <div className="flex start items-center justify-between w-full">
-              <div>{thread.name}</div>
+              <div>{data.name}</div>
               <Popover
                 classNames={{
                   content: ["rounded border border-default-200 p-0 m-0"],
@@ -51,7 +65,7 @@ export default function ThreadButton({ thread }: any) {
                       </div>
                       Rename
                     </div>
-                    <DeleteThreadButton id={thread.id} />
+                    <DeleteThreadButton thread={data} />
                   </div>
                 </PopoverContent>
               </Popover>
@@ -62,10 +76,10 @@ export default function ThreadButton({ thread }: any) {
         <Button
           className="flex flex-row start w-full bg-transparent"
           size="sm"
-          onClick={() => router.push(`/thread/${thread.id}`)}
+          onClick={() => router.push(`/thread/${data.id}`)}
         >
           <div className="flex start items-center justify-between w-full">
-            <div>{thread.name}</div>
+            <div>{data.name}</div>
           </div>
         </Button>
       )}
