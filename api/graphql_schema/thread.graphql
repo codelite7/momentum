@@ -2,3 +2,7 @@ extend type Mutation {
     createThread(input: CreateThreadInput!): Thread!
     deleteThread(id: ID!):ID!
 }
+
+extend type Query {
+    thread(id:ID!): Thread!
+}

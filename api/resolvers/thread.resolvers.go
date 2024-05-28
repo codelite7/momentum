@@ -30,3 +30,8 @@ func (r *mutationResolver) DeleteThread(ctx context.Context, id uuid.UUID) (uuid
 	}
 	return id, nil
 }
+
+// Thread is the resolver for the thread field.
+func (r *queryResolver) Thread(ctx context.Context, id uuid.UUID) (*ent.Thread, error) {
+	return r.client.Thread.Get(ctx, id)
+}

@@ -677,6 +677,7 @@ type Query {
     """Filtering options for Users returned from the connection."""
     where: UserWhereInput
   ): UserConnection!
+  thread(id: ID!): Thread!
 }
 
 type Response implements Node {

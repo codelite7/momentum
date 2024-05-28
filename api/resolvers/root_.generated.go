@@ -131,6 +131,7 @@ type ComplexityRoot struct {
 		Node      func(childComplexity int, id uuid.UUID) int
 		Nodes     func(childComplexity int, ids []uuid.UUID) int
 		Responses func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ResponseOrder, where *ent.ResponseWhereInput) int
+		Thread    func(childComplexity int, id uuid.UUID) int
 		Threads   func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) int
 		Users     func(childComplexity int, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 	}
@@ -672,6 +673,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Responses(childComplexity, args["after"].(*entgql.Cursor[uuid.UUID]), args["first"].(*int), args["before"].(*entgql.Cursor[uuid.UUID]), args["last"].(*int), args["orderBy"].([]*ent.ResponseOrder), args["where"].(*ent.ResponseWhereInput)), true
+
+	case "Query.thread":
+		if e.complexity.Query.Thread == nil {
+			break
+		}
+
+		args, err := ec.field_Query_thread_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Thread(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "Query.threads":
 		if e.complexity.Query.Threads == nil {
@@ -2668,6 +2681,10 @@ input UserWhereInput {
 	{Name: "../graphql_schema/thread.graphql", Input: `extend type Mutation {
     createThread(input: CreateThreadInput!): Thread!
     deleteThread(id: ID!):ID!
+}
+
+extend type Query {
+    thread(id:ID!): Thread!
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/user.graphql", Input: `extend type Mutation {
     createUser(input: CreateUserInput!): User
