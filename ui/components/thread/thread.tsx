@@ -54,5 +54,4 @@ export default function Thread({ id }: props) {
       </div>
     </div>
   );
-  // return <Messages thread={data.thread} />;
 }
