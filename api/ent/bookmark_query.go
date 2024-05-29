@@ -14,9 +14,9 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // BookmarkQuery is the builder for querying Bookmark entities.
@@ -181,8 +181,8 @@ func (bq *BookmarkQuery) FirstX(ctx context.Context) *Bookmark {
 
 // FirstID returns the first Bookmark ID from the query.
 // Returns a *NotFoundError when no Bookmark ID was found.
-func (bq *BookmarkQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (bq *BookmarkQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = bq.Limit(1).IDs(setContextOp(ctx, bq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -194,7 +194,7 @@ func (bq *BookmarkQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) 
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (bq *BookmarkQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (bq *BookmarkQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := bq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -232,8 +232,8 @@ func (bq *BookmarkQuery) OnlyX(ctx context.Context) *Bookmark {
 // OnlyID is like Only, but returns the only Bookmark ID in the query.
 // Returns a *NotSingularError when more than one Bookmark ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (bq *BookmarkQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (bq *BookmarkQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = bq.Limit(2).IDs(setContextOp(ctx, bq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -249,7 +249,7 @@ func (bq *BookmarkQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (bq *BookmarkQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (bq *BookmarkQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := bq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -277,7 +277,7 @@ func (bq *BookmarkQuery) AllX(ctx context.Context) []*Bookmark {
 }
 
 // IDs executes the query and returns a list of Bookmark IDs.
-func (bq *BookmarkQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (bq *BookmarkQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if bq.ctx.Unique == nil && bq.path != nil {
 		bq.Unique(true)
 	}
@@ -289,7 +289,7 @@ func (bq *BookmarkQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (bq *BookmarkQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (bq *BookmarkQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := bq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -549,8 +549,8 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 }
 
 func (bq *BookmarkQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *User)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Bookmark)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Bookmark)
 	for i := range nodes {
 		if nodes[i].user_bookmarks == nil {
 			continue
@@ -581,8 +581,8 @@ func (bq *BookmarkQuery) loadUser(ctx context.Context, query *UserQuery, nodes [
 	return nil
 }
 func (bq *BookmarkQuery) loadThread(ctx context.Context, query *ThreadQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Thread)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Bookmark)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Bookmark)
 	for i := range nodes {
 		if nodes[i].thread_bookmarks == nil {
 			continue
@@ -613,8 +613,8 @@ func (bq *BookmarkQuery) loadThread(ctx context.Context, query *ThreadQuery, nod
 	return nil
 }
 func (bq *BookmarkQuery) loadMessage(ctx context.Context, query *MessageQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Message)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Bookmark)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Bookmark)
 	for i := range nodes {
 		if nodes[i].message_bookmarks == nil {
 			continue
@@ -645,8 +645,8 @@ func (bq *BookmarkQuery) loadMessage(ctx context.Context, query *MessageQuery, n
 	return nil
 }
 func (bq *BookmarkQuery) loadResponse(ctx context.Context, query *ResponseQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Response)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Bookmark)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Bookmark)
 	for i := range nodes {
 		if nodes[i].response_bookmarks == nil {
 			continue
@@ -690,7 +690,7 @@ func (bq *BookmarkQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (bq *BookmarkQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString))
 	_spec.From = bq.sql
 	if unique := bq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

@@ -14,7 +14,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // ResponseCreate is the builder for creating a Response entity.
@@ -67,21 +67,21 @@ func (rc *ResponseCreate) SetNillableContent(s *string) *ResponseCreate {
 }
 
 // SetID sets the "id" field.
-func (rc *ResponseCreate) SetID(u uuid.UUID) *ResponseCreate {
-	rc.mutation.SetID(u)
+func (rc *ResponseCreate) SetID(pu pulid.ID) *ResponseCreate {
+	rc.mutation.SetID(pu)
 	return rc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (rc *ResponseCreate) SetNillableID(u *uuid.UUID) *ResponseCreate {
-	if u != nil {
-		rc.SetID(*u)
+func (rc *ResponseCreate) SetNillableID(pu *pulid.ID) *ResponseCreate {
+	if pu != nil {
+		rc.SetID(*pu)
 	}
 	return rc
 }
 
 // SetSentByID sets the "sent_by" edge to the Agent entity by ID.
-func (rc *ResponseCreate) SetSentByID(id uuid.UUID) *ResponseCreate {
+func (rc *ResponseCreate) SetSentByID(id pulid.ID) *ResponseCreate {
 	rc.mutation.SetSentByID(id)
 	return rc
 }
@@ -92,7 +92,7 @@ func (rc *ResponseCreate) SetSentBy(a *Agent) *ResponseCreate {
 }
 
 // SetMessageID sets the "message" edge to the Message entity by ID.
-func (rc *ResponseCreate) SetMessageID(id uuid.UUID) *ResponseCreate {
+func (rc *ResponseCreate) SetMessageID(id pulid.ID) *ResponseCreate {
 	rc.mutation.SetMessageID(id)
 	return rc
 }
@@ -103,14 +103,14 @@ func (rc *ResponseCreate) SetMessage(m *Message) *ResponseCreate {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (rc *ResponseCreate) AddBookmarkIDs(ids ...uuid.UUID) *ResponseCreate {
+func (rc *ResponseCreate) AddBookmarkIDs(ids ...pulid.ID) *ResponseCreate {
 	rc.mutation.AddBookmarkIDs(ids...)
 	return rc
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (rc *ResponseCreate) AddBookmarks(b ...*Bookmark) *ResponseCreate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -195,7 +195,7 @@ func (rc *ResponseCreate) sqlSave(ctx context.Context) (*Response, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*pulid.ID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -209,7 +209,7 @@ func (rc *ResponseCreate) sqlSave(ctx context.Context) (*Response, error) {
 func (rc *ResponseCreate) createSpec() (*Response, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Response{config: rc.config}
-		_spec = sqlgraph.NewCreateSpec(response.Table, sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(response.Table, sqlgraph.NewFieldSpec(response.FieldID, field.TypeString))
 	)
 	if id, ok := rc.mutation.ID(); ok {
 		_node.ID = id
@@ -235,7 +235,7 @@ func (rc *ResponseCreate) createSpec() (*Response, *sqlgraph.CreateSpec) {
 			Columns: []string{response.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -252,7 +252,7 @@ func (rc *ResponseCreate) createSpec() (*Response, *sqlgraph.CreateSpec) {
 			Columns: []string{response.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -269,7 +269,7 @@ func (rc *ResponseCreate) createSpec() (*Response, *sqlgraph.CreateSpec) {
 			Columns: []string{response.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

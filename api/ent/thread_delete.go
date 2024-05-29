@@ -40,7 +40,7 @@ func (td *ThreadDelete) ExecX(ctx context.Context) int {
 }
 
 func (td *ThreadDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(thread.Table, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewDeleteSpec(thread.Table, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString))
 	if ps := td.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

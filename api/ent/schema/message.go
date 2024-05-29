@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 type Message struct {
@@ -15,6 +16,7 @@ type Message struct {
 func (Message) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		BaseMixin{},
+		pulid.MixinWithPrefix("me"),
 	}
 }
 

@@ -15,9 +15,9 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // MessageQuery is the builder for querying Message entities.
@@ -183,8 +183,8 @@ func (mq *MessageQuery) FirstX(ctx context.Context) *Message {
 
 // FirstID returns the first Message ID from the query.
 // Returns a *NotFoundError when no Message ID was found.
-func (mq *MessageQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (mq *MessageQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = mq.Limit(1).IDs(setContextOp(ctx, mq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -196,7 +196,7 @@ func (mq *MessageQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (mq *MessageQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (mq *MessageQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := mq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -234,8 +234,8 @@ func (mq *MessageQuery) OnlyX(ctx context.Context) *Message {
 // OnlyID is like Only, but returns the only Message ID in the query.
 // Returns a *NotSingularError when more than one Message ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (mq *MessageQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (mq *MessageQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = mq.Limit(2).IDs(setContextOp(ctx, mq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -251,7 +251,7 @@ func (mq *MessageQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (mq *MessageQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (mq *MessageQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := mq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -279,7 +279,7 @@ func (mq *MessageQuery) AllX(ctx context.Context) []*Message {
 }
 
 // IDs executes the query and returns a list of Message IDs.
-func (mq *MessageQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (mq *MessageQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if mq.ctx.Unique == nil && mq.path != nil {
 		mq.Unique(true)
 	}
@@ -291,7 +291,7 @@ func (mq *MessageQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (mq *MessageQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (mq *MessageQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := mq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -559,8 +559,8 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 }
 
 func (mq *MessageQuery) loadSentBy(ctx context.Context, query *UserQuery, nodes []*Message, init func(*Message), assign func(*Message, *User)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Message)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Message)
 	for i := range nodes {
 		if nodes[i].user_messages == nil {
 			continue
@@ -591,8 +591,8 @@ func (mq *MessageQuery) loadSentBy(ctx context.Context, query *UserQuery, nodes 
 	return nil
 }
 func (mq *MessageQuery) loadThread(ctx context.Context, query *ThreadQuery, nodes []*Message, init func(*Message), assign func(*Message, *Thread)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Message)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Message)
 	for i := range nodes {
 		if nodes[i].thread_messages == nil {
 			continue
@@ -624,7 +624,7 @@ func (mq *MessageQuery) loadThread(ctx context.Context, query *ThreadQuery, node
 }
 func (mq *MessageQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*Message, init func(*Message), assign func(*Message, *Bookmark)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Message)
+	nodeids := make(map[pulid.ID]*Message)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -655,7 +655,7 @@ func (mq *MessageQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery,
 }
 func (mq *MessageQuery) loadResponse(ctx context.Context, query *ResponseQuery, nodes []*Message, init func(*Message), assign func(*Message, *Response)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Message)
+	nodeids := make(map[pulid.ID]*Message)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -695,7 +695,7 @@ func (mq *MessageQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (mq *MessageQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(message.Table, message.Columns, sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(message.Table, message.Columns, sqlgraph.NewFieldSpec(message.FieldID, field.TypeString))
 	_spec.From = mq.sql
 	if unique := mq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

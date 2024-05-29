@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<f895c1dfc9d663da70bfcaa74f93e912>>
+ * @generated SignedSource<<ca0ef3b5e2dc0cf77857ccab5219ee1d>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -133,7 +133,7 @@ return {
                 "alias": null,
                 "args": null,
                 "kind": "ScalarField",
-                "name": "startCursor",
+                "name": "endCursor",
                 "storageKey": null
               },
               {
@@ -141,13 +141,6 @@ return {
                 "args": null,
                 "kind": "ScalarField",
                 "name": "hasNextPage",
-                "storageKey": null
-              },
-              {
-                "alias": null,
-                "args": null,
-                "kind": "ScalarField",
-                "name": "endCursor",
                 "storageKey": null
               }
             ],
@@ -168,12 +161,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "96aa6ab2c5e25ad61d0e1ea0a892036b",
+    "cacheID": "e9fee515f7b8ce464e7d92c3832d761b",
     "id": null,
     "metadata": {},
     "name": "testQuery",
     "operationKind": "query",
-    "text": "query testQuery {\n  ...testPaginationFragment\n}\n\nfragment testMessageFragment on Message {\n  id\n  createdAt\n  content\n}\n\nfragment testPaginationFragment on Query {\n  messages(first: 3) {\n    totalCount\n    edges {\n      node {\n        id\n        ...testMessageFragment\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      startCursor\n      hasNextPage\n      endCursor\n    }\n  }\n}\n"
+    "text": "query testQuery {\n  ...testPaginationFragment\n}\n\nfragment testMessageFragment on Message {\n  id\n  createdAt\n  content\n}\n\nfragment testPaginationFragment on Query {\n  messages(first: 3) {\n    totalCount\n    edges {\n      node {\n        id\n        ...testMessageFragment\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      endCursor\n      hasNextPage\n    }\n  }\n}\n"
   }
 };
 })();

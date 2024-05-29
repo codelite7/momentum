@@ -40,7 +40,7 @@ func (bd *BookmarkDelete) ExecX(ctx context.Context) int {
 }
 
 func (bd *BookmarkDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(bookmark.Table, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewDeleteSpec(bookmark.Table, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString))
 	if ps := bd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

@@ -1,9 +1,9 @@
 import { graphql, usePaginationFragment } from "react-relay";
 
-import { messagesFragment$key } from "@/__generated__/messagesFragment.graphql";
 import InfiniteScroller from "@/components/common/scroll/infinite-scroller";
-import Message from "@/components/thread/message";
+import Message from "@/components/thread/messages/message";
 import PromptInput from "@/app/thread/[id]/prompt-input";
+import { messagesFragment$key } from "@/__generated__/messagesFragment.graphql";
 
 type props = {
   thread: messagesFragment$key;
@@ -33,7 +33,6 @@ const MessagesFragment = graphql`
 `;
 
 export default function Messages({ thread }: props) {
-  // const data = useFragment<messagesFragment$key>(MessagesFragment, thread);
   const { data, loadNext, hasNext } = usePaginationFragment(
     MessagesFragment,
     thread,

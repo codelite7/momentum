@@ -13,9 +13,9 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // BookmarkCreate is the builder for creating a Bookmark entity.
@@ -54,21 +54,21 @@ func (bc *BookmarkCreate) SetNillableUpdatedAt(t *time.Time) *BookmarkCreate {
 }
 
 // SetID sets the "id" field.
-func (bc *BookmarkCreate) SetID(u uuid.UUID) *BookmarkCreate {
-	bc.mutation.SetID(u)
+func (bc *BookmarkCreate) SetID(pu pulid.ID) *BookmarkCreate {
+	bc.mutation.SetID(pu)
 	return bc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (bc *BookmarkCreate) SetNillableID(u *uuid.UUID) *BookmarkCreate {
-	if u != nil {
-		bc.SetID(*u)
+func (bc *BookmarkCreate) SetNillableID(pu *pulid.ID) *BookmarkCreate {
+	if pu != nil {
+		bc.SetID(*pu)
 	}
 	return bc
 }
 
 // SetUserID sets the "user" edge to the User entity by ID.
-func (bc *BookmarkCreate) SetUserID(id uuid.UUID) *BookmarkCreate {
+func (bc *BookmarkCreate) SetUserID(id pulid.ID) *BookmarkCreate {
 	bc.mutation.SetUserID(id)
 	return bc
 }
@@ -79,13 +79,13 @@ func (bc *BookmarkCreate) SetUser(u *User) *BookmarkCreate {
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by ID.
-func (bc *BookmarkCreate) SetThreadID(id uuid.UUID) *BookmarkCreate {
+func (bc *BookmarkCreate) SetThreadID(id pulid.ID) *BookmarkCreate {
 	bc.mutation.SetThreadID(id)
 	return bc
 }
 
 // SetNillableThreadID sets the "thread" edge to the Thread entity by ID if the given value is not nil.
-func (bc *BookmarkCreate) SetNillableThreadID(id *uuid.UUID) *BookmarkCreate {
+func (bc *BookmarkCreate) SetNillableThreadID(id *pulid.ID) *BookmarkCreate {
 	if id != nil {
 		bc = bc.SetThreadID(*id)
 	}
@@ -98,13 +98,13 @@ func (bc *BookmarkCreate) SetThread(t *Thread) *BookmarkCreate {
 }
 
 // SetMessageID sets the "message" edge to the Message entity by ID.
-func (bc *BookmarkCreate) SetMessageID(id uuid.UUID) *BookmarkCreate {
+func (bc *BookmarkCreate) SetMessageID(id pulid.ID) *BookmarkCreate {
 	bc.mutation.SetMessageID(id)
 	return bc
 }
 
 // SetNillableMessageID sets the "message" edge to the Message entity by ID if the given value is not nil.
-func (bc *BookmarkCreate) SetNillableMessageID(id *uuid.UUID) *BookmarkCreate {
+func (bc *BookmarkCreate) SetNillableMessageID(id *pulid.ID) *BookmarkCreate {
 	if id != nil {
 		bc = bc.SetMessageID(*id)
 	}
@@ -117,13 +117,13 @@ func (bc *BookmarkCreate) SetMessage(m *Message) *BookmarkCreate {
 }
 
 // SetResponseID sets the "response" edge to the Response entity by ID.
-func (bc *BookmarkCreate) SetResponseID(id uuid.UUID) *BookmarkCreate {
+func (bc *BookmarkCreate) SetResponseID(id pulid.ID) *BookmarkCreate {
 	bc.mutation.SetResponseID(id)
 	return bc
 }
 
 // SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
-func (bc *BookmarkCreate) SetNillableResponseID(id *uuid.UUID) *BookmarkCreate {
+func (bc *BookmarkCreate) SetNillableResponseID(id *pulid.ID) *BookmarkCreate {
 	if id != nil {
 		bc = bc.SetResponseID(*id)
 	}
@@ -210,7 +210,7 @@ func (bc *BookmarkCreate) sqlSave(ctx context.Context) (*Bookmark, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*pulid.ID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -224,7 +224,7 @@ func (bc *BookmarkCreate) sqlSave(ctx context.Context) (*Bookmark, error) {
 func (bc *BookmarkCreate) createSpec() (*Bookmark, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Bookmark{config: bc.config}
-		_spec = sqlgraph.NewCreateSpec(bookmark.Table, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(bookmark.Table, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString))
 	)
 	if id, ok := bc.mutation.ID(); ok {
 		_node.ID = id
@@ -246,7 +246,7 @@ func (bc *BookmarkCreate) createSpec() (*Bookmark, *sqlgraph.CreateSpec) {
 			Columns: []string{bookmark.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -263,7 +263,7 @@ func (bc *BookmarkCreate) createSpec() (*Bookmark, *sqlgraph.CreateSpec) {
 			Columns: []string{bookmark.ThreadColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -280,7 +280,7 @@ func (bc *BookmarkCreate) createSpec() (*Bookmark, *sqlgraph.CreateSpec) {
 			Columns: []string{bookmark.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -297,7 +297,7 @@ func (bc *BookmarkCreate) createSpec() (*Bookmark, *sqlgraph.CreateSpec) {
 			Columns: []string{bookmark.ResponseColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

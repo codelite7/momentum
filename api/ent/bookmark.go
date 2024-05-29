@@ -12,16 +12,16 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // Bookmark is the model entity for the Bookmark schema.
 type Bookmark struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID pulid.ID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -29,10 +29,10 @@ type Bookmark struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BookmarkQuery when eager-loading is set.
 	Edges              BookmarkEdges `json:"edges"`
-	message_bookmarks  *uuid.UUID
-	response_bookmarks *uuid.UUID
-	thread_bookmarks   *uuid.UUID
-	user_bookmarks     *uuid.UUID
+	message_bookmarks  *pulid.ID
+	response_bookmarks *pulid.ID
+	thread_bookmarks   *pulid.ID
+	user_bookmarks     *pulid.ID
 	selectValues       sql.SelectValues
 }
 
@@ -102,18 +102,18 @@ func (*Bookmark) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case bookmark.FieldID:
+			values[i] = new(pulid.ID)
 		case bookmark.FieldCreatedAt, bookmark.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case bookmark.FieldID:
-			values[i] = new(uuid.UUID)
 		case bookmark.ForeignKeys[0]: // message_bookmarks
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		case bookmark.ForeignKeys[1]: // response_bookmarks
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		case bookmark.ForeignKeys[2]: // thread_bookmarks
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		case bookmark.ForeignKeys[3]: // user_bookmarks
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -130,7 +130,7 @@ func (b *Bookmark) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case bookmark.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*pulid.ID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				b.ID = *value
@@ -151,29 +151,29 @@ func (b *Bookmark) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field message_bookmarks", values[i])
 			} else if value.Valid {
-				b.message_bookmarks = new(uuid.UUID)
-				*b.message_bookmarks = *value.S.(*uuid.UUID)
+				b.message_bookmarks = new(pulid.ID)
+				*b.message_bookmarks = *value.S.(*pulid.ID)
 			}
 		case bookmark.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field response_bookmarks", values[i])
 			} else if value.Valid {
-				b.response_bookmarks = new(uuid.UUID)
-				*b.response_bookmarks = *value.S.(*uuid.UUID)
+				b.response_bookmarks = new(pulid.ID)
+				*b.response_bookmarks = *value.S.(*pulid.ID)
 			}
 		case bookmark.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field thread_bookmarks", values[i])
 			} else if value.Valid {
-				b.thread_bookmarks = new(uuid.UUID)
-				*b.thread_bookmarks = *value.S.(*uuid.UUID)
+				b.thread_bookmarks = new(pulid.ID)
+				*b.thread_bookmarks = *value.S.(*pulid.ID)
 			}
 		case bookmark.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_bookmarks", values[i])
 			} else if value.Valid {
-				b.user_bookmarks = new(uuid.UUID)
-				*b.user_bookmarks = *value.S.(*uuid.UUID)
+				b.user_bookmarks = new(pulid.ID)
+				*b.user_bookmarks = *value.S.(*pulid.ID)
 			}
 		default:
 			b.selectValues.Set(columns[i], values[i])

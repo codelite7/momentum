@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<6a7687663f826cdd51bd3272a9c6d76f>>
+ * @generated SignedSource<<2b736a3e3ed60b8a20c6170cd931a2f3>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -153,7 +153,7 @@ return {
                 "alias": null,
                 "args": null,
                 "kind": "ScalarField",
-                "name": "startCursor",
+                "name": "endCursor",
                 "storageKey": null
               },
               {
@@ -161,13 +161,6 @@ return {
                 "args": null,
                 "kind": "ScalarField",
                 "name": "hasNextPage",
-                "storageKey": null
-              },
-              {
-                "alias": null,
-                "args": null,
-                "kind": "ScalarField",
-                "name": "endCursor",
                 "storageKey": null
               }
             ],
@@ -188,16 +181,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "09260ac87db2d3b3f81b8f7213159e57",
+    "cacheID": "8c2502b9dcbeb93bb840e2df5e8796a2",
     "id": null,
     "metadata": {},
     "name": "TestPaginationQuery",
     "operationKind": "query",
-    "text": "query TestPaginationQuery(\n  $after: Cursor\n  $first: Int = 3\n) {\n  ...testPaginationFragment_2HEEH6\n}\n\nfragment testMessageFragment on Message {\n  id\n  createdAt\n  content\n}\n\nfragment testPaginationFragment_2HEEH6 on Query {\n  messages(first: $first, after: $after) {\n    totalCount\n    edges {\n      node {\n        id\n        ...testMessageFragment\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      startCursor\n      hasNextPage\n      endCursor\n    }\n  }\n}\n"
+    "text": "query TestPaginationQuery(\n  $after: Cursor\n  $first: Int = 3\n) {\n  ...testPaginationFragment_2HEEH6\n}\n\nfragment testMessageFragment on Message {\n  id\n  createdAt\n  content\n}\n\nfragment testPaginationFragment_2HEEH6 on Query {\n  messages(first: $first, after: $after) {\n    totalCount\n    edges {\n      node {\n        id\n        ...testMessageFragment\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      endCursor\n      hasNextPage\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "e4e86d3571d4c981560757ba9a56fc1c";
+(node as any).hash = "ebdf0102edf883abb4dfc760c2ad160b";
 
 export default node;

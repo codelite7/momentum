@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 type Bookmark struct {
@@ -12,6 +13,7 @@ type Bookmark struct {
 func (Bookmark) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		BaseMixin{},
+		pulid.MixinWithPrefix("bm"),
 	}
 }
 

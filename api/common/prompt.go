@@ -6,9 +6,9 @@ import (
 	"github.com/codelite7/momentum/api/config"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/go-resty/resty/v2"
-	"github.com/google/uuid"
 	"time"
 )
 
@@ -30,7 +30,7 @@ func Prompt(chatMessages []*ChatMessage) (string, error) {
 	}
 	return resp.String(), nil
 }
-func GetMessageHistory(ctx context.Context, tx *ent.Tx, threadId uuid.UUID, lastMessageCreatedAt time.Time) ([]*ent.Message, error) {
+func GetMessageHistory(ctx context.Context, tx *ent.Tx, threadId pulid.ID, lastMessageCreatedAt time.Time) ([]*ent.Message, error) {
 	return tx.Message.Query().Where(
 		message.HasThreadWith(thread.ID(threadId)),
 		message.CreatedAtLTE(lastMessageCreatedAt),

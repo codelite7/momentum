@@ -12,9 +12,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // UserCreate is the builder for creating a User entity.
@@ -59,28 +59,28 @@ func (uc *UserCreate) SetEmail(s string) *UserCreate {
 }
 
 // SetID sets the "id" field.
-func (uc *UserCreate) SetID(u uuid.UUID) *UserCreate {
-	uc.mutation.SetID(u)
+func (uc *UserCreate) SetID(pu pulid.ID) *UserCreate {
+	uc.mutation.SetID(pu)
 	return uc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
-	if u != nil {
-		uc.SetID(*u)
+func (uc *UserCreate) SetNillableID(pu *pulid.ID) *UserCreate {
+	if pu != nil {
+		uc.SetID(*pu)
 	}
 	return uc
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (uc *UserCreate) AddBookmarkIDs(ids ...uuid.UUID) *UserCreate {
+func (uc *UserCreate) AddBookmarkIDs(ids ...pulid.ID) *UserCreate {
 	uc.mutation.AddBookmarkIDs(ids...)
 	return uc
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (uc *UserCreate) AddBookmarks(b ...*Bookmark) *UserCreate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -88,14 +88,14 @@ func (uc *UserCreate) AddBookmarks(b ...*Bookmark) *UserCreate {
 }
 
 // AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
-func (uc *UserCreate) AddThreadIDs(ids ...uuid.UUID) *UserCreate {
+func (uc *UserCreate) AddThreadIDs(ids ...pulid.ID) *UserCreate {
 	uc.mutation.AddThreadIDs(ids...)
 	return uc
 }
 
 // AddThreads adds the "threads" edges to the Thread entity.
 func (uc *UserCreate) AddThreads(t ...*Thread) *UserCreate {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -103,14 +103,14 @@ func (uc *UserCreate) AddThreads(t ...*Thread) *UserCreate {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (uc *UserCreate) AddMessageIDs(ids ...uuid.UUID) *UserCreate {
+func (uc *UserCreate) AddMessageIDs(ids ...pulid.ID) *UserCreate {
 	uc.mutation.AddMessageIDs(ids...)
 	return uc
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (uc *UserCreate) AddMessages(m ...*Message) *UserCreate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -192,7 +192,7 @@ func (uc *UserCreate) sqlSave(ctx context.Context) (*User, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*pulid.ID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -206,7 +206,7 @@ func (uc *UserCreate) sqlSave(ctx context.Context) (*User, error) {
 func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	var (
 		_node = &User{config: uc.config}
-		_spec = sqlgraph.NewCreateSpec(user.Table, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(user.Table, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	)
 	if id, ok := uc.mutation.ID(); ok {
 		_node.ID = id
@@ -232,7 +232,7 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -248,7 +248,7 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -264,7 +264,7 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

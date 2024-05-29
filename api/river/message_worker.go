@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 	"github.com/codelite7/momentum/api/common"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/riverqueue/river"
 	"time"
 )
 
 type MessageArgs struct {
-	ThreadId         uuid.UUID `json:"threadId"`
-	MessageId        uuid.UUID `json:"messageId"`
-	ResponseId       uuid.UUID `json:"responseId"`
+	ThreadId         pulid.ID  `json:"threadId"`
+	MessageId        pulid.ID  `json:"messageId"`
+	ResponseId       pulid.ID  `json:"responseId"`
 	MessageCreatedAt time.Time `json:"messageCreatedAt"`
 	MessageContent   string    `json:"messageContent"`
 }

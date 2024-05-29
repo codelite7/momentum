@@ -11,7 +11,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/codelite7/momentum/api/ent"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -20,10 +20,10 @@ import (
 type MutationResolver interface {
 	CreateAgent(ctx context.Context, input ent.CreateAgentInput) (*ent.Agent, error)
 	CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.Bookmark, error)
-	DeleteBookmark(ctx context.Context, id uuid.UUID) (bool, error)
+	DeleteBookmark(ctx context.Context, id pulid.ID) (bool, error)
 	CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error)
 	CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error)
-	DeleteThread(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
+	DeleteThread(ctx context.Context, id pulid.ID) (pulid.ID, error)
 	CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error)
 }
 
@@ -109,10 +109,10 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_deleteBookmark_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 uuid.UUID
+	var arg0 pulid.ID
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -124,10 +124,10 @@ func (ec *executionContext) field_Mutation_deleteBookmark_args(ctx context.Conte
 func (ec *executionContext) field_Mutation_deleteThread_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 uuid.UUID
+	var arg0 pulid.ID
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -294,7 +294,7 @@ func (ec *executionContext) _Mutation_deleteBookmark(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteBookmark(rctx, fc.Args["id"].(uuid.UUID))
+		return ec.resolvers.Mutation().DeleteBookmark(rctx, fc.Args["id"].(pulid.ID))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -494,7 +494,7 @@ func (ec *executionContext) _Mutation_deleteThread(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteThread(rctx, fc.Args["id"].(uuid.UUID))
+		return ec.resolvers.Mutation().DeleteThread(rctx, fc.Args["id"].(pulid.ID))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -506,9 +506,9 @@ func (ec *executionContext) _Mutation_deleteThread(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(uuid.UUID)
+	res := resTmp.(pulid.ID)
 	fc.Result = res
-	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+	return ec.marshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteThread(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {

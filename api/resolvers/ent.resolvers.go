@@ -9,46 +9,46 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"github.com/codelite7/momentum/api/ent"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // Node is the resolver for the node field.
-func (r *queryResolver) Node(ctx context.Context, id uuid.UUID) (ent.Noder, error) {
-	return r.client.Noder(ctx, id)
+func (r *queryResolver) Node(ctx context.Context, id pulid.ID) (ent.Noder, error) {
+	return r.client.Noder(ctx, id, ent.WithNodeType(ent.IDToType))
 }
 
 // Nodes is the resolver for the nodes field.
-func (r *queryResolver) Nodes(ctx context.Context, ids []uuid.UUID) ([]ent.Noder, error) {
+func (r *queryResolver) Nodes(ctx context.Context, ids []pulid.ID) ([]ent.Noder, error) {
 	return r.client.Noders(ctx, ids)
 }
 
 // Agents is the resolver for the agents field.
-func (r *queryResolver) Agents(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.AgentOrder, where *ent.AgentWhereInput) (*ent.AgentConnection, error) {
+func (r *queryResolver) Agents(ctx context.Context, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.AgentOrder, where *ent.AgentWhereInput) (*ent.AgentConnection, error) {
 	return r.client.Agent.Query().Paginate(ctx, after, first, before, last, ent.WithAgentOrder(orderBy), ent.WithAgentFilter(where.Filter))
 }
 
 // Bookmarks is the resolver for the bookmarks field.
-func (r *queryResolver) Bookmarks(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) (*ent.BookmarkConnection, error) {
+func (r *queryResolver) Bookmarks(ctx context.Context, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) (*ent.BookmarkConnection, error) {
 	return r.client.Bookmark.Query().Paginate(ctx, after, first, before, last, ent.WithBookmarkOrder(orderBy), ent.WithBookmarkFilter(where.Filter))
 }
 
 // Messages is the resolver for the messages field.
-func (r *queryResolver) Messages(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.MessageOrder, where *ent.MessageWhereInput) (*ent.MessageConnection, error) {
+func (r *queryResolver) Messages(ctx context.Context, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.MessageOrder, where *ent.MessageWhereInput) (*ent.MessageConnection, error) {
 	return r.client.Message.Query().Paginate(ctx, after, first, before, last, ent.WithMessageOrder(orderBy), ent.WithMessageFilter(where.Filter))
 }
 
 // Responses is the resolver for the responses field.
-func (r *queryResolver) Responses(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ResponseOrder, where *ent.ResponseWhereInput) (*ent.ResponseConnection, error) {
+func (r *queryResolver) Responses(ctx context.Context, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.ResponseOrder, where *ent.ResponseWhereInput) (*ent.ResponseConnection, error) {
 	return r.client.Response.Query().Paginate(ctx, after, first, before, last, ent.WithResponseOrder(orderBy), ent.WithResponseFilter(where.Filter))
 }
 
 // Threads is the resolver for the threads field.
-func (r *queryResolver) Threads(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) (*ent.ThreadConnection, error) {
+func (r *queryResolver) Threads(ctx context.Context, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) (*ent.ThreadConnection, error) {
 	return r.client.Thread.Query().Paginate(ctx, after, first, before, last, ent.WithThreadOrder(orderBy), ent.WithThreadFilter(where.Filter))
 }
 
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[uuid.UUID], first *int, before *entgql.Cursor[uuid.UUID], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error) {
+func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error) {
 	return r.client.User.Query().Paginate(ctx, after, first, before, last, ent.WithUserOrder(orderBy), ent.WithUserFilter(where.Filter))
 }
 

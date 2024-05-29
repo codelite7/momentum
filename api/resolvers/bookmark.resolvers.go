@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/codelite7/momentum/api/ent"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // CreateBookmark is the resolver for the createBookmark field.
@@ -17,7 +17,7 @@ func (r *mutationResolver) CreateBookmark(ctx context.Context, input ent.CreateB
 }
 
 // DeleteBookmark is the resolver for the deleteBookmark field.
-func (r *mutationResolver) DeleteBookmark(ctx context.Context, id uuid.UUID) (bool, error) {
+func (r *mutationResolver) DeleteBookmark(ctx context.Context, id pulid.ID) (bool, error) {
 	err := ent.FromContext(ctx).Bookmark.DeleteOneID(id).Exec(ctx)
 	return err == nil, err
 }

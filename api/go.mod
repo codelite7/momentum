@@ -11,10 +11,10 @@ require (
 	github.com/acaloiaro/neoq v0.66.0
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/go-resty/resty/v2 v2.13.1
-	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/labstack/echo/v4 v4.12.0
+	github.com/oklog/ulid/v2 v2.0.2
 	github.com/riverqueue/river v0.6.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.6.0
 	github.com/riverqueue/river/rivertype v0.6.0
@@ -31,6 +31,7 @@ require (
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/guregu/null v4.0.0+incompatible // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

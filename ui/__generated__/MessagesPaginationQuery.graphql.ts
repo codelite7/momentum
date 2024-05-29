@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<a6a2da547df7c02682bef1c5ead40505>>
+ * @generated SignedSource<<93a5ea8e9af363f1e77ce0afc43a1db4>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -17,7 +17,7 @@ export type MessagesPaginationQuery$variables = {
 };
 export type MessagesPaginationQuery$data = {
   readonly node: {
-    readonly " $fragmentSpreads": FragmentRefs<"MessagesFragment">;
+    readonly " $fragmentSpreads": FragmentRefs<"messagesFragment">;
   } | null | undefined;
 };
 export type MessagesPaginationQuery = {
@@ -75,6 +75,20 @@ v4 = {
   "kind": "ScalarField",
   "name": "id",
   "storageKey": null
+},
+v5 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "createdAt",
+  "storageKey": null
+},
+v6 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "content",
+  "storageKey": null
 };
 return {
   "fragment": {
@@ -94,7 +108,7 @@ return {
           {
             "args": (v2/*: any*/),
             "kind": "FragmentSpread",
-            "name": "MessagesFragment"
+            "name": "messagesFragment"
           }
         ],
         "storageKey": null
@@ -133,38 +147,6 @@ return {
                   {
                     "alias": null,
                     "args": null,
-                    "concreteType": "PageInfo",
-                    "kind": "LinkedField",
-                    "name": "pageInfo",
-                    "plural": false,
-                    "selections": [
-                      {
-                        "alias": null,
-                        "args": null,
-                        "kind": "ScalarField",
-                        "name": "startCursor",
-                        "storageKey": null
-                      },
-                      {
-                        "alias": null,
-                        "args": null,
-                        "kind": "ScalarField",
-                        "name": "hasNextPage",
-                        "storageKey": null
-                      },
-                      {
-                        "alias": null,
-                        "args": null,
-                        "kind": "ScalarField",
-                        "name": "endCursor",
-                        "storageKey": null
-                      }
-                    ],
-                    "storageKey": null
-                  },
-                  {
-                    "alias": null,
-                    "args": null,
                     "kind": "ScalarField",
                     "name": "totalCount",
                     "storageKey": null
@@ -186,18 +168,20 @@ return {
                         "plural": false,
                         "selections": [
                           (v4/*: any*/),
+                          (v5/*: any*/),
+                          (v6/*: any*/),
                           {
                             "alias": null,
                             "args": null,
-                            "kind": "ScalarField",
-                            "name": "createdAt",
-                            "storageKey": null
-                          },
-                          {
-                            "alias": null,
-                            "args": null,
-                            "kind": "ScalarField",
-                            "name": "content",
+                            "concreteType": "Response",
+                            "kind": "LinkedField",
+                            "name": "response",
+                            "plural": false,
+                            "selections": [
+                              (v4/*: any*/),
+                              (v5/*: any*/),
+                              (v6/*: any*/)
+                            ],
                             "storageKey": null
                           },
                           (v3/*: any*/)
@@ -209,6 +193,31 @@ return {
                         "args": null,
                         "kind": "ScalarField",
                         "name": "cursor",
+                        "storageKey": null
+                      }
+                    ],
+                    "storageKey": null
+                  },
+                  {
+                    "alias": null,
+                    "args": null,
+                    "concreteType": "PageInfo",
+                    "kind": "LinkedField",
+                    "name": "pageInfo",
+                    "plural": false,
+                    "selections": [
+                      {
+                        "alias": null,
+                        "args": null,
+                        "kind": "ScalarField",
+                        "name": "endCursor",
+                        "storageKey": null
+                      },
+                      {
+                        "alias": null,
+                        "args": null,
+                        "kind": "ScalarField",
+                        "name": "hasNextPage",
                         "storageKey": null
                       }
                     ],
@@ -236,16 +245,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "3796ab2fc79014821e637be3ccabbfe8",
+    "cacheID": "b7ef22980b2c67ac17cce920a5cbc9ca",
     "id": null,
     "metadata": {},
     "name": "MessagesPaginationQuery",
     "operationKind": "query",
-    "text": "query MessagesPaginationQuery(\n  $after: Cursor\n  $first: Int = 3\n  $id: ID!\n) {\n  node(id: $id) {\n    __typename\n    ...MessagesFragment_2HEEH6\n    id\n  }\n}\n\nfragment MessageFragment on Message {\n  id\n  createdAt\n  content\n}\n\nfragment MessagesFragment_2HEEH6 on Thread {\n  messages(first: $first, after: $after) {\n    pageInfo {\n      startCursor\n      hasNextPage\n      endCursor\n    }\n    totalCount\n    edges {\n      node {\n        id\n        ...MessageFragment\n        __typename\n      }\n      cursor\n    }\n  }\n  id\n}\n"
+    "text": "query MessagesPaginationQuery(\n  $after: Cursor\n  $first: Int = 3\n  $id: ID!\n) {\n  node(id: $id) {\n    __typename\n    ...messagesFragment_2HEEH6\n    id\n  }\n}\n\nfragment messageFragment on Message {\n  id\n  createdAt\n  content\n  response {\n    ...responseFragment\n    id\n  }\n}\n\nfragment messagesFragment_2HEEH6 on Thread {\n  messages(first: $first, after: $after) {\n    totalCount\n    edges {\n      node {\n        id\n        ...messageFragment\n        __typename\n      }\n      cursor\n    }\n    pageInfo {\n      endCursor\n      hasNextPage\n    }\n  }\n  id\n}\n\nfragment responseFragment on Response {\n  id\n  createdAt\n  content\n}\n"
   }
 };
 })();
 
-(node as any).hash = "7ed48ac3f32c82171764a90cba8f53e9";
+(node as any).hash = "cd2c6a84cbd6e25dd6f7ba1e1eac6a04";
 
 export default node;

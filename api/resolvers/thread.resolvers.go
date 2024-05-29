@@ -6,9 +6,10 @@ package resolvers
 
 import (
 	"context"
+
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -23,15 +24,15 @@ func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThr
 }
 
 // DeleteThread is the resolver for the deleteThread field.
-func (r *mutationResolver) DeleteThread(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+func (r *mutationResolver) DeleteThread(ctx context.Context, id pulid.ID) (pulid.ID, error) {
 	err := ent.FromContext(ctx).Thread.DeleteOneID(id).Exec(ctx)
 	if err != nil {
-		return uuid.Nil, err
+		return "", err
 	}
 	return id, nil
 }
 
 // Thread is the resolver for the thread field.
-func (r *queryResolver) Thread(ctx context.Context, id uuid.UUID) (*ent.Thread, error) {
+func (r *queryResolver) Thread(ctx context.Context, id pulid.ID) (*ent.Thread, error) {
 	return r.client.Thread.Get(ctx, id)
 }

@@ -18,16 +18,16 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // Common entgql types.
 type (
-	Cursor         = entgql.Cursor[uuid.UUID]
-	PageInfo       = entgql.PageInfo[uuid.UUID]
+	Cursor         = entgql.Cursor[pulid.ID]
+	PageInfo       = entgql.PageInfo[pulid.ID]
 	OrderDirection = entgql.OrderDirection
 )
 

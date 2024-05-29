@@ -14,9 +14,9 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // ThreadQuery is the builder for querying Thread entities.
@@ -207,8 +207,8 @@ func (tq *ThreadQuery) FirstX(ctx context.Context) *Thread {
 
 // FirstID returns the first Thread ID from the query.
 // Returns a *NotFoundError when no Thread ID was found.
-func (tq *ThreadQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (tq *ThreadQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = tq.Limit(1).IDs(setContextOp(ctx, tq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -220,7 +220,7 @@ func (tq *ThreadQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (tq *ThreadQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (tq *ThreadQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := tq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -258,8 +258,8 @@ func (tq *ThreadQuery) OnlyX(ctx context.Context) *Thread {
 // OnlyID is like Only, but returns the only Thread ID in the query.
 // Returns a *NotSingularError when more than one Thread ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (tq *ThreadQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (tq *ThreadQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = tq.Limit(2).IDs(setContextOp(ctx, tq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -275,7 +275,7 @@ func (tq *ThreadQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (tq *ThreadQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (tq *ThreadQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := tq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -303,7 +303,7 @@ func (tq *ThreadQuery) AllX(ctx context.Context) []*Thread {
 }
 
 // IDs executes the query and returns a list of Thread IDs.
-func (tq *ThreadQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (tq *ThreadQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if tq.ctx.Unique == nil && tq.path != nil {
 		tq.Unique(true)
 	}
@@ -315,7 +315,7 @@ func (tq *ThreadQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (tq *ThreadQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (tq *ThreadQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := tq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -618,8 +618,8 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 }
 
 func (tq *ThreadQuery) loadCreatedBy(ctx context.Context, query *UserQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *User)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Thread)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Thread)
 	for i := range nodes {
 		if nodes[i].user_threads == nil {
 			continue
@@ -651,7 +651,7 @@ func (tq *ThreadQuery) loadCreatedBy(ctx context.Context, query *UserQuery, node
 }
 func (tq *ThreadQuery) loadMessages(ctx context.Context, query *MessageQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Message)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Thread)
+	nodeids := make(map[pulid.ID]*Thread)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -682,7 +682,7 @@ func (tq *ThreadQuery) loadMessages(ctx context.Context, query *MessageQuery, no
 }
 func (tq *ThreadQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Bookmark)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Thread)
+	nodeids := make(map[pulid.ID]*Thread)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -712,8 +712,8 @@ func (tq *ThreadQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, 
 	return nil
 }
 func (tq *ThreadQuery) loadParent(ctx context.Context, query *ThreadQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Thread)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Thread)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Thread)
 	for i := range nodes {
 		if nodes[i].thread_children == nil {
 			continue
@@ -745,7 +745,7 @@ func (tq *ThreadQuery) loadParent(ctx context.Context, query *ThreadQuery, nodes
 }
 func (tq *ThreadQuery) loadChildren(ctx context.Context, query *ThreadQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Thread)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Thread)
+	nodeids := make(map[pulid.ID]*Thread)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -788,7 +788,7 @@ func (tq *ThreadQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (tq *ThreadQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(thread.Table, thread.Columns, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(thread.Table, thread.Columns, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString))
 	_spec.From = tq.sql
 	if unique := tq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

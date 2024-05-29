@@ -14,9 +14,9 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // UserUpdate is the builder for updating User entities.
@@ -61,14 +61,14 @@ func (uu *UserUpdate) SetNillableEmail(s *string) *UserUpdate {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (uu *UserUpdate) AddBookmarkIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) AddBookmarkIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.AddBookmarkIDs(ids...)
 	return uu
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (uu *UserUpdate) AddBookmarks(b ...*Bookmark) *UserUpdate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -76,14 +76,14 @@ func (uu *UserUpdate) AddBookmarks(b ...*Bookmark) *UserUpdate {
 }
 
 // AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
-func (uu *UserUpdate) AddThreadIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) AddThreadIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.AddThreadIDs(ids...)
 	return uu
 }
 
 // AddThreads adds the "threads" edges to the Thread entity.
 func (uu *UserUpdate) AddThreads(t ...*Thread) *UserUpdate {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -91,14 +91,14 @@ func (uu *UserUpdate) AddThreads(t ...*Thread) *UserUpdate {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (uu *UserUpdate) AddMessageIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) AddMessageIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.AddMessageIDs(ids...)
 	return uu
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (uu *UserUpdate) AddMessages(m ...*Message) *UserUpdate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -117,14 +117,14 @@ func (uu *UserUpdate) ClearBookmarks() *UserUpdate {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to Bookmark entities by IDs.
-func (uu *UserUpdate) RemoveBookmarkIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) RemoveBookmarkIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.RemoveBookmarkIDs(ids...)
 	return uu
 }
 
 // RemoveBookmarks removes "bookmarks" edges to Bookmark entities.
 func (uu *UserUpdate) RemoveBookmarks(b ...*Bookmark) *UserUpdate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -138,14 +138,14 @@ func (uu *UserUpdate) ClearThreads() *UserUpdate {
 }
 
 // RemoveThreadIDs removes the "threads" edge to Thread entities by IDs.
-func (uu *UserUpdate) RemoveThreadIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) RemoveThreadIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.RemoveThreadIDs(ids...)
 	return uu
 }
 
 // RemoveThreads removes "threads" edges to Thread entities.
 func (uu *UserUpdate) RemoveThreads(t ...*Thread) *UserUpdate {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -159,14 +159,14 @@ func (uu *UserUpdate) ClearMessages() *UserUpdate {
 }
 
 // RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (uu *UserUpdate) RemoveMessageIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) RemoveMessageIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.RemoveMessageIDs(ids...)
 	return uu
 }
 
 // RemoveMessages removes "messages" edges to Message entities.
 func (uu *UserUpdate) RemoveMessages(m ...*Message) *UserUpdate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -201,7 +201,7 @@ func (uu *UserUpdate) ExecX(ctx context.Context) {
 }
 
 func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	if ps := uu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -223,7 +223,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -236,7 +236,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -252,7 +252,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -268,7 +268,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -281,7 +281,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -297,7 +297,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -313,7 +313,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -326,7 +326,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -342,7 +342,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -399,14 +399,14 @@ func (uuo *UserUpdateOne) SetNillableEmail(s *string) *UserUpdateOne {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (uuo *UserUpdateOne) AddBookmarkIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddBookmarkIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.AddBookmarkIDs(ids...)
 	return uuo
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (uuo *UserUpdateOne) AddBookmarks(b ...*Bookmark) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -414,14 +414,14 @@ func (uuo *UserUpdateOne) AddBookmarks(b ...*Bookmark) *UserUpdateOne {
 }
 
 // AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
-func (uuo *UserUpdateOne) AddThreadIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddThreadIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.AddThreadIDs(ids...)
 	return uuo
 }
 
 // AddThreads adds the "threads" edges to the Thread entity.
 func (uuo *UserUpdateOne) AddThreads(t ...*Thread) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -429,14 +429,14 @@ func (uuo *UserUpdateOne) AddThreads(t ...*Thread) *UserUpdateOne {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (uuo *UserUpdateOne) AddMessageIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddMessageIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.AddMessageIDs(ids...)
 	return uuo
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (uuo *UserUpdateOne) AddMessages(m ...*Message) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -455,14 +455,14 @@ func (uuo *UserUpdateOne) ClearBookmarks() *UserUpdateOne {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to Bookmark entities by IDs.
-func (uuo *UserUpdateOne) RemoveBookmarkIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveBookmarkIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.RemoveBookmarkIDs(ids...)
 	return uuo
 }
 
 // RemoveBookmarks removes "bookmarks" edges to Bookmark entities.
 func (uuo *UserUpdateOne) RemoveBookmarks(b ...*Bookmark) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -476,14 +476,14 @@ func (uuo *UserUpdateOne) ClearThreads() *UserUpdateOne {
 }
 
 // RemoveThreadIDs removes the "threads" edge to Thread entities by IDs.
-func (uuo *UserUpdateOne) RemoveThreadIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveThreadIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.RemoveThreadIDs(ids...)
 	return uuo
 }
 
 // RemoveThreads removes "threads" edges to Thread entities.
 func (uuo *UserUpdateOne) RemoveThreads(t ...*Thread) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -497,14 +497,14 @@ func (uuo *UserUpdateOne) ClearMessages() *UserUpdateOne {
 }
 
 // RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (uuo *UserUpdateOne) RemoveMessageIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveMessageIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.RemoveMessageIDs(ids...)
 	return uuo
 }
 
 // RemoveMessages removes "messages" edges to Message entities.
 func (uuo *UserUpdateOne) RemoveMessages(m ...*Message) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -552,7 +552,7 @@ func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
-	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	id, ok := uuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "User.id" for update`)}
@@ -591,7 +591,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -604,7 +604,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -620,7 +620,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -636,7 +636,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -649,7 +649,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -665,7 +665,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -681,7 +681,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -694,7 +694,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -710,7 +710,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

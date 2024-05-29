@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<034291f7eb2baf2112ab00a869f3651d>>
+ * @generated SignedSource<<813d3bf37248184d3fded45ad33a1bb7>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -19,8 +19,8 @@ export type testPaginationFragment$data = {
       } | null | undefined;
     } | null | undefined> | null | undefined;
     readonly pageInfo: {
+      readonly endCursor: any | null | undefined;
       readonly hasNextPage: boolean;
-      readonly startCursor: any | null | undefined;
     };
     readonly totalCount: number;
   };
@@ -150,7 +150,7 @@ return {
               "alias": null,
               "args": null,
               "kind": "ScalarField",
-              "name": "startCursor",
+              "name": "endCursor",
               "storageKey": null
             },
             {
@@ -158,13 +158,6 @@ return {
               "args": null,
               "kind": "ScalarField",
               "name": "hasNextPage",
-              "storageKey": null
-            },
-            {
-              "alias": null,
-              "args": null,
-              "kind": "ScalarField",
-              "name": "endCursor",
               "storageKey": null
             }
           ],
@@ -179,6 +172,6 @@ return {
 };
 })();
 
-(node as any).hash = "e4e86d3571d4c981560757ba9a56fc1c";
+(node as any).hash = "ebdf0102edf883abb4dfc760c2ad160b";
 
 export default node;

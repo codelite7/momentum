@@ -14,7 +14,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // AgentUpdate is the builder for updating Agent entities.
@@ -87,14 +87,14 @@ func (au *AgentUpdate) SetNillableAPIKey(s *string) *AgentUpdate {
 }
 
 // AddResponseIDs adds the "responses" edge to the Response entity by IDs.
-func (au *AgentUpdate) AddResponseIDs(ids ...uuid.UUID) *AgentUpdate {
+func (au *AgentUpdate) AddResponseIDs(ids ...pulid.ID) *AgentUpdate {
 	au.mutation.AddResponseIDs(ids...)
 	return au
 }
 
 // AddResponses adds the "responses" edges to the Response entity.
 func (au *AgentUpdate) AddResponses(r ...*Response) *AgentUpdate {
-	ids := make([]uuid.UUID, len(r))
+	ids := make([]pulid.ID, len(r))
 	for i := range r {
 		ids[i] = r[i].ID
 	}
@@ -113,14 +113,14 @@ func (au *AgentUpdate) ClearResponses() *AgentUpdate {
 }
 
 // RemoveResponseIDs removes the "responses" edge to Response entities by IDs.
-func (au *AgentUpdate) RemoveResponseIDs(ids ...uuid.UUID) *AgentUpdate {
+func (au *AgentUpdate) RemoveResponseIDs(ids ...pulid.ID) *AgentUpdate {
 	au.mutation.RemoveResponseIDs(ids...)
 	return au
 }
 
 // RemoveResponses removes "responses" edges to Response entities.
 func (au *AgentUpdate) RemoveResponses(r ...*Response) *AgentUpdate {
-	ids := make([]uuid.UUID, len(r))
+	ids := make([]pulid.ID, len(r))
 	for i := range r {
 		ids[i] = r[i].ID
 	}
@@ -155,7 +155,7 @@ func (au *AgentUpdate) ExecX(ctx context.Context) {
 }
 
 func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -183,7 +183,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -196,7 +196,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -212,7 +212,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -297,14 +297,14 @@ func (auo *AgentUpdateOne) SetNillableAPIKey(s *string) *AgentUpdateOne {
 }
 
 // AddResponseIDs adds the "responses" edge to the Response entity by IDs.
-func (auo *AgentUpdateOne) AddResponseIDs(ids ...uuid.UUID) *AgentUpdateOne {
+func (auo *AgentUpdateOne) AddResponseIDs(ids ...pulid.ID) *AgentUpdateOne {
 	auo.mutation.AddResponseIDs(ids...)
 	return auo
 }
 
 // AddResponses adds the "responses" edges to the Response entity.
 func (auo *AgentUpdateOne) AddResponses(r ...*Response) *AgentUpdateOne {
-	ids := make([]uuid.UUID, len(r))
+	ids := make([]pulid.ID, len(r))
 	for i := range r {
 		ids[i] = r[i].ID
 	}
@@ -323,14 +323,14 @@ func (auo *AgentUpdateOne) ClearResponses() *AgentUpdateOne {
 }
 
 // RemoveResponseIDs removes the "responses" edge to Response entities by IDs.
-func (auo *AgentUpdateOne) RemoveResponseIDs(ids ...uuid.UUID) *AgentUpdateOne {
+func (auo *AgentUpdateOne) RemoveResponseIDs(ids ...pulid.ID) *AgentUpdateOne {
 	auo.mutation.RemoveResponseIDs(ids...)
 	return auo
 }
 
 // RemoveResponses removes "responses" edges to Response entities.
 func (auo *AgentUpdateOne) RemoveResponses(r ...*Response) *AgentUpdateOne {
-	ids := make([]uuid.UUID, len(r))
+	ids := make([]pulid.ID, len(r))
 	for i := range r {
 		ids[i] = r[i].ID
 	}
@@ -378,7 +378,7 @@ func (auo *AgentUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error) {
-	_spec := sqlgraph.NewUpdateSpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString))
 	id, ok := auo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Agent.id" for update`)}
@@ -423,7 +423,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -436,7 +436,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -452,7 +452,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.ResponsesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

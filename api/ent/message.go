@@ -11,16 +11,16 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // Message is the model entity for the Message schema.
 type Message struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID pulid.ID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -30,8 +30,8 @@ type Message struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MessageQuery when eager-loading is set.
 	Edges           MessageEdges `json:"edges"`
-	thread_messages *uuid.UUID
-	user_messages   *uuid.UUID
+	thread_messages *pulid.ID
+	user_messages   *pulid.ID
 	selectValues    sql.SelectValues
 }
 
@@ -101,16 +101,16 @@ func (*Message) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case message.FieldID:
+			values[i] = new(pulid.ID)
 		case message.FieldContent:
 			values[i] = new(sql.NullString)
 		case message.FieldCreatedAt, message.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case message.FieldID:
-			values[i] = new(uuid.UUID)
 		case message.ForeignKeys[0]: // thread_messages
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		case message.ForeignKeys[1]: // user_messages
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -127,7 +127,7 @@ func (m *Message) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case message.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*pulid.ID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				m.ID = *value
@@ -154,15 +154,15 @@ func (m *Message) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field thread_messages", values[i])
 			} else if value.Valid {
-				m.thread_messages = new(uuid.UUID)
-				*m.thread_messages = *value.S.(*uuid.UUID)
+				m.thread_messages = new(pulid.ID)
+				*m.thread_messages = *value.S.(*pulid.ID)
 			}
 		case message.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_messages", values[i])
 			} else if value.Valid {
-				m.user_messages = new(uuid.UUID)
-				*m.user_messages = *value.S.(*uuid.UUID)
+				m.user_messages = new(pulid.ID)
+				*m.user_messages = *value.S.(*pulid.ID)
 			}
 		default:
 			m.selectValues.Set(columns[i], values[i])
