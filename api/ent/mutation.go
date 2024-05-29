@@ -16,9 +16,9 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 const (
@@ -43,15 +43,15 @@ type AgentMutation struct {
 	config
 	op               Op
 	typ              string
-	id               *uuid.UUID
+	id               *pulid.ID
 	created_at       *time.Time
 	updated_at       *time.Time
 	provider         *string
 	model            *string
 	api_key          *string
 	clearedFields    map[string]struct{}
-	responses        map[uuid.UUID]struct{}
-	removedresponses map[uuid.UUID]struct{}
+	responses        map[pulid.ID]struct{}
+	removedresponses map[pulid.ID]struct{}
 	clearedresponses bool
 	done             bool
 	oldValue         func(context.Context) (*Agent, error)
@@ -78,7 +78,7 @@ func newAgentMutation(c config, op Op, opts ...agentOption) *AgentMutation {
 }
 
 // withAgentID sets the ID field of the mutation.
-func withAgentID(id uuid.UUID) agentOption {
+func withAgentID(id pulid.ID) agentOption {
 	return func(m *AgentMutation) {
 		var (
 			err   error
@@ -130,13 +130,13 @@ func (m AgentMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Agent entities.
-func (m *AgentMutation) SetID(id uuid.UUID) {
+func (m *AgentMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *AgentMutation) ID() (id uuid.UUID, exists bool) {
+func (m *AgentMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -147,12 +147,12 @@ func (m *AgentMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *AgentMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *AgentMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -343,9 +343,9 @@ func (m *AgentMutation) ResetAPIKey() {
 }
 
 // AddResponseIDs adds the "responses" edge to the Response entity by ids.
-func (m *AgentMutation) AddResponseIDs(ids ...uuid.UUID) {
+func (m *AgentMutation) AddResponseIDs(ids ...pulid.ID) {
 	if m.responses == nil {
-		m.responses = make(map[uuid.UUID]struct{})
+		m.responses = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.responses[ids[i]] = struct{}{}
@@ -363,9 +363,9 @@ func (m *AgentMutation) ResponsesCleared() bool {
 }
 
 // RemoveResponseIDs removes the "responses" edge to the Response entity by IDs.
-func (m *AgentMutation) RemoveResponseIDs(ids ...uuid.UUID) {
+func (m *AgentMutation) RemoveResponseIDs(ids ...pulid.ID) {
 	if m.removedresponses == nil {
-		m.removedresponses = make(map[uuid.UUID]struct{})
+		m.removedresponses = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.responses, ids[i])
@@ -374,7 +374,7 @@ func (m *AgentMutation) RemoveResponseIDs(ids ...uuid.UUID) {
 }
 
 // RemovedResponses returns the removed IDs of the "responses" edge to the Response entity.
-func (m *AgentMutation) RemovedResponsesIDs() (ids []uuid.UUID) {
+func (m *AgentMutation) RemovedResponsesIDs() (ids []pulid.ID) {
 	for id := range m.removedresponses {
 		ids = append(ids, id)
 	}
@@ -382,7 +382,7 @@ func (m *AgentMutation) RemovedResponsesIDs() (ids []uuid.UUID) {
 }
 
 // ResponsesIDs returns the "responses" edge IDs in the mutation.
-func (m *AgentMutation) ResponsesIDs() (ids []uuid.UUID) {
+func (m *AgentMutation) ResponsesIDs() (ids []pulid.ID) {
 	for id := range m.responses {
 		ids = append(ids, id)
 	}
@@ -684,17 +684,17 @@ type BookmarkMutation struct {
 	config
 	op              Op
 	typ             string
-	id              *uuid.UUID
+	id              *pulid.ID
 	created_at      *time.Time
 	updated_at      *time.Time
 	clearedFields   map[string]struct{}
-	user            *uuid.UUID
+	user            *pulid.ID
 	cleareduser     bool
-	thread          *uuid.UUID
+	thread          *pulid.ID
 	clearedthread   bool
-	message         *uuid.UUID
+	message         *pulid.ID
 	clearedmessage  bool
-	response        *uuid.UUID
+	response        *pulid.ID
 	clearedresponse bool
 	done            bool
 	oldValue        func(context.Context) (*Bookmark, error)
@@ -721,7 +721,7 @@ func newBookmarkMutation(c config, op Op, opts ...bookmarkOption) *BookmarkMutat
 }
 
 // withBookmarkID sets the ID field of the mutation.
-func withBookmarkID(id uuid.UUID) bookmarkOption {
+func withBookmarkID(id pulid.ID) bookmarkOption {
 	return func(m *BookmarkMutation) {
 		var (
 			err   error
@@ -773,13 +773,13 @@ func (m BookmarkMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Bookmark entities.
-func (m *BookmarkMutation) SetID(id uuid.UUID) {
+func (m *BookmarkMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *BookmarkMutation) ID() (id uuid.UUID, exists bool) {
+func (m *BookmarkMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -790,12 +790,12 @@ func (m *BookmarkMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *BookmarkMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *BookmarkMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -878,7 +878,7 @@ func (m *BookmarkMutation) ResetUpdatedAt() {
 }
 
 // SetUserID sets the "user" edge to the User entity by id.
-func (m *BookmarkMutation) SetUserID(id uuid.UUID) {
+func (m *BookmarkMutation) SetUserID(id pulid.ID) {
 	m.user = &id
 }
 
@@ -893,7 +893,7 @@ func (m *BookmarkMutation) UserCleared() bool {
 }
 
 // UserID returns the "user" edge ID in the mutation.
-func (m *BookmarkMutation) UserID() (id uuid.UUID, exists bool) {
+func (m *BookmarkMutation) UserID() (id pulid.ID, exists bool) {
 	if m.user != nil {
 		return *m.user, true
 	}
@@ -903,7 +903,7 @@ func (m *BookmarkMutation) UserID() (id uuid.UUID, exists bool) {
 // UserIDs returns the "user" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // UserID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) UserIDs() (ids []uuid.UUID) {
+func (m *BookmarkMutation) UserIDs() (ids []pulid.ID) {
 	if id := m.user; id != nil {
 		ids = append(ids, *id)
 	}
@@ -917,7 +917,7 @@ func (m *BookmarkMutation) ResetUser() {
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by id.
-func (m *BookmarkMutation) SetThreadID(id uuid.UUID) {
+func (m *BookmarkMutation) SetThreadID(id pulid.ID) {
 	m.thread = &id
 }
 
@@ -932,7 +932,7 @@ func (m *BookmarkMutation) ThreadCleared() bool {
 }
 
 // ThreadID returns the "thread" edge ID in the mutation.
-func (m *BookmarkMutation) ThreadID() (id uuid.UUID, exists bool) {
+func (m *BookmarkMutation) ThreadID() (id pulid.ID, exists bool) {
 	if m.thread != nil {
 		return *m.thread, true
 	}
@@ -942,7 +942,7 @@ func (m *BookmarkMutation) ThreadID() (id uuid.UUID, exists bool) {
 // ThreadIDs returns the "thread" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // ThreadID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) ThreadIDs() (ids []uuid.UUID) {
+func (m *BookmarkMutation) ThreadIDs() (ids []pulid.ID) {
 	if id := m.thread; id != nil {
 		ids = append(ids, *id)
 	}
@@ -956,7 +956,7 @@ func (m *BookmarkMutation) ResetThread() {
 }
 
 // SetMessageID sets the "message" edge to the Message entity by id.
-func (m *BookmarkMutation) SetMessageID(id uuid.UUID) {
+func (m *BookmarkMutation) SetMessageID(id pulid.ID) {
 	m.message = &id
 }
 
@@ -971,7 +971,7 @@ func (m *BookmarkMutation) MessageCleared() bool {
 }
 
 // MessageID returns the "message" edge ID in the mutation.
-func (m *BookmarkMutation) MessageID() (id uuid.UUID, exists bool) {
+func (m *BookmarkMutation) MessageID() (id pulid.ID, exists bool) {
 	if m.message != nil {
 		return *m.message, true
 	}
@@ -981,7 +981,7 @@ func (m *BookmarkMutation) MessageID() (id uuid.UUID, exists bool) {
 // MessageIDs returns the "message" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // MessageID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) MessageIDs() (ids []uuid.UUID) {
+func (m *BookmarkMutation) MessageIDs() (ids []pulid.ID) {
 	if id := m.message; id != nil {
 		ids = append(ids, *id)
 	}
@@ -995,7 +995,7 @@ func (m *BookmarkMutation) ResetMessage() {
 }
 
 // SetResponseID sets the "response" edge to the Response entity by id.
-func (m *BookmarkMutation) SetResponseID(id uuid.UUID) {
+func (m *BookmarkMutation) SetResponseID(id pulid.ID) {
 	m.response = &id
 }
 
@@ -1010,7 +1010,7 @@ func (m *BookmarkMutation) ResponseCleared() bool {
 }
 
 // ResponseID returns the "response" edge ID in the mutation.
-func (m *BookmarkMutation) ResponseID() (id uuid.UUID, exists bool) {
+func (m *BookmarkMutation) ResponseID() (id pulid.ID, exists bool) {
 	if m.response != nil {
 		return *m.response, true
 	}
@@ -1020,7 +1020,7 @@ func (m *BookmarkMutation) ResponseID() (id uuid.UUID, exists bool) {
 // ResponseIDs returns the "response" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // ResponseID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) ResponseIDs() (ids []uuid.UUID) {
+func (m *BookmarkMutation) ResponseIDs() (ids []pulid.ID) {
 	if id := m.response; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1314,19 +1314,19 @@ type MessageMutation struct {
 	config
 	op               Op
 	typ              string
-	id               *uuid.UUID
+	id               *pulid.ID
 	created_at       *time.Time
 	updated_at       *time.Time
 	content          *string
 	clearedFields    map[string]struct{}
-	sent_by          *uuid.UUID
+	sent_by          *pulid.ID
 	clearedsent_by   bool
-	thread           *uuid.UUID
+	thread           *pulid.ID
 	clearedthread    bool
-	bookmarks        map[uuid.UUID]struct{}
-	removedbookmarks map[uuid.UUID]struct{}
+	bookmarks        map[pulid.ID]struct{}
+	removedbookmarks map[pulid.ID]struct{}
 	clearedbookmarks bool
-	response         *uuid.UUID
+	response         *pulid.ID
 	clearedresponse  bool
 	done             bool
 	oldValue         func(context.Context) (*Message, error)
@@ -1353,7 +1353,7 @@ func newMessageMutation(c config, op Op, opts ...messageOption) *MessageMutation
 }
 
 // withMessageID sets the ID field of the mutation.
-func withMessageID(id uuid.UUID) messageOption {
+func withMessageID(id pulid.ID) messageOption {
 	return func(m *MessageMutation) {
 		var (
 			err   error
@@ -1405,13 +1405,13 @@ func (m MessageMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Message entities.
-func (m *MessageMutation) SetID(id uuid.UUID) {
+func (m *MessageMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *MessageMutation) ID() (id uuid.UUID, exists bool) {
+func (m *MessageMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1422,12 +1422,12 @@ func (m *MessageMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *MessageMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *MessageMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1546,7 +1546,7 @@ func (m *MessageMutation) ResetContent() {
 }
 
 // SetSentByID sets the "sent_by" edge to the User entity by id.
-func (m *MessageMutation) SetSentByID(id uuid.UUID) {
+func (m *MessageMutation) SetSentByID(id pulid.ID) {
 	m.sent_by = &id
 }
 
@@ -1561,7 +1561,7 @@ func (m *MessageMutation) SentByCleared() bool {
 }
 
 // SentByID returns the "sent_by" edge ID in the mutation.
-func (m *MessageMutation) SentByID() (id uuid.UUID, exists bool) {
+func (m *MessageMutation) SentByID() (id pulid.ID, exists bool) {
 	if m.sent_by != nil {
 		return *m.sent_by, true
 	}
@@ -1571,7 +1571,7 @@ func (m *MessageMutation) SentByID() (id uuid.UUID, exists bool) {
 // SentByIDs returns the "sent_by" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // SentByID instead. It exists only for internal usage by the builders.
-func (m *MessageMutation) SentByIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) SentByIDs() (ids []pulid.ID) {
 	if id := m.sent_by; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1585,7 +1585,7 @@ func (m *MessageMutation) ResetSentBy() {
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by id.
-func (m *MessageMutation) SetThreadID(id uuid.UUID) {
+func (m *MessageMutation) SetThreadID(id pulid.ID) {
 	m.thread = &id
 }
 
@@ -1600,7 +1600,7 @@ func (m *MessageMutation) ThreadCleared() bool {
 }
 
 // ThreadID returns the "thread" edge ID in the mutation.
-func (m *MessageMutation) ThreadID() (id uuid.UUID, exists bool) {
+func (m *MessageMutation) ThreadID() (id pulid.ID, exists bool) {
 	if m.thread != nil {
 		return *m.thread, true
 	}
@@ -1610,7 +1610,7 @@ func (m *MessageMutation) ThreadID() (id uuid.UUID, exists bool) {
 // ThreadIDs returns the "thread" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // ThreadID instead. It exists only for internal usage by the builders.
-func (m *MessageMutation) ThreadIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) ThreadIDs() (ids []pulid.ID) {
 	if id := m.thread; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1624,9 +1624,9 @@ func (m *MessageMutation) ResetThread() {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *MessageMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+func (m *MessageMutation) AddBookmarkIDs(ids ...pulid.ID) {
 	if m.bookmarks == nil {
-		m.bookmarks = make(map[uuid.UUID]struct{})
+		m.bookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.bookmarks[ids[i]] = struct{}{}
@@ -1644,9 +1644,9 @@ func (m *MessageMutation) BookmarksCleared() bool {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *MessageMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+func (m *MessageMutation) RemoveBookmarkIDs(ids ...pulid.ID) {
 	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[uuid.UUID]struct{})
+		m.removedbookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.bookmarks, ids[i])
@@ -1655,7 +1655,7 @@ func (m *MessageMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
 }
 
 // RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *MessageMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) RemovedBookmarksIDs() (ids []pulid.ID) {
 	for id := range m.removedbookmarks {
 		ids = append(ids, id)
 	}
@@ -1663,7 +1663,7 @@ func (m *MessageMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
 }
 
 // BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *MessageMutation) BookmarksIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) BookmarksIDs() (ids []pulid.ID) {
 	for id := range m.bookmarks {
 		ids = append(ids, id)
 	}
@@ -1678,7 +1678,7 @@ func (m *MessageMutation) ResetBookmarks() {
 }
 
 // SetResponseID sets the "response" edge to the Response entity by id.
-func (m *MessageMutation) SetResponseID(id uuid.UUID) {
+func (m *MessageMutation) SetResponseID(id pulid.ID) {
 	m.response = &id
 }
 
@@ -1693,7 +1693,7 @@ func (m *MessageMutation) ResponseCleared() bool {
 }
 
 // ResponseID returns the "response" edge ID in the mutation.
-func (m *MessageMutation) ResponseID() (id uuid.UUID, exists bool) {
+func (m *MessageMutation) ResponseID() (id pulid.ID, exists bool) {
 	if m.response != nil {
 		return *m.response, true
 	}
@@ -1703,7 +1703,7 @@ func (m *MessageMutation) ResponseID() (id uuid.UUID, exists bool) {
 // ResponseIDs returns the "response" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // ResponseID instead. It exists only for internal usage by the builders.
-func (m *MessageMutation) ResponseIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) ResponseIDs() (ids []pulid.ID) {
 	if id := m.response; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2024,17 +2024,17 @@ type ResponseMutation struct {
 	config
 	op               Op
 	typ              string
-	id               *uuid.UUID
+	id               *pulid.ID
 	created_at       *time.Time
 	updated_at       *time.Time
 	content          *string
 	clearedFields    map[string]struct{}
-	sent_by          *uuid.UUID
+	sent_by          *pulid.ID
 	clearedsent_by   bool
-	message          *uuid.UUID
+	message          *pulid.ID
 	clearedmessage   bool
-	bookmarks        map[uuid.UUID]struct{}
-	removedbookmarks map[uuid.UUID]struct{}
+	bookmarks        map[pulid.ID]struct{}
+	removedbookmarks map[pulid.ID]struct{}
 	clearedbookmarks bool
 	done             bool
 	oldValue         func(context.Context) (*Response, error)
@@ -2061,7 +2061,7 @@ func newResponseMutation(c config, op Op, opts ...responseOption) *ResponseMutat
 }
 
 // withResponseID sets the ID field of the mutation.
-func withResponseID(id uuid.UUID) responseOption {
+func withResponseID(id pulid.ID) responseOption {
 	return func(m *ResponseMutation) {
 		var (
 			err   error
@@ -2113,13 +2113,13 @@ func (m ResponseMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Response entities.
-func (m *ResponseMutation) SetID(id uuid.UUID) {
+func (m *ResponseMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *ResponseMutation) ID() (id uuid.UUID, exists bool) {
+func (m *ResponseMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2130,12 +2130,12 @@ func (m *ResponseMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *ResponseMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *ResponseMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -2267,7 +2267,7 @@ func (m *ResponseMutation) ResetContent() {
 }
 
 // SetSentByID sets the "sent_by" edge to the Agent entity by id.
-func (m *ResponseMutation) SetSentByID(id uuid.UUID) {
+func (m *ResponseMutation) SetSentByID(id pulid.ID) {
 	m.sent_by = &id
 }
 
@@ -2282,7 +2282,7 @@ func (m *ResponseMutation) SentByCleared() bool {
 }
 
 // SentByID returns the "sent_by" edge ID in the mutation.
-func (m *ResponseMutation) SentByID() (id uuid.UUID, exists bool) {
+func (m *ResponseMutation) SentByID() (id pulid.ID, exists bool) {
 	if m.sent_by != nil {
 		return *m.sent_by, true
 	}
@@ -2292,7 +2292,7 @@ func (m *ResponseMutation) SentByID() (id uuid.UUID, exists bool) {
 // SentByIDs returns the "sent_by" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // SentByID instead. It exists only for internal usage by the builders.
-func (m *ResponseMutation) SentByIDs() (ids []uuid.UUID) {
+func (m *ResponseMutation) SentByIDs() (ids []pulid.ID) {
 	if id := m.sent_by; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2306,7 +2306,7 @@ func (m *ResponseMutation) ResetSentBy() {
 }
 
 // SetMessageID sets the "message" edge to the Message entity by id.
-func (m *ResponseMutation) SetMessageID(id uuid.UUID) {
+func (m *ResponseMutation) SetMessageID(id pulid.ID) {
 	m.message = &id
 }
 
@@ -2321,7 +2321,7 @@ func (m *ResponseMutation) MessageCleared() bool {
 }
 
 // MessageID returns the "message" edge ID in the mutation.
-func (m *ResponseMutation) MessageID() (id uuid.UUID, exists bool) {
+func (m *ResponseMutation) MessageID() (id pulid.ID, exists bool) {
 	if m.message != nil {
 		return *m.message, true
 	}
@@ -2331,7 +2331,7 @@ func (m *ResponseMutation) MessageID() (id uuid.UUID, exists bool) {
 // MessageIDs returns the "message" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // MessageID instead. It exists only for internal usage by the builders.
-func (m *ResponseMutation) MessageIDs() (ids []uuid.UUID) {
+func (m *ResponseMutation) MessageIDs() (ids []pulid.ID) {
 	if id := m.message; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2345,9 +2345,9 @@ func (m *ResponseMutation) ResetMessage() {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *ResponseMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+func (m *ResponseMutation) AddBookmarkIDs(ids ...pulid.ID) {
 	if m.bookmarks == nil {
-		m.bookmarks = make(map[uuid.UUID]struct{})
+		m.bookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.bookmarks[ids[i]] = struct{}{}
@@ -2365,9 +2365,9 @@ func (m *ResponseMutation) BookmarksCleared() bool {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *ResponseMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+func (m *ResponseMutation) RemoveBookmarkIDs(ids ...pulid.ID) {
 	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[uuid.UUID]struct{})
+		m.removedbookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.bookmarks, ids[i])
@@ -2376,7 +2376,7 @@ func (m *ResponseMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
 }
 
 // RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *ResponseMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+func (m *ResponseMutation) RemovedBookmarksIDs() (ids []pulid.ID) {
 	for id := range m.removedbookmarks {
 		ids = append(ids, id)
 	}
@@ -2384,7 +2384,7 @@ func (m *ResponseMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
 }
 
 // BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *ResponseMutation) BookmarksIDs() (ids []uuid.UUID) {
+func (m *ResponseMutation) BookmarksIDs() (ids []pulid.ID) {
 	for id := range m.bookmarks {
 		ids = append(ids, id)
 	}
@@ -2697,23 +2697,23 @@ type ThreadMutation struct {
 	config
 	op                Op
 	typ               string
-	id                *uuid.UUID
+	id                *pulid.ID
 	created_at        *time.Time
 	updated_at        *time.Time
 	name              *string
 	clearedFields     map[string]struct{}
-	created_by        *uuid.UUID
+	created_by        *pulid.ID
 	clearedcreated_by bool
-	messages          map[uuid.UUID]struct{}
-	removedmessages   map[uuid.UUID]struct{}
+	messages          map[pulid.ID]struct{}
+	removedmessages   map[pulid.ID]struct{}
 	clearedmessages   bool
-	bookmarks         map[uuid.UUID]struct{}
-	removedbookmarks  map[uuid.UUID]struct{}
+	bookmarks         map[pulid.ID]struct{}
+	removedbookmarks  map[pulid.ID]struct{}
 	clearedbookmarks  bool
-	parent            *uuid.UUID
+	parent            *pulid.ID
 	clearedparent     bool
-	children          map[uuid.UUID]struct{}
-	removedchildren   map[uuid.UUID]struct{}
+	children          map[pulid.ID]struct{}
+	removedchildren   map[pulid.ID]struct{}
 	clearedchildren   bool
 	done              bool
 	oldValue          func(context.Context) (*Thread, error)
@@ -2740,7 +2740,7 @@ func newThreadMutation(c config, op Op, opts ...threadOption) *ThreadMutation {
 }
 
 // withThreadID sets the ID field of the mutation.
-func withThreadID(id uuid.UUID) threadOption {
+func withThreadID(id pulid.ID) threadOption {
 	return func(m *ThreadMutation) {
 		var (
 			err   error
@@ -2792,13 +2792,13 @@ func (m ThreadMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Thread entities.
-func (m *ThreadMutation) SetID(id uuid.UUID) {
+func (m *ThreadMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *ThreadMutation) ID() (id uuid.UUID, exists bool) {
+func (m *ThreadMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2809,12 +2809,12 @@ func (m *ThreadMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *ThreadMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *ThreadMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -2933,7 +2933,7 @@ func (m *ThreadMutation) ResetName() {
 }
 
 // SetCreatedByID sets the "created_by" edge to the User entity by id.
-func (m *ThreadMutation) SetCreatedByID(id uuid.UUID) {
+func (m *ThreadMutation) SetCreatedByID(id pulid.ID) {
 	m.created_by = &id
 }
 
@@ -2948,7 +2948,7 @@ func (m *ThreadMutation) CreatedByCleared() bool {
 }
 
 // CreatedByID returns the "created_by" edge ID in the mutation.
-func (m *ThreadMutation) CreatedByID() (id uuid.UUID, exists bool) {
+func (m *ThreadMutation) CreatedByID() (id pulid.ID, exists bool) {
 	if m.created_by != nil {
 		return *m.created_by, true
 	}
@@ -2958,7 +2958,7 @@ func (m *ThreadMutation) CreatedByID() (id uuid.UUID, exists bool) {
 // CreatedByIDs returns the "created_by" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // CreatedByID instead. It exists only for internal usage by the builders.
-func (m *ThreadMutation) CreatedByIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) CreatedByIDs() (ids []pulid.ID) {
 	if id := m.created_by; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2972,9 +2972,9 @@ func (m *ThreadMutation) ResetCreatedBy() {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by ids.
-func (m *ThreadMutation) AddMessageIDs(ids ...uuid.UUID) {
+func (m *ThreadMutation) AddMessageIDs(ids ...pulid.ID) {
 	if m.messages == nil {
-		m.messages = make(map[uuid.UUID]struct{})
+		m.messages = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.messages[ids[i]] = struct{}{}
@@ -2992,9 +2992,9 @@ func (m *ThreadMutation) MessagesCleared() bool {
 }
 
 // RemoveMessageIDs removes the "messages" edge to the Message entity by IDs.
-func (m *ThreadMutation) RemoveMessageIDs(ids ...uuid.UUID) {
+func (m *ThreadMutation) RemoveMessageIDs(ids ...pulid.ID) {
 	if m.removedmessages == nil {
-		m.removedmessages = make(map[uuid.UUID]struct{})
+		m.removedmessages = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.messages, ids[i])
@@ -3003,7 +3003,7 @@ func (m *ThreadMutation) RemoveMessageIDs(ids ...uuid.UUID) {
 }
 
 // RemovedMessages returns the removed IDs of the "messages" edge to the Message entity.
-func (m *ThreadMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) RemovedMessagesIDs() (ids []pulid.ID) {
 	for id := range m.removedmessages {
 		ids = append(ids, id)
 	}
@@ -3011,7 +3011,7 @@ func (m *ThreadMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
 }
 
 // MessagesIDs returns the "messages" edge IDs in the mutation.
-func (m *ThreadMutation) MessagesIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) MessagesIDs() (ids []pulid.ID) {
 	for id := range m.messages {
 		ids = append(ids, id)
 	}
@@ -3026,9 +3026,9 @@ func (m *ThreadMutation) ResetMessages() {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *ThreadMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+func (m *ThreadMutation) AddBookmarkIDs(ids ...pulid.ID) {
 	if m.bookmarks == nil {
-		m.bookmarks = make(map[uuid.UUID]struct{})
+		m.bookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.bookmarks[ids[i]] = struct{}{}
@@ -3046,9 +3046,9 @@ func (m *ThreadMutation) BookmarksCleared() bool {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *ThreadMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+func (m *ThreadMutation) RemoveBookmarkIDs(ids ...pulid.ID) {
 	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[uuid.UUID]struct{})
+		m.removedbookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.bookmarks, ids[i])
@@ -3057,7 +3057,7 @@ func (m *ThreadMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
 }
 
 // RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *ThreadMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) RemovedBookmarksIDs() (ids []pulid.ID) {
 	for id := range m.removedbookmarks {
 		ids = append(ids, id)
 	}
@@ -3065,7 +3065,7 @@ func (m *ThreadMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
 }
 
 // BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *ThreadMutation) BookmarksIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) BookmarksIDs() (ids []pulid.ID) {
 	for id := range m.bookmarks {
 		ids = append(ids, id)
 	}
@@ -3080,7 +3080,7 @@ func (m *ThreadMutation) ResetBookmarks() {
 }
 
 // SetParentID sets the "parent" edge to the Thread entity by id.
-func (m *ThreadMutation) SetParentID(id uuid.UUID) {
+func (m *ThreadMutation) SetParentID(id pulid.ID) {
 	m.parent = &id
 }
 
@@ -3095,7 +3095,7 @@ func (m *ThreadMutation) ParentCleared() bool {
 }
 
 // ParentID returns the "parent" edge ID in the mutation.
-func (m *ThreadMutation) ParentID() (id uuid.UUID, exists bool) {
+func (m *ThreadMutation) ParentID() (id pulid.ID, exists bool) {
 	if m.parent != nil {
 		return *m.parent, true
 	}
@@ -3105,7 +3105,7 @@ func (m *ThreadMutation) ParentID() (id uuid.UUID, exists bool) {
 // ParentIDs returns the "parent" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // ParentID instead. It exists only for internal usage by the builders.
-func (m *ThreadMutation) ParentIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) ParentIDs() (ids []pulid.ID) {
 	if id := m.parent; id != nil {
 		ids = append(ids, *id)
 	}
@@ -3119,9 +3119,9 @@ func (m *ThreadMutation) ResetParent() {
 }
 
 // AddChildIDs adds the "children" edge to the Thread entity by ids.
-func (m *ThreadMutation) AddChildIDs(ids ...uuid.UUID) {
+func (m *ThreadMutation) AddChildIDs(ids ...pulid.ID) {
 	if m.children == nil {
-		m.children = make(map[uuid.UUID]struct{})
+		m.children = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.children[ids[i]] = struct{}{}
@@ -3139,9 +3139,9 @@ func (m *ThreadMutation) ChildrenCleared() bool {
 }
 
 // RemoveChildIDs removes the "children" edge to the Thread entity by IDs.
-func (m *ThreadMutation) RemoveChildIDs(ids ...uuid.UUID) {
+func (m *ThreadMutation) RemoveChildIDs(ids ...pulid.ID) {
 	if m.removedchildren == nil {
-		m.removedchildren = make(map[uuid.UUID]struct{})
+		m.removedchildren = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.children, ids[i])
@@ -3150,7 +3150,7 @@ func (m *ThreadMutation) RemoveChildIDs(ids ...uuid.UUID) {
 }
 
 // RemovedChildren returns the removed IDs of the "children" edge to the Thread entity.
-func (m *ThreadMutation) RemovedChildrenIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) RemovedChildrenIDs() (ids []pulid.ID) {
 	for id := range m.removedchildren {
 		ids = append(ids, id)
 	}
@@ -3158,7 +3158,7 @@ func (m *ThreadMutation) RemovedChildrenIDs() (ids []uuid.UUID) {
 }
 
 // ChildrenIDs returns the "children" edge IDs in the mutation.
-func (m *ThreadMutation) ChildrenIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) ChildrenIDs() (ids []pulid.ID) {
 	for id := range m.children {
 		ids = append(ids, id)
 	}
@@ -3514,19 +3514,19 @@ type UserMutation struct {
 	config
 	op               Op
 	typ              string
-	id               *uuid.UUID
+	id               *pulid.ID
 	created_at       *time.Time
 	updated_at       *time.Time
 	email            *string
 	clearedFields    map[string]struct{}
-	bookmarks        map[uuid.UUID]struct{}
-	removedbookmarks map[uuid.UUID]struct{}
+	bookmarks        map[pulid.ID]struct{}
+	removedbookmarks map[pulid.ID]struct{}
 	clearedbookmarks bool
-	threads          map[uuid.UUID]struct{}
-	removedthreads   map[uuid.UUID]struct{}
+	threads          map[pulid.ID]struct{}
+	removedthreads   map[pulid.ID]struct{}
 	clearedthreads   bool
-	messages         map[uuid.UUID]struct{}
-	removedmessages  map[uuid.UUID]struct{}
+	messages         map[pulid.ID]struct{}
+	removedmessages  map[pulid.ID]struct{}
 	clearedmessages  bool
 	done             bool
 	oldValue         func(context.Context) (*User, error)
@@ -3553,7 +3553,7 @@ func newUserMutation(c config, op Op, opts ...userOption) *UserMutation {
 }
 
 // withUserID sets the ID field of the mutation.
-func withUserID(id uuid.UUID) userOption {
+func withUserID(id pulid.ID) userOption {
 	return func(m *UserMutation) {
 		var (
 			err   error
@@ -3605,13 +3605,13 @@ func (m UserMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of User entities.
-func (m *UserMutation) SetID(id uuid.UUID) {
+func (m *UserMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *UserMutation) ID() (id uuid.UUID, exists bool) {
+func (m *UserMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -3622,12 +3622,12 @@ func (m *UserMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *UserMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *UserMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -3746,9 +3746,9 @@ func (m *UserMutation) ResetEmail() {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *UserMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+func (m *UserMutation) AddBookmarkIDs(ids ...pulid.ID) {
 	if m.bookmarks == nil {
-		m.bookmarks = make(map[uuid.UUID]struct{})
+		m.bookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.bookmarks[ids[i]] = struct{}{}
@@ -3766,9 +3766,9 @@ func (m *UserMutation) BookmarksCleared() bool {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *UserMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+func (m *UserMutation) RemoveBookmarkIDs(ids ...pulid.ID) {
 	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[uuid.UUID]struct{})
+		m.removedbookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.bookmarks, ids[i])
@@ -3777,7 +3777,7 @@ func (m *UserMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
 }
 
 // RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *UserMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+func (m *UserMutation) RemovedBookmarksIDs() (ids []pulid.ID) {
 	for id := range m.removedbookmarks {
 		ids = append(ids, id)
 	}
@@ -3785,7 +3785,7 @@ func (m *UserMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
 }
 
 // BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *UserMutation) BookmarksIDs() (ids []uuid.UUID) {
+func (m *UserMutation) BookmarksIDs() (ids []pulid.ID) {
 	for id := range m.bookmarks {
 		ids = append(ids, id)
 	}
@@ -3800,9 +3800,9 @@ func (m *UserMutation) ResetBookmarks() {
 }
 
 // AddThreadIDs adds the "threads" edge to the Thread entity by ids.
-func (m *UserMutation) AddThreadIDs(ids ...uuid.UUID) {
+func (m *UserMutation) AddThreadIDs(ids ...pulid.ID) {
 	if m.threads == nil {
-		m.threads = make(map[uuid.UUID]struct{})
+		m.threads = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.threads[ids[i]] = struct{}{}
@@ -3820,9 +3820,9 @@ func (m *UserMutation) ThreadsCleared() bool {
 }
 
 // RemoveThreadIDs removes the "threads" edge to the Thread entity by IDs.
-func (m *UserMutation) RemoveThreadIDs(ids ...uuid.UUID) {
+func (m *UserMutation) RemoveThreadIDs(ids ...pulid.ID) {
 	if m.removedthreads == nil {
-		m.removedthreads = make(map[uuid.UUID]struct{})
+		m.removedthreads = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.threads, ids[i])
@@ -3831,7 +3831,7 @@ func (m *UserMutation) RemoveThreadIDs(ids ...uuid.UUID) {
 }
 
 // RemovedThreads returns the removed IDs of the "threads" edge to the Thread entity.
-func (m *UserMutation) RemovedThreadsIDs() (ids []uuid.UUID) {
+func (m *UserMutation) RemovedThreadsIDs() (ids []pulid.ID) {
 	for id := range m.removedthreads {
 		ids = append(ids, id)
 	}
@@ -3839,7 +3839,7 @@ func (m *UserMutation) RemovedThreadsIDs() (ids []uuid.UUID) {
 }
 
 // ThreadsIDs returns the "threads" edge IDs in the mutation.
-func (m *UserMutation) ThreadsIDs() (ids []uuid.UUID) {
+func (m *UserMutation) ThreadsIDs() (ids []pulid.ID) {
 	for id := range m.threads {
 		ids = append(ids, id)
 	}
@@ -3854,9 +3854,9 @@ func (m *UserMutation) ResetThreads() {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by ids.
-func (m *UserMutation) AddMessageIDs(ids ...uuid.UUID) {
+func (m *UserMutation) AddMessageIDs(ids ...pulid.ID) {
 	if m.messages == nil {
-		m.messages = make(map[uuid.UUID]struct{})
+		m.messages = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.messages[ids[i]] = struct{}{}
@@ -3874,9 +3874,9 @@ func (m *UserMutation) MessagesCleared() bool {
 }
 
 // RemoveMessageIDs removes the "messages" edge to the Message entity by IDs.
-func (m *UserMutation) RemoveMessageIDs(ids ...uuid.UUID) {
+func (m *UserMutation) RemoveMessageIDs(ids ...pulid.ID) {
 	if m.removedmessages == nil {
-		m.removedmessages = make(map[uuid.UUID]struct{})
+		m.removedmessages = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.messages, ids[i])
@@ -3885,7 +3885,7 @@ func (m *UserMutation) RemoveMessageIDs(ids ...uuid.UUID) {
 }
 
 // RemovedMessages returns the removed IDs of the "messages" edge to the Message entity.
-func (m *UserMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
+func (m *UserMutation) RemovedMessagesIDs() (ids []pulid.ID) {
 	for id := range m.removedmessages {
 		ids = append(ids, id)
 	}
@@ -3893,7 +3893,7 @@ func (m *UserMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
 }
 
 // MessagesIDs returns the "messages" edge IDs in the mutation.
-func (m *UserMutation) MessagesIDs() (ids []uuid.UUID) {
+func (m *UserMutation) MessagesIDs() (ids []pulid.ID) {
 	for id := range m.messages {
 		ids = append(ids, id)
 	}

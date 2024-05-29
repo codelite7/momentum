@@ -10,14 +10,14 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/agent"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // Agent is the model entity for the Agent schema.
 type Agent struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID pulid.ID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -61,12 +61,12 @@ func (*Agent) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case agent.FieldID:
+			values[i] = new(pulid.ID)
 		case agent.FieldProvider, agent.FieldModel, agent.FieldAPIKey:
 			values[i] = new(sql.NullString)
 		case agent.FieldCreatedAt, agent.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case agent.FieldID:
-			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -83,7 +83,7 @@ func (a *Agent) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case agent.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*pulid.ID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				a.ID = *value

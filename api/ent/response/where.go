@@ -8,51 +8,51 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.Response {
+func ID(id pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.Response {
+func IDEQ(id pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.Response {
+func IDNEQ(id pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.Response {
+func IDIn(ids ...pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.Response {
+func IDNotIn(ids ...pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.Response {
+func IDGT(id pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.Response {
+func IDGTE(id pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.Response {
+func IDLT(id pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.Response {
+func IDLTE(id pulid.ID) predicate.Response {
 	return predicate.Response(sql.FieldLTE(FieldID, id))
 }
 

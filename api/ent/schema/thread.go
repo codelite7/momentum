@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 type Thread struct {
@@ -13,6 +14,7 @@ type Thread struct {
 
 func (Thread) Mixin() []ent.Mixin {
 	return []ent.Mixin{
+		pulid.MixinWithPrefix("TR"),
 		BaseMixin{},
 	}
 }

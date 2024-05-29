@@ -10,7 +10,7 @@ import (
 var (
 	// AgentsColumns holds the columns for the "agents" table.
 	AgentsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "provider", Type: field.TypeString},
@@ -25,13 +25,13 @@ var (
 	}
 	// BookmarksColumns holds the columns for the "bookmarks" table.
 	BookmarksColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "message_bookmarks", Type: field.TypeUUID, Nullable: true},
-		{Name: "response_bookmarks", Type: field.TypeUUID, Nullable: true},
-		{Name: "thread_bookmarks", Type: field.TypeUUID, Nullable: true},
-		{Name: "user_bookmarks", Type: field.TypeUUID},
+		{Name: "message_bookmarks", Type: field.TypeString, Nullable: true},
+		{Name: "response_bookmarks", Type: field.TypeString, Nullable: true},
+		{Name: "thread_bookmarks", Type: field.TypeString, Nullable: true},
+		{Name: "user_bookmarks", Type: field.TypeString},
 	}
 	// BookmarksTable holds the schema information for the "bookmarks" table.
 	BookmarksTable = &schema.Table{
@@ -67,12 +67,12 @@ var (
 	}
 	// MessagesColumns holds the columns for the "messages" table.
 	MessagesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "content", Type: field.TypeString},
-		{Name: "thread_messages", Type: field.TypeUUID},
-		{Name: "user_messages", Type: field.TypeUUID},
+		{Name: "thread_messages", Type: field.TypeString},
+		{Name: "user_messages", Type: field.TypeString},
 	}
 	// MessagesTable holds the schema information for the "messages" table.
 	MessagesTable = &schema.Table{
@@ -96,12 +96,12 @@ var (
 	}
 	// ResponsesColumns holds the columns for the "responses" table.
 	ResponsesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "content", Type: field.TypeString, Nullable: true},
-		{Name: "agent_responses", Type: field.TypeUUID},
-		{Name: "message_response", Type: field.TypeUUID, Unique: true},
+		{Name: "agent_responses", Type: field.TypeString},
+		{Name: "message_response", Type: field.TypeString, Unique: true},
 	}
 	// ResponsesTable holds the schema information for the "responses" table.
 	ResponsesTable = &schema.Table{
@@ -125,12 +125,12 @@ var (
 	}
 	// ThreadsColumns holds the columns for the "threads" table.
 	ThreadsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
-		{Name: "thread_children", Type: field.TypeUUID, Nullable: true},
-		{Name: "user_threads", Type: field.TypeUUID},
+		{Name: "thread_children", Type: field.TypeString, Nullable: true},
+		{Name: "user_threads", Type: field.TypeString},
 	}
 	// ThreadsTable holds the schema information for the "threads" table.
 	ThreadsTable = &schema.Table{
@@ -154,7 +154,7 @@ var (
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "email", Type: field.TypeString, Unique: true},

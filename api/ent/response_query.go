@@ -16,7 +16,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // ResponseQuery is the builder for querying Response entities.
@@ -159,8 +159,8 @@ func (rq *ResponseQuery) FirstX(ctx context.Context) *Response {
 
 // FirstID returns the first Response ID from the query.
 // Returns a *NotFoundError when no Response ID was found.
-func (rq *ResponseQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (rq *ResponseQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = rq.Limit(1).IDs(setContextOp(ctx, rq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -172,7 +172,7 @@ func (rq *ResponseQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) 
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (rq *ResponseQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (rq *ResponseQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := rq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -210,8 +210,8 @@ func (rq *ResponseQuery) OnlyX(ctx context.Context) *Response {
 // OnlyID is like Only, but returns the only Response ID in the query.
 // Returns a *NotSingularError when more than one Response ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (rq *ResponseQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (rq *ResponseQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = rq.Limit(2).IDs(setContextOp(ctx, rq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -227,7 +227,7 @@ func (rq *ResponseQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (rq *ResponseQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (rq *ResponseQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := rq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -255,7 +255,7 @@ func (rq *ResponseQuery) AllX(ctx context.Context) []*Response {
 }
 
 // IDs executes the query and returns a list of Response IDs.
-func (rq *ResponseQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (rq *ResponseQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if rq.ctx.Unique == nil && rq.path != nil {
 		rq.Unique(true)
 	}
@@ -267,7 +267,7 @@ func (rq *ResponseQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (rq *ResponseQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (rq *ResponseQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := rq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -516,8 +516,8 @@ func (rq *ResponseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Res
 }
 
 func (rq *ResponseQuery) loadSentBy(ctx context.Context, query *AgentQuery, nodes []*Response, init func(*Response), assign func(*Response, *Agent)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Response)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Response)
 	for i := range nodes {
 		if nodes[i].agent_responses == nil {
 			continue
@@ -548,8 +548,8 @@ func (rq *ResponseQuery) loadSentBy(ctx context.Context, query *AgentQuery, node
 	return nil
 }
 func (rq *ResponseQuery) loadMessage(ctx context.Context, query *MessageQuery, nodes []*Response, init func(*Response), assign func(*Response, *Message)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Response)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Response)
 	for i := range nodes {
 		if nodes[i].message_response == nil {
 			continue
@@ -581,7 +581,7 @@ func (rq *ResponseQuery) loadMessage(ctx context.Context, query *MessageQuery, n
 }
 func (rq *ResponseQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*Response, init func(*Response), assign func(*Response, *Bookmark)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Response)
+	nodeids := make(map[pulid.ID]*Response)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -624,7 +624,7 @@ func (rq *ResponseQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (rq *ResponseQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(response.Table, response.Columns, sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(response.Table, response.Columns, sqlgraph.NewFieldSpec(response.FieldID, field.TypeString))
 	_spec.From = rq.sql
 	if unique := rq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

@@ -51,10 +51,10 @@ func (w *MessageWorker) Work(ctx context.Context, job *river.Job[MessageArgs]) e
 	if aiResponse == "" {
 		return err
 	}
-	_, err = tx.Response.UpdateOneID(job.Args.ResponseId).SetContent(aiResponse).Save(ctx)
-	if err != nil {
-		return err
-	}
+	//_, err = tx.Response.UpdateOneID(job.Args.ResponseId).SetContent(aiResponse).Save(ctx)
+	//if err != nil {
+	//	return err
+	//}
 	return tx.Commit()
 }
 

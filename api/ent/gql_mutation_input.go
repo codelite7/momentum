@@ -5,7 +5,7 @@ package ent
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // CreateAgentInput represents a mutation input for creating agents.
@@ -15,7 +15,7 @@ type CreateAgentInput struct {
 	Provider    string
 	Model       string
 	APIKey      string
-	ResponseIDs []uuid.UUID
+	ResponseIDs []pulid.ID
 }
 
 // Mutate applies the CreateAgentInput on the AgentMutation builder.
@@ -47,8 +47,8 @@ type UpdateAgentInput struct {
 	Model             *string
 	APIKey            *string
 	ClearResponses    bool
-	AddResponseIDs    []uuid.UUID
-	RemoveResponseIDs []uuid.UUID
+	AddResponseIDs    []pulid.ID
+	RemoveResponseIDs []pulid.ID
 }
 
 // Mutate applies the UpdateAgentInput on the AgentMutation builder.
@@ -92,10 +92,10 @@ func (c *AgentUpdateOne) SetInput(i UpdateAgentInput) *AgentUpdateOne {
 type CreateBookmarkInput struct {
 	CreatedAt  *time.Time
 	UpdatedAt  *time.Time
-	UserID     uuid.UUID
-	ThreadID   *uuid.UUID
-	MessageID  *uuid.UUID
-	ResponseID *uuid.UUID
+	UserID     pulid.ID
+	ThreadID   *pulid.ID
+	MessageID  *pulid.ID
+	ResponseID *pulid.ID
 }
 
 // Mutate applies the CreateBookmarkInput on the BookmarkMutation builder.
@@ -127,13 +127,13 @@ func (c *BookmarkCreate) SetInput(i CreateBookmarkInput) *BookmarkCreate {
 // UpdateBookmarkInput represents a mutation input for updating bookmarks.
 type UpdateBookmarkInput struct {
 	UpdatedAt     *time.Time
-	UserID        *uuid.UUID
+	UserID        *pulid.ID
 	ClearThread   bool
-	ThreadID      *uuid.UUID
+	ThreadID      *pulid.ID
 	ClearMessage  bool
-	MessageID     *uuid.UUID
+	MessageID     *pulid.ID
 	ClearResponse bool
-	ResponseID    *uuid.UUID
+	ResponseID    *pulid.ID
 }
 
 // Mutate applies the UpdateBookmarkInput on the BookmarkMutation builder.
@@ -181,10 +181,10 @@ type CreateMessageInput struct {
 	CreatedAt   *time.Time
 	UpdatedAt   *time.Time
 	Content     string
-	SentByID    uuid.UUID
-	ThreadID    uuid.UUID
-	BookmarkIDs []uuid.UUID
-	ResponseID  *uuid.UUID
+	SentByID    pulid.ID
+	ThreadID    pulid.ID
+	BookmarkIDs []pulid.ID
+	ResponseID  *pulid.ID
 }
 
 // Mutate applies the CreateMessageInput on the MessageMutation builder.
@@ -216,13 +216,13 @@ func (c *MessageCreate) SetInput(i CreateMessageInput) *MessageCreate {
 type UpdateMessageInput struct {
 	UpdatedAt         *time.Time
 	Content           *string
-	SentByID          *uuid.UUID
-	ThreadID          *uuid.UUID
+	SentByID          *pulid.ID
+	ThreadID          *pulid.ID
 	ClearBookmarks    bool
-	AddBookmarkIDs    []uuid.UUID
-	RemoveBookmarkIDs []uuid.UUID
+	AddBookmarkIDs    []pulid.ID
+	RemoveBookmarkIDs []pulid.ID
 	ClearResponse     bool
-	ResponseID        *uuid.UUID
+	ResponseID        *pulid.ID
 }
 
 // Mutate applies the UpdateMessageInput on the MessageMutation builder.
@@ -273,9 +273,9 @@ type CreateResponseInput struct {
 	CreatedAt   *time.Time
 	UpdatedAt   *time.Time
 	Content     *string
-	SentByID    uuid.UUID
-	MessageID   uuid.UUID
-	BookmarkIDs []uuid.UUID
+	SentByID    pulid.ID
+	MessageID   pulid.ID
+	BookmarkIDs []pulid.ID
 }
 
 // Mutate applies the CreateResponseInput on the ResponseMutation builder.
@@ -307,11 +307,11 @@ type UpdateResponseInput struct {
 	UpdatedAt         *time.Time
 	ClearContent      bool
 	Content           *string
-	SentByID          *uuid.UUID
-	MessageID         *uuid.UUID
+	SentByID          *pulid.ID
+	MessageID         *pulid.ID
 	ClearBookmarks    bool
-	AddBookmarkIDs    []uuid.UUID
-	RemoveBookmarkIDs []uuid.UUID
+	AddBookmarkIDs    []pulid.ID
+	RemoveBookmarkIDs []pulid.ID
 }
 
 // Mutate applies the UpdateResponseInput on the ResponseMutation builder.
@@ -359,11 +359,11 @@ type CreateThreadInput struct {
 	CreatedAt   *time.Time
 	UpdatedAt   *time.Time
 	Name        string
-	CreatedByID uuid.UUID
-	MessageIDs  []uuid.UUID
-	BookmarkIDs []uuid.UUID
-	ParentID    *uuid.UUID
-	ChildIDs    []uuid.UUID
+	CreatedByID pulid.ID
+	MessageIDs  []pulid.ID
+	BookmarkIDs []pulid.ID
+	ParentID    *pulid.ID
+	ChildIDs    []pulid.ID
 }
 
 // Mutate applies the CreateThreadInput on the ThreadMutation builder.
@@ -400,18 +400,18 @@ func (c *ThreadCreate) SetInput(i CreateThreadInput) *ThreadCreate {
 type UpdateThreadInput struct {
 	UpdatedAt         *time.Time
 	Name              *string
-	CreatedByID       *uuid.UUID
+	CreatedByID       *pulid.ID
 	ClearMessages     bool
-	AddMessageIDs     []uuid.UUID
-	RemoveMessageIDs  []uuid.UUID
+	AddMessageIDs     []pulid.ID
+	RemoveMessageIDs  []pulid.ID
 	ClearBookmarks    bool
-	AddBookmarkIDs    []uuid.UUID
-	RemoveBookmarkIDs []uuid.UUID
+	AddBookmarkIDs    []pulid.ID
+	RemoveBookmarkIDs []pulid.ID
 	ClearParent       bool
-	ParentID          *uuid.UUID
+	ParentID          *pulid.ID
 	ClearChildren     bool
-	AddChildIDs       []uuid.UUID
-	RemoveChildIDs    []uuid.UUID
+	AddChildIDs       []pulid.ID
+	RemoveChildIDs    []pulid.ID
 }
 
 // Mutate applies the UpdateThreadInput on the ThreadMutation builder.
@@ -477,9 +477,9 @@ type CreateUserInput struct {
 	CreatedAt   *time.Time
 	UpdatedAt   *time.Time
 	Email       string
-	BookmarkIDs []uuid.UUID
-	ThreadIDs   []uuid.UUID
-	MessageIDs  []uuid.UUID
+	BookmarkIDs []pulid.ID
+	ThreadIDs   []pulid.ID
+	MessageIDs  []pulid.ID
 }
 
 // Mutate applies the CreateUserInput on the UserMutation builder.
@@ -513,14 +513,14 @@ type UpdateUserInput struct {
 	UpdatedAt         *time.Time
 	Email             *string
 	ClearBookmarks    bool
-	AddBookmarkIDs    []uuid.UUID
-	RemoveBookmarkIDs []uuid.UUID
+	AddBookmarkIDs    []pulid.ID
+	RemoveBookmarkIDs []pulid.ID
 	ClearThreads      bool
-	AddThreadIDs      []uuid.UUID
-	RemoveThreadIDs   []uuid.UUID
+	AddThreadIDs      []pulid.ID
+	RemoveThreadIDs   []pulid.ID
 	ClearMessages     bool
-	AddMessageIDs     []uuid.UUID
-	RemoveMessageIDs  []uuid.UUID
+	AddMessageIDs     []pulid.ID
+	RemoveMessageIDs  []pulid.ID
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.

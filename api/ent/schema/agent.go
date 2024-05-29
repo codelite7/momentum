@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 type Agent struct {
@@ -14,6 +15,7 @@ type Agent struct {
 func (Agent) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		BaseMixin{},
+		pulid.MixinWithPrefix("AG"),
 	}
 }
 

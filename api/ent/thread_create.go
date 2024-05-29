@@ -12,9 +12,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // ThreadCreate is the builder for creating a Thread entity.
@@ -59,21 +59,21 @@ func (tc *ThreadCreate) SetName(s string) *ThreadCreate {
 }
 
 // SetID sets the "id" field.
-func (tc *ThreadCreate) SetID(u uuid.UUID) *ThreadCreate {
-	tc.mutation.SetID(u)
+func (tc *ThreadCreate) SetID(pu pulid.ID) *ThreadCreate {
+	tc.mutation.SetID(pu)
 	return tc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (tc *ThreadCreate) SetNillableID(u *uuid.UUID) *ThreadCreate {
-	if u != nil {
-		tc.SetID(*u)
+func (tc *ThreadCreate) SetNillableID(pu *pulid.ID) *ThreadCreate {
+	if pu != nil {
+		tc.SetID(*pu)
 	}
 	return tc
 }
 
 // SetCreatedByID sets the "created_by" edge to the User entity by ID.
-func (tc *ThreadCreate) SetCreatedByID(id uuid.UUID) *ThreadCreate {
+func (tc *ThreadCreate) SetCreatedByID(id pulid.ID) *ThreadCreate {
 	tc.mutation.SetCreatedByID(id)
 	return tc
 }
@@ -84,14 +84,14 @@ func (tc *ThreadCreate) SetCreatedBy(u *User) *ThreadCreate {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (tc *ThreadCreate) AddMessageIDs(ids ...uuid.UUID) *ThreadCreate {
+func (tc *ThreadCreate) AddMessageIDs(ids ...pulid.ID) *ThreadCreate {
 	tc.mutation.AddMessageIDs(ids...)
 	return tc
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (tc *ThreadCreate) AddMessages(m ...*Message) *ThreadCreate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -99,14 +99,14 @@ func (tc *ThreadCreate) AddMessages(m ...*Message) *ThreadCreate {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (tc *ThreadCreate) AddBookmarkIDs(ids ...uuid.UUID) *ThreadCreate {
+func (tc *ThreadCreate) AddBookmarkIDs(ids ...pulid.ID) *ThreadCreate {
 	tc.mutation.AddBookmarkIDs(ids...)
 	return tc
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (tc *ThreadCreate) AddBookmarks(b ...*Bookmark) *ThreadCreate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -114,13 +114,13 @@ func (tc *ThreadCreate) AddBookmarks(b ...*Bookmark) *ThreadCreate {
 }
 
 // SetParentID sets the "parent" edge to the Thread entity by ID.
-func (tc *ThreadCreate) SetParentID(id uuid.UUID) *ThreadCreate {
+func (tc *ThreadCreate) SetParentID(id pulid.ID) *ThreadCreate {
 	tc.mutation.SetParentID(id)
 	return tc
 }
 
 // SetNillableParentID sets the "parent" edge to the Thread entity by ID if the given value is not nil.
-func (tc *ThreadCreate) SetNillableParentID(id *uuid.UUID) *ThreadCreate {
+func (tc *ThreadCreate) SetNillableParentID(id *pulid.ID) *ThreadCreate {
 	if id != nil {
 		tc = tc.SetParentID(*id)
 	}
@@ -133,14 +133,14 @@ func (tc *ThreadCreate) SetParent(t *Thread) *ThreadCreate {
 }
 
 // AddChildIDs adds the "children" edge to the Thread entity by IDs.
-func (tc *ThreadCreate) AddChildIDs(ids ...uuid.UUID) *ThreadCreate {
+func (tc *ThreadCreate) AddChildIDs(ids ...pulid.ID) *ThreadCreate {
 	tc.mutation.AddChildIDs(ids...)
 	return tc
 }
 
 // AddChildren adds the "children" edges to the Thread entity.
 func (tc *ThreadCreate) AddChildren(t ...*Thread) *ThreadCreate {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -225,7 +225,7 @@ func (tc *ThreadCreate) sqlSave(ctx context.Context) (*Thread, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*pulid.ID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -239,7 +239,7 @@ func (tc *ThreadCreate) sqlSave(ctx context.Context) (*Thread, error) {
 func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Thread{config: tc.config}
-		_spec = sqlgraph.NewCreateSpec(thread.Table, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(thread.Table, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString))
 	)
 	if id, ok := tc.mutation.ID(); ok {
 		_node.ID = id
@@ -265,7 +265,7 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 			Columns: []string{thread.CreatedByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -282,7 +282,7 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 			Columns: []string{thread.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -298,7 +298,7 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 			Columns: []string{thread.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -314,7 +314,7 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 			Columns: []string{thread.ParentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -331,7 +331,7 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 			Columns: []string{thread.ChildrenColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

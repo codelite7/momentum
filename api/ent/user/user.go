@@ -7,7 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 const (
@@ -76,7 +76,7 @@ var (
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
+	DefaultID func() pulid.ID
 )
 
 // OrderOption defines the ordering options for the User queries.

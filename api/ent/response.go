@@ -12,14 +12,14 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // Response is the model entity for the Response schema.
 type Response struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID pulid.ID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -29,8 +29,8 @@ type Response struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ResponseQuery when eager-loading is set.
 	Edges            ResponseEdges `json:"edges"`
-	agent_responses  *uuid.UUID
-	message_response *uuid.UUID
+	agent_responses  *pulid.ID
+	message_response *pulid.ID
 	selectValues     sql.SelectValues
 }
 
@@ -87,16 +87,16 @@ func (*Response) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case response.FieldID:
+			values[i] = new(pulid.ID)
 		case response.FieldContent:
 			values[i] = new(sql.NullString)
 		case response.FieldCreatedAt, response.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case response.FieldID:
-			values[i] = new(uuid.UUID)
 		case response.ForeignKeys[0]: // agent_responses
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		case response.ForeignKeys[1]: // message_response
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -113,7 +113,7 @@ func (r *Response) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case response.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*pulid.ID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				r.ID = *value
@@ -140,15 +140,15 @@ func (r *Response) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field agent_responses", values[i])
 			} else if value.Valid {
-				r.agent_responses = new(uuid.UUID)
-				*r.agent_responses = *value.S.(*uuid.UUID)
+				r.agent_responses = new(pulid.ID)
+				*r.agent_responses = *value.S.(*pulid.ID)
 			}
 		case response.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field message_response", values[i])
 			} else if value.Valid {
-				r.message_response = new(uuid.UUID)
-				*r.message_response = *value.S.(*uuid.UUID)
+				r.message_response = new(pulid.ID)
+				*r.message_response = *value.S.(*pulid.ID)
 			}
 		default:
 			r.selectValues.Set(columns[i], values[i])

@@ -20,18 +20,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
-	"github.com/samber/lo"
-	"github.com/supertokens/supertokens-golang/recipe/dashboard"
-	"github.com/supertokens/supertokens-golang/recipe/session"
-	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
-	"github.com/supertokens/supertokens-golang/recipe/thirdparty/tpmodels"
-	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword"
-	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword/tpepmodels"
-	"github.com/supertokens/supertokens-golang/supertokens"
 	"github.com/urfave/cli/v2"
-	"net/http"
 	"strings"
-	"time"
 )
 
 var RunCommand = &cli.Command{
@@ -136,132 +126,17 @@ func initGraphqlServer(client *ent.Client) *handler.Server {
 }
 
 func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
-	err := initSuperTokens()
-	if err != nil {
-		return nil, err
-	}
 	e := echo.New()
 	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:                             []string{"*"},
-		AllowMethods:                             []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:                             append([]string{"Content-Type"}, supertokens.GetAllCORSHeaders()...),
-		AllowCredentials:                         true,
-		UnsafeWildcardOriginWithAllowCredentials: true,
-	}))
-	e.Use(echo.WrapMiddleware(supertokens.Middleware))
+	e.Use(middleware.CORS())
 	e.GET("/health", func(c echo.Context) error {
 		return nil
 	})
-	e.GET("/", echo.WrapHandler(playground.Handler("Todo", "/query")), echo.WrapMiddleware(sessionMiddleware))
-	e.POST("/query", echo.WrapHandler(graphqlServer), echo.WrapMiddleware(sessionMiddleware))
+	e.GET("/", echo.WrapHandler(playground.Handler("Todo", "/query")))
+	e.POST("/query", echo.WrapHandler(graphqlServer))
 
 	return e, nil
-}
-
-func initSuperTokens() error {
-	return supertokens.Init(supertokens.TypeInput{
-		Supertokens: &supertokens.ConnectionInfo{
-			// These are the connection details of the app you created on supertokens.com
-			ConnectionURI: config.SuperTokensConfig.Uri,
-			APIKey:        config.SuperTokensConfig.ApiKey,
-		},
-		AppInfo: supertokens.AppInfo{
-			AppName:         "momentum",
-			APIDomain:       config.SuperTokensConfig.ApiDomain,
-			WebsiteDomain:   config.SuperTokensConfig.WebsiteDomain,
-			APIBasePath:     &config.SuperTokensConfig.ApiBasePath,
-			WebsiteBasePath: &config.SuperTokensConfig.WebsiteBasePath,
-		},
-		RecipeList: []supertokens.Recipe{
-			thirdpartyemailpassword.Init(&tpepmodels.TypeInput{
-				Providers: []tpmodels.ProviderInput{
-					{
-						Config: tpmodels.ProviderConfig{
-							ThirdPartyId: "google",
-							Clients: []tpmodels.ProviderClientConfig{
-								{
-									ClientID:     config.SuperTokensConfig.GoogleClientID,
-									ClientSecret: config.SuperTokensConfig.GoogleClientSecret,
-								},
-							},
-						},
-					},
-				},
-				Override: &tpepmodels.OverrideStruct{
-					Functions: func(originalImplementation tpepmodels.RecipeInterface) tpepmodels.RecipeInterface {
-						original := *originalImplementation.EmailPasswordSignUp
-						*originalImplementation.EmailPasswordSignUp = func(email string, password string, tenantId string, userContext supertokens.UserContext) (tpepmodels.SignUpResponse, error) {
-							input := ent.CreateUserInput{
-								CreatedAt: lo.ToPtr(time.Now()),
-								UpdatedAt: lo.ToPtr(time.Now()),
-								Email:     email,
-							}
-							var response tpepmodels.SignUpResponse
-							tx, err := common.EntClient.Tx(context.Background())
-							if err != nil {
-								return response, err
-							}
-							defer tx.Rollback()
-							user, err := tx.User.Create().SetInput(input).Save(context.Background())
-							if err != nil {
-								return response, err
-							}
-							response, err = original(email, password, tenantId, userContext)
-							if err != nil {
-								return response, err
-							}
-
-							if response.OK != nil {
-								if response.OK.User.ID != "" {
-									externalUserId := user.ID.String()
-									_, err := supertokens.CreateUserIdMapping(response.OK.User.ID, externalUserId, nil, nil)
-									if err != nil {
-										return response, err
-									}
-									response.OK.User.ID = externalUserId
-								}
-
-							}
-							err = tx.Commit()
-							if err != nil {
-								return response, err
-							}
-							return response, nil
-						}
-						return originalImplementation
-					},
-				},
-			}),
-			session.Init(&sessmodels.TypeInput{
-				Override: &sessmodels.OverrideStruct{
-					Functions: func(originalImplementation sessmodels.RecipeInterface) sessmodels.RecipeInterface {
-						// First we copy the original implementation func
-						originalCreateNewSession := *originalImplementation.CreateNewSession
-
-						// Now we override the CreateNewSession function
-						*originalImplementation.CreateNewSession = func(userID string, accessTokenPayload, sessionDataInDatabase map[string]interface{}, disableAntiCsrf *bool, tenantId string, userContext supertokens.UserContext) (sessmodels.SessionContainer, error) {
-							// This goes in the access token, and is available to read on the frontend.
-							if accessTokenPayload == nil {
-								accessTokenPayload = map[string]interface{}{}
-							}
-							user, err := thirdpartyemailpassword.GetUserById(userID)
-							if err != nil {
-								return &sessmodels.TypeSessionContainer{}, err
-							}
-							accessTokenPayload["email"] = user.Email
-
-							return originalCreateNewSession(userID, accessTokenPayload, sessionDataInDatabase, disableAntiCsrf, tenantId, userContext)
-						}
-
-						return originalImplementation
-					},
-				},
-			}),
-			dashboard.Init(nil),
-		},
-	})
 }
 
 var flags = []cli.Flag{
@@ -369,10 +244,6 @@ var flags = []cli.Flag{
 		EnvVars:     []string{"SESSION_REQUIRED"},
 		Destination: &config.SessionRequired,
 	},
-}
-
-func sessionMiddleware(next http.Handler) http.Handler {
-	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(config.SessionRequired)}, next.ServeHTTP)
 }
 
 func runRiverMigrations() error {

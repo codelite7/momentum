@@ -16,7 +16,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // ResponseUpdate is the builder for updating Response entities.
@@ -67,7 +67,7 @@ func (ru *ResponseUpdate) ClearContent() *ResponseUpdate {
 }
 
 // SetSentByID sets the "sent_by" edge to the Agent entity by ID.
-func (ru *ResponseUpdate) SetSentByID(id uuid.UUID) *ResponseUpdate {
+func (ru *ResponseUpdate) SetSentByID(id pulid.ID) *ResponseUpdate {
 	ru.mutation.SetSentByID(id)
 	return ru
 }
@@ -78,7 +78,7 @@ func (ru *ResponseUpdate) SetSentBy(a *Agent) *ResponseUpdate {
 }
 
 // SetMessageID sets the "message" edge to the Message entity by ID.
-func (ru *ResponseUpdate) SetMessageID(id uuid.UUID) *ResponseUpdate {
+func (ru *ResponseUpdate) SetMessageID(id pulid.ID) *ResponseUpdate {
 	ru.mutation.SetMessageID(id)
 	return ru
 }
@@ -89,14 +89,14 @@ func (ru *ResponseUpdate) SetMessage(m *Message) *ResponseUpdate {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (ru *ResponseUpdate) AddBookmarkIDs(ids ...uuid.UUID) *ResponseUpdate {
+func (ru *ResponseUpdate) AddBookmarkIDs(ids ...pulid.ID) *ResponseUpdate {
 	ru.mutation.AddBookmarkIDs(ids...)
 	return ru
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (ru *ResponseUpdate) AddBookmarks(b ...*Bookmark) *ResponseUpdate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -127,14 +127,14 @@ func (ru *ResponseUpdate) ClearBookmarks() *ResponseUpdate {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to Bookmark entities by IDs.
-func (ru *ResponseUpdate) RemoveBookmarkIDs(ids ...uuid.UUID) *ResponseUpdate {
+func (ru *ResponseUpdate) RemoveBookmarkIDs(ids ...pulid.ID) *ResponseUpdate {
 	ru.mutation.RemoveBookmarkIDs(ids...)
 	return ru
 }
 
 // RemoveBookmarks removes "bookmarks" edges to Bookmark entities.
 func (ru *ResponseUpdate) RemoveBookmarks(b ...*Bookmark) *ResponseUpdate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -183,7 +183,7 @@ func (ru *ResponseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := ru.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(response.Table, response.Columns, sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(response.Table, response.Columns, sqlgraph.NewFieldSpec(response.FieldID, field.TypeString))
 	if ps := ru.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -208,7 +208,7 @@ func (ru *ResponseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{response.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -221,7 +221,7 @@ func (ru *ResponseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{response.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -237,7 +237,7 @@ func (ru *ResponseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{response.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -250,7 +250,7 @@ func (ru *ResponseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{response.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -266,7 +266,7 @@ func (ru *ResponseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{response.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -279,7 +279,7 @@ func (ru *ResponseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{response.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -295,7 +295,7 @@ func (ru *ResponseUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{response.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -358,7 +358,7 @@ func (ruo *ResponseUpdateOne) ClearContent() *ResponseUpdateOne {
 }
 
 // SetSentByID sets the "sent_by" edge to the Agent entity by ID.
-func (ruo *ResponseUpdateOne) SetSentByID(id uuid.UUID) *ResponseUpdateOne {
+func (ruo *ResponseUpdateOne) SetSentByID(id pulid.ID) *ResponseUpdateOne {
 	ruo.mutation.SetSentByID(id)
 	return ruo
 }
@@ -369,7 +369,7 @@ func (ruo *ResponseUpdateOne) SetSentBy(a *Agent) *ResponseUpdateOne {
 }
 
 // SetMessageID sets the "message" edge to the Message entity by ID.
-func (ruo *ResponseUpdateOne) SetMessageID(id uuid.UUID) *ResponseUpdateOne {
+func (ruo *ResponseUpdateOne) SetMessageID(id pulid.ID) *ResponseUpdateOne {
 	ruo.mutation.SetMessageID(id)
 	return ruo
 }
@@ -380,14 +380,14 @@ func (ruo *ResponseUpdateOne) SetMessage(m *Message) *ResponseUpdateOne {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (ruo *ResponseUpdateOne) AddBookmarkIDs(ids ...uuid.UUID) *ResponseUpdateOne {
+func (ruo *ResponseUpdateOne) AddBookmarkIDs(ids ...pulid.ID) *ResponseUpdateOne {
 	ruo.mutation.AddBookmarkIDs(ids...)
 	return ruo
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (ruo *ResponseUpdateOne) AddBookmarks(b ...*Bookmark) *ResponseUpdateOne {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -418,14 +418,14 @@ func (ruo *ResponseUpdateOne) ClearBookmarks() *ResponseUpdateOne {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to Bookmark entities by IDs.
-func (ruo *ResponseUpdateOne) RemoveBookmarkIDs(ids ...uuid.UUID) *ResponseUpdateOne {
+func (ruo *ResponseUpdateOne) RemoveBookmarkIDs(ids ...pulid.ID) *ResponseUpdateOne {
 	ruo.mutation.RemoveBookmarkIDs(ids...)
 	return ruo
 }
 
 // RemoveBookmarks removes "bookmarks" edges to Bookmark entities.
 func (ruo *ResponseUpdateOne) RemoveBookmarks(b ...*Bookmark) *ResponseUpdateOne {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -487,7 +487,7 @@ func (ruo *ResponseUpdateOne) sqlSave(ctx context.Context) (_node *Response, err
 	if err := ruo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(response.Table, response.Columns, sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(response.Table, response.Columns, sqlgraph.NewFieldSpec(response.FieldID, field.TypeString))
 	id, ok := ruo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Response.id" for update`)}
@@ -529,7 +529,7 @@ func (ruo *ResponseUpdateOne) sqlSave(ctx context.Context) (_node *Response, err
 			Columns: []string{response.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -542,7 +542,7 @@ func (ruo *ResponseUpdateOne) sqlSave(ctx context.Context) (_node *Response, err
 			Columns: []string{response.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -558,7 +558,7 @@ func (ruo *ResponseUpdateOne) sqlSave(ctx context.Context) (_node *Response, err
 			Columns: []string{response.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -571,7 +571,7 @@ func (ruo *ResponseUpdateOne) sqlSave(ctx context.Context) (_node *Response, err
 			Columns: []string{response.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -587,7 +587,7 @@ func (ruo *ResponseUpdateOne) sqlSave(ctx context.Context) (_node *Response, err
 			Columns: []string{response.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -600,7 +600,7 @@ func (ruo *ResponseUpdateOne) sqlSave(ctx context.Context) (_node *Response, err
 			Columns: []string{response.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -616,7 +616,7 @@ func (ruo *ResponseUpdateOne) sqlSave(ctx context.Context) (_node *Response, err
 			Columns: []string{response.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

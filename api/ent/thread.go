@@ -9,16 +9,16 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // Thread is the model entity for the Thread schema.
 type Thread struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID pulid.ID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -28,8 +28,8 @@ type Thread struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ThreadQuery when eager-loading is set.
 	Edges           ThreadEdges `json:"edges"`
-	thread_children *uuid.UUID
-	user_threads    *uuid.UUID
+	thread_children *pulid.ID
+	user_threads    *pulid.ID
 	selectValues    sql.SelectValues
 }
 
@@ -110,16 +110,16 @@ func (*Thread) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case thread.FieldID:
+			values[i] = new(pulid.ID)
 		case thread.FieldName:
 			values[i] = new(sql.NullString)
 		case thread.FieldCreatedAt, thread.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case thread.FieldID:
-			values[i] = new(uuid.UUID)
 		case thread.ForeignKeys[0]: // thread_children
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		case thread.ForeignKeys[1]: // user_threads
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -136,7 +136,7 @@ func (t *Thread) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case thread.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*pulid.ID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				t.ID = *value
@@ -163,15 +163,15 @@ func (t *Thread) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field thread_children", values[i])
 			} else if value.Valid {
-				t.thread_children = new(uuid.UUID)
-				*t.thread_children = *value.S.(*uuid.UUID)
+				t.thread_children = new(pulid.ID)
+				*t.thread_children = *value.S.(*pulid.ID)
 			}
 		case thread.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_threads", values[i])
 			} else if value.Valid {
-				t.user_threads = new(uuid.UUID)
-				*t.user_threads = *value.S.(*uuid.UUID)
+				t.user_threads = new(pulid.ID)
+				*t.user_threads = *value.S.(*pulid.ID)
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])

@@ -14,9 +14,9 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
@@ -69,8 +69,8 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"agent_responses"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"agent_responses"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(agent.ResponsesColumn), ids...))
@@ -78,7 +78,7 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 						if err := query.GroupBy(agent.ResponsesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -439,8 +439,8 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"message_bookmarks"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"message_bookmarks"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(message.BookmarksColumn), ids...))
@@ -448,7 +448,7 @@ func (m *MessageQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 						if err := query.GroupBy(message.BookmarksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -666,8 +666,8 @@ func (r *ResponseQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"response_bookmarks"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"response_bookmarks"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(response.BookmarksColumn), ids...))
@@ -675,7 +675,7 @@ func (r *ResponseQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 						if err := query.GroupBy(response.BookmarksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -871,8 +871,8 @@ func (t *ThreadQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"thread_messages"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"thread_messages"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(thread.MessagesColumn), ids...))
@@ -880,7 +880,7 @@ func (t *ThreadQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 						if err := query.GroupBy(thread.MessagesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -960,8 +960,8 @@ func (t *ThreadQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"thread_bookmarks"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"thread_bookmarks"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(thread.BookmarksColumn), ids...))
@@ -969,7 +969,7 @@ func (t *ThreadQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 						if err := query.GroupBy(thread.BookmarksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -1060,8 +1060,8 @@ func (t *ThreadQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"thread_children"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"thread_children"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(thread.ChildrenColumn), ids...))
@@ -1069,7 +1069,7 @@ func (t *ThreadQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 						if err := query.GroupBy(thread.ChildrenColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -1254,8 +1254,8 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"user_bookmarks"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"user_bookmarks"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(user.BookmarksColumn), ids...))
@@ -1263,7 +1263,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						if err := query.GroupBy(user.BookmarksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -1343,8 +1343,8 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"user_threads"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"user_threads"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(user.ThreadsColumn), ids...))
@@ -1352,7 +1352,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						if err := query.GroupBy(user.ThreadsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}
@@ -1432,8 +1432,8 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 							ids[i] = nodes[i].ID
 						}
 						var v []struct {
-							NodeID uuid.UUID `sql:"user_messages"`
-							Count  int       `sql:"count"`
+							NodeID pulid.ID `sql:"user_messages"`
+							Count  int      `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
 							s.Where(sql.InValues(s.C(user.MessagesColumn), ids...))
@@ -1441,7 +1441,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						if err := query.GroupBy(user.MessagesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
-						m := make(map[uuid.UUID]int, len(v))
+						m := make(map[pulid.ID]int, len(v))
 						for i := range v {
 							m[v[i].NodeID] = v[i].Count
 						}

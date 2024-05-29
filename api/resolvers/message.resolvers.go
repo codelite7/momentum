@@ -6,63 +6,55 @@ package resolvers
 
 import (
 	"context"
-	"strings"
-
-	"entgo.io/ent/dialect/sql"
-	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
-	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/thread"
-	"github.com/codelite7/momentum/api/river"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateMessage is the resolver for the createMessage field.
 func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
 	// if the previous message doesn't have response content, don't allow creation of a new message
-	userUuid, err := getUserUuid(ctx)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	input.SentByID = userUuid
-	client := ent.FromContext(ctx)
-	previousMessage, err := client.Message.Query().Where(message.HasThreadWith(thread.ID(input.ThreadID))).Order(message.ByCreatedAt(sql.OrderAsc())).First(ctx)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	if previousMessage != nil {
-		previousResponse, err := previousMessage.Response(ctx)
-		if err != nil {
-			return nil, gqlerror.Errorf(err.Error())
-		}
-		if previousResponse == nil || previousResponse.Content == "" {
-			return nil, gqlerror.Errorf("previous message response is empty, you must wait for a response before you can send another message")
-		}
-	}
-
-	message, err := client.Message.Create().SetInput(input).Save(ctx)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	agent, err := common.GetDefaultAgent(ctx, client)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	response, err := client.Response.Create().SetMessage(message).SetSentBy(agent).SetContent("").Save(ctx)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	_, err = river.RiverClient.Insert(ctx, river.MessageArgs{
-		ThreadId:         input.ThreadID,
-		MessageId:        message.ID,
-		ResponseId:       response.ID,
-		MessageContent:   message.Content,
-		MessageCreatedAt: message.CreatedAt,
-	}, nil)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	return client.Message.Get(ctx, message.ID)
+	//userUuid, err := getUserUuid(ctx)
+	//if err != nil {
+	//	return nil, gqlerror.Errorf(err.Error())
+	//}
+	//input.SentByID = userUuid
+	//client := ent.FromContext(ctx)
+	//previousMessage, err := client.Message.Query().Where(message.HasThreadWith(thread.ID(input.ThreadID))).Order(message.ByCreatedAt(sql.OrderAsc())).First(ctx)
+	//if err != nil && !strings.Contains(err.Error(), "not found") {
+	//	return nil, gqlerror.Errorf(err.Error())
+	//}
+	//if previousMessage != nil {
+	//	previousResponse, err := previousMessage.Response(ctx)
+	//	if err != nil {
+	//		return nil, gqlerror.Errorf(err.Error())
+	//	}
+	//	if previousResponse == nil || previousResponse.Content == "" {
+	//		return nil, gqlerror.Errorf("previous message response is empty, you must wait for a response before you can send another message")
+	//	}
+	//}
+	//
+	return ent.FromContext(ctx).Message.Create().SetInput(input).Save(ctx)
+	//if err != nil {
+	//	return nil, gqlerror.Errorf(err.Error())
+	//}
+	//agent, err := common.GetDefaultAgent(ctx, client)
+	//if err != nil {
+	//	return nil, gqlerror.Errorf(err.Error())
+	//}
+	//response, err := client.Response.Create().SetMessage(message).SetSentBy(agent).SetContent("").Save(ctx)
+	//if err != nil {
+	//	return nil, gqlerror.Errorf(err.Error())
+	//}
+	//_, err = river.RiverClient.Insert(ctx, river.MessageArgs{
+	//	//ThreadId:         input.ThreadID,
+	//	//MessageId:        message.ID,
+	//	//ResponseId:       response.ID,
+	//	MessageContent:   message.Content,
+	//	MessageCreatedAt: message.CreatedAt,
+	//}, nil)
+	//if err != nil {
+	//	return nil, gqlerror.Errorf(err.Error())
+	//}
+	//return client.Message.Get(ctx, message.ID)
 }
 
 // !!! WARNING !!!

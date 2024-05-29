@@ -29,7 +29,7 @@ models:
   # Defines the ID field as Go 'int'.
   ID:
     model:
-      - github.com/99designs/gqlgen/graphql.UUID
+      - github.com/codelite7/momentum/api/ent/schema/pulid.ID
   Node:
     model:
       - github.com/codelite7/momentum/api/ent.Noder

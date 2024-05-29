@@ -14,7 +14,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // AgentQuery is the builder for querying Agent entities.
@@ -110,8 +110,8 @@ func (aq *AgentQuery) FirstX(ctx context.Context) *Agent {
 
 // FirstID returns the first Agent ID from the query.
 // Returns a *NotFoundError when no Agent ID was found.
-func (aq *AgentQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (aq *AgentQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = aq.Limit(1).IDs(setContextOp(ctx, aq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -123,7 +123,7 @@ func (aq *AgentQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (aq *AgentQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (aq *AgentQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := aq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -161,8 +161,8 @@ func (aq *AgentQuery) OnlyX(ctx context.Context) *Agent {
 // OnlyID is like Only, but returns the only Agent ID in the query.
 // Returns a *NotSingularError when more than one Agent ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (aq *AgentQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (aq *AgentQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = aq.Limit(2).IDs(setContextOp(ctx, aq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -178,7 +178,7 @@ func (aq *AgentQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (aq *AgentQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (aq *AgentQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := aq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -206,7 +206,7 @@ func (aq *AgentQuery) AllX(ctx context.Context) []*Agent {
 }
 
 // IDs executes the query and returns a list of Agent IDs.
-func (aq *AgentQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (aq *AgentQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if aq.ctx.Unique == nil && aq.path != nil {
 		aq.Unique(true)
 	}
@@ -218,7 +218,7 @@ func (aq *AgentQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (aq *AgentQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (aq *AgentQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := aq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -423,7 +423,7 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 
 func (aq *AgentQuery) loadResponses(ctx context.Context, query *ResponseQuery, nodes []*Agent, init func(*Agent), assign func(*Agent, *Response)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Agent)
+	nodeids := make(map[pulid.ID]*Agent)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -466,7 +466,7 @@ func (aq *AgentQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (aq *AgentQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString))
 	_spec.From = aq.sql
 	if unique := aq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
