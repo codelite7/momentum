@@ -11393,6 +11393,13 @@ func (ec *executionContext) marshalOBookmark2ᚖgithubᚗcomᚋcodelite7ᚋmomen
 	return ec._Bookmark(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOBookmarkConnection2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkConnection(ctx context.Context, sel ast.SelectionSet, v *ent.BookmarkConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BookmarkConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOBookmarkEdge2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.BookmarkEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null

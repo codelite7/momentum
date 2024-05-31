@@ -7,10 +7,10 @@ import Bookmarks from "@/components/right-sidebar/bookmarks";
 
 export function RightSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [width, setWidth] = useState("w-52");
+  const [width, setWidth] = useState("w-64");
 
   useEffect(() => {
-    let width = "w-52";
+    let width = "w-64";
 
     if (collapsed) {
       width = "w-16";

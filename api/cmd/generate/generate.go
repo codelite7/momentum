@@ -43,11 +43,31 @@ var flags = []cli.Flag{
 		Destination: &numThreads,
 	},
 	&cli.IntFlag{
-		Name:        "messages-per-thread",
-		Aliases:     []string{"mpt"},
+		Name:        "min-messages-per-thread",
+		Aliases:     []string{"minmpt"},
+		Value:       1,
+		Usage:       "Minimum number of messages to generate in each thread",
+		Destination: &minNumMessages,
+	},
+	&cli.IntFlag{
+		Name:        "max-messages-per-thread",
+		Aliases:     []string{"maxmpt"},
 		Value:       50,
-		Usage:       "Number of messages to generate in each thread",
-		Destination: &numMessages,
+		Usage:       "Maximum number of messages to generate in each thread",
+		Destination: &maxNumMessages,
+	},
+	&cli.IntFlag{
+		Name:        "min-bookmarks-per-thread",
+		Aliases:     []string{"minbpt"},
+		Value:       0,
+		Usage:       "Minimum number of bookmarks per thread",
+		Destination: &minBookmarksPerThread,
+	}, &cli.IntFlag{
+		Name:        "max-bookmarks-per-thread",
+		Aliases:     []string{"maxbpt"},
+		Value:       10,
+		Usage:       "Maximum number of bookmarks per thread",
+		Destination: &maxBookmarksPerThread,
 	},
 }
 
@@ -72,8 +92,11 @@ func generate() error {
 	if err != nil {
 		return err
 	}
-
-	_, err = createResponses(agent, messages)
+	responses, err := createResponses(agent, messages)
+	if err != nil {
+		return err
+	}
+	_, err = createBookmarks(user, messages, responses)
 	if err != nil {
 		return err
 	}
@@ -115,6 +138,7 @@ func generateFakeThread() *ent.Thread {
 func createMessages(user *ent.User, threads []*ent.Thread) ([]*ent.Message, error) {
 	creates := []*ent.MessageCreate{}
 	for _, thread := range threads {
+		numMessages := gofakeit.Number(minNumMessages, maxNumMessages)
 		for i := 0; i < numMessages; i++ {
 			message := generateFakeMessage()
 			create := common.EntClient.Message.Create().SetSentBy(user).SetThread(thread).SetContent(message.Content)
@@ -151,4 +175,37 @@ func createResponses(agent *ent.Agent, messages []*ent.Message) ([]*ent.Response
 
 func generateFakeResponse() *ent.Response {
 	return &ent.Response{Content: generateFakeContent()}
+}
+
+func createBookmarks(user *ent.User, messages []*ent.Message, responses []*ent.Response) ([]*ent.Bookmark, error) {
+	messagesByThread := map[string]*ent.Message{}
+	responsesByThread := map[string]*ent.Response{}
+	for _, message := range messages {
+		thread, err := message.Thread(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		messagesByThread[string(thread.ID)] = message
+		response, err := message.Response(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		responsesByThread[string(thread.ID)] = response
+	}
+	creates := []*ent.BookmarkCreate{}
+	for _, threadMessages := range messagesByThread {
+		numBookmarks := gofakeit.Number(minBookmarksPerThread, maxBookmarksPerThread)
+		for i := 0; i < numBookmarks; i++ {
+			create := common.EntClient.Bookmark.Create().SetMessage(threadMessages).SetUser(user)
+			creates = append(creates, create)
+		}
+	}
+	for _, threadResponses := range responsesByThread {
+		numBookmarks := gofakeit.Number(minBookmarksPerThread, maxBookmarksPerThread)
+		for i := 0; i < numBookmarks; i++ {
+			create := common.EntClient.Bookmark.Create().SetResponse(threadResponses).SetUser(user)
+			creates = append(creates, create)
+		}
+	}
+	return common.EntClient.Bookmark.CreateBulk(creates...).Save(context.Background())
 }

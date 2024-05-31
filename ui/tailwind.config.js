@@ -64,9 +64,6 @@ module.exports = {
               800: "#39E2CB",
               900: "#39E2CB",
             },
-            default: {
-              200: "red",
-            },
           },
         },
       },

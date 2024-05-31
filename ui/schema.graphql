@@ -493,8 +493,8 @@ input MessageWhereInput {
 
 type Mutation {
   createAgent(input: CreateAgentInput!): Agent
-  createBookmark(input: CreateBookmarkInput!): Bookmark
-  deleteBookmark(id: ID!): Boolean!
+  createBookmark(input: CreateBookmarkInput!): BookmarkConnection
+  deleteBookmark(id: ID!): ID!
   createMessage(input: CreateMessageInput!): Message
   createThread(input: CreateThreadInput!): Thread!
   deleteThread(id: ID!): ID!

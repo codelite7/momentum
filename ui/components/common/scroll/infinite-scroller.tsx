@@ -15,14 +15,15 @@ export function onInfiniteScroll(
 }
 
 export default function InfiniteScroller(props: any) {
-  const { children, onScrollDown, onScrollUp, ...rest } = props;
+  const { children, onScrollDown, onScrollUp, gap, ...rest } = props;
+  let flexGap = gap ? gap : 2;
 
   return (
     <ScrollShadow
       {...rest}
       onScroll={(e) => onInfiniteScroll(e, onScrollDown, onScrollUp)}
     >
-      {children}
+      <div className={`flex flex-col gap-${flexGap}`}>{children}</div>
     </ScrollShadow>
   );
 }

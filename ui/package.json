@@ -50,6 +50,7 @@
 		"react": "18.3.1",
 		"react-dom": "18.3.1",
 		"react-infinite-scroll-component": "^6.1.0",
+		"react-lines-ellipsis": "^0.15.4",
 		"react-pro-sidebar": "^1.1.0",
 		"react-relay": "^16.2.0",
 		"relay-runtime": "^16.2.0",
@@ -62,6 +63,7 @@
 	},
 	"devDependencies": {
 		"@types/lodash": "^4.17.4",
+		"@types/react-lines-ellipsis": "^0.15.6",
 		"@types/react-relay": "^16.0.6",
 		"@types/relay-runtime": "^14.1.24",
 		"concurrently": "^8.2.2",

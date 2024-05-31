@@ -1,5 +1,8 @@
 package generate
 
 var numThreads int
-var numMessages int
+var minNumMessages int
+var maxNumMessages int
 var userEmail string
+var minBookmarksPerThread int
+var maxBookmarksPerThread int

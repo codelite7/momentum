@@ -7,6 +7,7 @@ import { messagesFragment$key } from "@/__generated__/messagesFragment.graphql";
 
 type props = {
   thread: messagesFragment$key;
+  threadId: string;
 };
 
 const MessagesFragment = graphql`
@@ -32,7 +33,7 @@ const MessagesFragment = graphql`
   }
 `;
 
-export default function Messages({ thread }: props) {
+export default function Messages({ thread, threadId }: props) {
   const { data, loadNext, hasNext } = usePaginationFragment(
     MessagesFragment,
     thread,
@@ -47,10 +48,16 @@ export default function Messages({ thread }: props) {
   return (
     <>
       {messages.totalCount > 0 ? (
-        <InfiniteScroller onScrollDown={() => maybeLoadMore(1)}>
+        <InfiniteScroller hideScrollBar onScrollDown={() => maybeLoadMore(1)}>
           {messages.edges?.map((edge) => {
             return (
-              edge?.node && <Message key={edge.node.id} message={edge.node} />
+              edge?.node && (
+                <Message
+                  key={edge.node.id}
+                  message={edge.node}
+                  threadId={threadId}
+                />
+              )
             );
           })}
         </InfiniteScroller>

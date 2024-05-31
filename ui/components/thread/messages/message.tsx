@@ -17,16 +17,19 @@ const MessageFragment = graphql`
 
 type props = {
   message: messageFragment$key;
+  threadId: string;
 };
 
-export default function Message({ message }: props) {
+export default function Message({ message, threadId }: props) {
   const data = useFragment(MessageFragment, message);
 
   return (
     <>
       <MessageBase
         content={data.content}
+        id={data.id}
         sentAt={data.createdAt}
+        threadId={threadId}
         user={{ name: "Me" }}
       />
       {data.response && <Response response={data.response} />}

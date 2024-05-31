@@ -6,18 +6,29 @@ package resolvers
 
 import (
 	"context"
-
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/samber/lo"
 )
 
 // CreateBookmark is the resolver for the createBookmark field.
-func (r *mutationResolver) CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.Bookmark, error) {
-	return ent.FromContext(ctx).Bookmark.Create().SetInput(input).Save(ctx)
+func (r *mutationResolver) CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.BookmarkConnection, error) {
+	client := ent.FromContext(ctx)
+	created, err := client.Bookmark.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	connection, err := client.Bookmark.Query().Where(bookmark.ID(created.ID)).Paginate(ctx, nil, lo.ToPtr(1), nil, nil)
+	return connection, err
 }
 
 // DeleteBookmark is the resolver for the deleteBookmark field.
-func (r *mutationResolver) DeleteBookmark(ctx context.Context, id pulid.ID) (bool, error) {
+func (r *mutationResolver) DeleteBookmark(ctx context.Context, id pulid.ID) (pulid.ID, error) {
 	err := ent.FromContext(ctx).Bookmark.DeleteOneID(id).Exec(ctx)
-	return err == nil, err
+	if err != nil {
+		return "", err
+	}
+	return id, nil
 }

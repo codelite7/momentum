@@ -19,8 +19,8 @@ import (
 
 type MutationResolver interface {
 	CreateAgent(ctx context.Context, input ent.CreateAgentInput) (*ent.Agent, error)
-	CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.Bookmark, error)
-	DeleteBookmark(ctx context.Context, id pulid.ID) (bool, error)
+	CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.BookmarkConnection, error)
+	DeleteBookmark(ctx context.Context, id pulid.ID) (pulid.ID, error)
 	CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error)
 	CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error)
 	DeleteThread(ctx context.Context, id pulid.ID) (pulid.ID, error)
@@ -235,9 +235,9 @@ func (ec *executionContext) _Mutation_createBookmark(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Bookmark)
+	res := resTmp.(*ent.BookmarkConnection)
 	fc.Result = res
-	return ec.marshalOBookmark2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmark(ctx, field.Selections, res)
+	return ec.marshalOBookmarkConnection2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createBookmark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -248,22 +248,14 @@ func (ec *executionContext) fieldContext_Mutation_createBookmark(ctx context.Con
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Bookmark_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Bookmark_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Bookmark_updatedAt(ctx, field)
-			case "user":
-				return ec.fieldContext_Bookmark_user(ctx, field)
-			case "thread":
-				return ec.fieldContext_Bookmark_thread(ctx, field)
-			case "message":
-				return ec.fieldContext_Bookmark_message(ctx, field)
-			case "response":
-				return ec.fieldContext_Bookmark_response(ctx, field)
+			case "edges":
+				return ec.fieldContext_BookmarkConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_BookmarkConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_BookmarkConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type BookmarkConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -306,9 +298,9 @@ func (ec *executionContext) _Mutation_deleteBookmark(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(pulid.ID)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteBookmark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -318,7 +310,7 @@ func (ec *executionContext) fieldContext_Mutation_deleteBookmark(ctx context.Con
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	defer func() {

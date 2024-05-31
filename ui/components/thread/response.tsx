@@ -19,7 +19,9 @@ export default function Response({ response }: props) {
 
   return (
     <MessageBase
-      content={data.content}
+      isResponse
+      content={data.content ?? ""}
+      id={data.id}
       sentAt={data.createdAt}
       user={undefined}
     />

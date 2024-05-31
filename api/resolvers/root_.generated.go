@@ -1144,8 +1144,8 @@ var sources = []*ast.Source{
     createAgent(input: CreateAgentInput!): Agent
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/bookmark.graphql", Input: `extend type Mutation {
-    createBookmark(input: CreateBookmarkInput!): Bookmark
-    deleteBookmark(id: ID!):Boolean!
+    createBookmark(input: CreateBookmarkInput!): BookmarkConnection
+    deleteBookmark(id: ID!):ID!
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String, omittable: Boolean) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @goModel(model: String, models: [String!], forceGenerate: Boolean) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
