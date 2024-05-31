@@ -23,3 +23,6 @@ type Thread func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
+
+// WorkosEventCursor is the predicate function for workoseventcursor builders.
+type WorkosEventCursor func(*sql.Selector)

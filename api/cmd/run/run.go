@@ -22,6 +22,7 @@ import (
 	"github.com/riverqueue/river/rivermigrate"
 	"github.com/urfave/cli/v2"
 	"strings"
+	"time"
 )
 
 var RunCommand = &cli.Command{
@@ -55,6 +56,7 @@ func run() error {
 		return err
 	}
 	graphqlServer := initGraphqlServer(common.EntClient)
+	go HandleAuthEvents()
 	err = runHttpServer(graphqlServer)
 	if err != nil {
 		return err
@@ -179,6 +181,21 @@ var flags = []cli.Flag{
 		Usage:       "when true a session is required to reach the api",
 		EnvVars:     []string{"SESSION_REQUIRED"},
 		Destination: &config.SessionRequired,
+	},
+	&cli.StringFlag{
+		Name:        "workos-api-key",
+		Aliases:     []string{"wak"},
+		Usage:       "workos api key",
+		EnvVars:     []string{"WORKOS_API_KEY"},
+		Destination: &config.WorkosApiKey,
+	},
+	&cli.DurationFlag{
+		Name:        "workos-poll-interval",
+		Aliases:     []string{"wpo"},
+		Value:       10 * time.Second,
+		Usage:       "How often to poll workos for events",
+		EnvVars:     []string{"WORKOS_POLL_INTERVAL"},
+		Destination: &config.WorkosPollInterval,
 	},
 }
 

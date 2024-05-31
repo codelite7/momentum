@@ -18,8 +18,10 @@ require (
 	github.com/riverqueue/river v0.6.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.6.0
 	github.com/riverqueue/river/rivertype v0.6.0
+	github.com/samber/lo v1.39.0
 	github.com/urfave/cli/v2 v2.27.2
 	github.com/vektah/gqlparser/v2 v2.5.11
+	github.com/workos/workos-go/v3 v3.2.0
 )
 
 require (
@@ -31,6 +33,7 @@ require (
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/guregu/null v4.0.0+incompatible // indirect
@@ -48,7 +51,6 @@ require (
 	github.com/riverqueue/river/riverdriver v0.6.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/samber/lo v1.39.0 // indirect
 	github.com/sosodev/duration v1.2.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

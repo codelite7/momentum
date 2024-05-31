@@ -3,6 +3,7 @@ import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
+import { getUser } from "@workos-inc/authkit-nextjs";
 
 import { Providers } from "./providers";
 
@@ -30,11 +31,13 @@ export const viewport: Viewport = {
 };
 const myFont = localFont({ src: "../config/satoshi/Satoshi-Variable.woff2" });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = await getUser({ ensureSignedIn: true });
+
   return (
     <html suppressHydrationWarning lang="en">
       <head />
@@ -66,3 +69,7 @@ export default function RootLayout({
     </html>
   );
 }
+
+function ensureUser() {}
+
+function bootstrapUser() {}

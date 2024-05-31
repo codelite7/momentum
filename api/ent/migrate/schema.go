@@ -165,6 +165,17 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
+	// WorkosEventCursorsColumns holds the columns for the "workos_event_cursors" table.
+	WorkosEventCursorsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "user_created_cursor", Type: field.TypeString, Nullable: true},
+	}
+	// WorkosEventCursorsTable holds the schema information for the "workos_event_cursors" table.
+	WorkosEventCursorsTable = &schema.Table{
+		Name:       "workos_event_cursors",
+		Columns:    WorkosEventCursorsColumns,
+		PrimaryKey: []*schema.Column{WorkosEventCursorsColumns[0]},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AgentsTable,
@@ -173,6 +184,7 @@ var (
 		ResponsesTable,
 		ThreadsTable,
 		UsersTable,
+		WorkosEventCursorsTable,
 	}
 )
 

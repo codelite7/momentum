@@ -24,6 +24,8 @@ type Tx struct {
 	Thread *ThreadClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// WorkosEventCursor is the client for interacting with the WorkosEventCursor builders.
+	WorkosEventCursor *WorkosEventCursorClient
 
 	// lazily loaded.
 	client     *Client
@@ -161,6 +163,7 @@ func (tx *Tx) init() {
 	tx.Response = NewResponseClient(tx.config)
 	tx.Thread = NewThreadClient(tx.config)
 	tx.User = NewUserClient(tx.config)
+	tx.WorkosEventCursor = NewWorkosEventCursorClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
