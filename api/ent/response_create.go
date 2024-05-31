@@ -15,6 +15,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 )
 
 // ResponseCreate is the builder for creating a Response entity.
@@ -52,6 +53,12 @@ func (rc *ResponseCreate) SetNillableUpdatedAt(t *time.Time) *ResponseCreate {
 	return rc
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (rc *ResponseCreate) SetTenantID(pu pulid.ID) *ResponseCreate {
+	rc.mutation.SetTenantID(pu)
+	return rc
+}
+
 // SetContent sets the "content" field.
 func (rc *ResponseCreate) SetContent(s string) *ResponseCreate {
 	rc.mutation.SetContent(s)
@@ -78,6 +85,11 @@ func (rc *ResponseCreate) SetNillableID(pu *pulid.ID) *ResponseCreate {
 		rc.SetID(*pu)
 	}
 	return rc
+}
+
+// SetTenant sets the "tenant" edge to the Tenant entity.
+func (rc *ResponseCreate) SetTenant(t *Tenant) *ResponseCreate {
+	return rc.SetTenantID(t.ID)
 }
 
 // SetSentByID sets the "sent_by" edge to the Agent entity by ID.
@@ -174,6 +186,12 @@ func (rc *ResponseCreate) check() error {
 	if _, ok := rc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Response.updated_at"`)}
 	}
+	if _, ok := rc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Response.tenant_id"`)}
+	}
+	if _, ok := rc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant", err: errors.New(`ent: missing required edge "Response.tenant"`)}
+	}
 	if _, ok := rc.mutation.SentByID(); !ok {
 		return &ValidationError{Name: "sent_by", err: errors.New(`ent: missing required edge "Response.sent_by"`)}
 	}
@@ -226,6 +244,23 @@ func (rc *ResponseCreate) createSpec() (*Response, *sqlgraph.CreateSpec) {
 	if value, ok := rc.mutation.Content(); ok {
 		_spec.SetField(response.FieldContent, field.TypeString, value)
 		_node.Content = value
+	}
+	if nodes := rc.mutation.TenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   response.TenantTable,
+			Columns: []string{response.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.TenantID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := rc.mutation.SentByIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

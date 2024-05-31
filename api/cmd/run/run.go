@@ -12,14 +12,9 @@ import (
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/resolvers"
-	"github.com/codelite7/momentum/api/river"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
-	"github.com/riverqueue/river/rivermigrate"
 	"github.com/urfave/cli/v2"
 	"strings"
 	"time"
@@ -43,14 +38,6 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	err = runRiverMigrations()
-	if err != nil {
-		return err
-	}
-	err = river.StartRiverClient()
-	if err != nil {
-		return err
-	}
 	err = ensureDefaultAgents()
 	if err != nil {
 		return err
@@ -58,11 +45,6 @@ func run() error {
 	graphqlServer := initGraphqlServer(common.EntClient)
 	go HandleAuthEvents()
 	err = runHttpServer(graphqlServer)
-	if err != nil {
-		return err
-	}
-
-	err = river.StopRiverClient()
 	if err != nil {
 		return err
 	}
@@ -197,35 +179,4 @@ var flags = []cli.Flag{
 		EnvVars:     []string{"WORKOS_POLL_INTERVAL"},
 		Destination: &config.WorkosPollInterval,
 	},
-}
-
-func runRiverMigrations() error {
-	ctx := context.Background()
-
-	dbPool, err := pgxpool.New(context.Background(), config.PostgresUri)
-	if err != nil {
-		return err
-	}
-	defer dbPool.Close()
-
-	tx, err := dbPool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	migrator := rivermigrate.New[pgx.Tx](riverpgxv5.New(dbPool), nil)
-
-	printVersions := func(res *rivermigrate.MigrateResult) {
-		for _, version := range res.Versions {
-			fmt.Printf("Migrated [%s] version %d\n", strings.ToUpper(string(res.Direction)), version.Version)
-		}
-	}
-
-	res, err := migrator.MigrateTx(ctx, tx, rivermigrate.DirectionUp, nil)
-	if err != nil {
-		return err
-	}
-	printVersions(res)
-	return tx.Commit(ctx)
 }

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -23,6 +24,8 @@ type Thread struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -35,6 +38,8 @@ type Thread struct {
 
 // ThreadEdges holds the relations/edges for other nodes in the graph.
 type ThreadEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// CreatedBy holds the value of the created_by edge.
 	CreatedBy *User `json:"created_by,omitempty"`
 	// Messages holds the value of the messages edge.
@@ -47,7 +52,7 @@ type ThreadEdges struct {
 	Children []*Thread `json:"children,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
 	totalCount [5]map[string]int
 
@@ -56,12 +61,23 @@ type ThreadEdges struct {
 	namedChildren  map[string][]*Thread
 }
 
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ThreadEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
+}
+
 // CreatedByOrErr returns the CreatedBy value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ThreadEdges) CreatedByOrErr() (*User, error) {
 	if e.CreatedBy != nil {
 		return e.CreatedBy, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "created_by"}
@@ -70,7 +86,7 @@ func (e ThreadEdges) CreatedByOrErr() (*User, error) {
 // MessagesOrErr returns the Messages value or an error if the edge
 // was not loaded in eager-loading.
 func (e ThreadEdges) MessagesOrErr() ([]*Message, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Messages, nil
 	}
 	return nil, &NotLoadedError{edge: "messages"}
@@ -79,7 +95,7 @@ func (e ThreadEdges) MessagesOrErr() ([]*Message, error) {
 // BookmarksOrErr returns the Bookmarks value or an error if the edge
 // was not loaded in eager-loading.
 func (e ThreadEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
@@ -90,7 +106,7 @@ func (e ThreadEdges) BookmarksOrErr() ([]*Bookmark, error) {
 func (e ThreadEdges) ParentOrErr() (*Thread, error) {
 	if e.Parent != nil {
 		return e.Parent, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: thread.Label}
 	}
 	return nil, &NotLoadedError{edge: "parent"}
@@ -99,7 +115,7 @@ func (e ThreadEdges) ParentOrErr() (*Thread, error) {
 // ChildrenOrErr returns the Children value or an error if the edge
 // was not loaded in eager-loading.
 func (e ThreadEdges) ChildrenOrErr() ([]*Thread, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Children, nil
 	}
 	return nil, &NotLoadedError{edge: "children"}
@@ -110,7 +126,7 @@ func (*Thread) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case thread.FieldID:
+		case thread.FieldID, thread.FieldTenantID:
 			values[i] = new(pulid.ID)
 		case thread.FieldName:
 			values[i] = new(sql.NullString)
@@ -153,6 +169,12 @@ func (t *Thread) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.UpdatedAt = value.Time
 			}
+		case thread.FieldTenantID:
+			if value, ok := values[i].(*pulid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
+			} else if value != nil {
+				t.TenantID = *value
+			}
 		case thread.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -184,6 +206,11 @@ func (t *Thread) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (t *Thread) Value(name string) (ent.Value, error) {
 	return t.selectValues.Get(name)
+}
+
+// QueryTenant queries the "tenant" edge of the Thread entity.
+func (t *Thread) QueryTenant() *TenantQuery {
+	return NewThreadClient(t.config).QueryTenant(t)
 }
 
 // QueryCreatedBy queries the "created_by" edge of the Thread entity.
@@ -239,6 +266,9 @@ func (t *Thread) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(t.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("tenant_id=")
+	builder.WriteString(fmt.Sprintf("%v", t.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)

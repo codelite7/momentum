@@ -13,6 +13,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -52,6 +53,12 @@ func (tc *ThreadCreate) SetNillableUpdatedAt(t *time.Time) *ThreadCreate {
 	return tc
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (tc *ThreadCreate) SetTenantID(pu pulid.ID) *ThreadCreate {
+	tc.mutation.SetTenantID(pu)
+	return tc
+}
+
 // SetName sets the "name" field.
 func (tc *ThreadCreate) SetName(s string) *ThreadCreate {
 	tc.mutation.SetName(s)
@@ -70,6 +77,11 @@ func (tc *ThreadCreate) SetNillableID(pu *pulid.ID) *ThreadCreate {
 		tc.SetID(*pu)
 	}
 	return tc
+}
+
+// SetTenant sets the "tenant" edge to the Tenant entity.
+func (tc *ThreadCreate) SetTenant(t *Tenant) *ThreadCreate {
+	return tc.SetTenantID(t.ID)
 }
 
 // SetCreatedByID sets the "created_by" edge to the User entity by ID.
@@ -204,8 +216,14 @@ func (tc *ThreadCreate) check() error {
 	if _, ok := tc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Thread.updated_at"`)}
 	}
+	if _, ok := tc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Thread.tenant_id"`)}
+	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Thread.name"`)}
+	}
+	if _, ok := tc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant", err: errors.New(`ent: missing required edge "Thread.tenant"`)}
 	}
 	if _, ok := tc.mutation.CreatedByID(); !ok {
 		return &ValidationError{Name: "created_by", err: errors.New(`ent: missing required edge "Thread.created_by"`)}
@@ -256,6 +274,23 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(thread.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if nodes := tc.mutation.TenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   thread.TenantTable,
+			Columns: []string{thread.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.TenantID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := tc.mutation.CreatedByIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

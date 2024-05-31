@@ -17,6 +17,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 )
 
 // ResponseQuery is the builder for querying Response entities.
@@ -26,6 +27,7 @@ type ResponseQuery struct {
 	order              []response.OrderOption
 	inters             []Interceptor
 	predicates         []predicate.Response
+	withTenant         *TenantQuery
 	withSentBy         *AgentQuery
 	withMessage        *MessageQuery
 	withBookmarks      *BookmarkQuery
@@ -67,6 +69,28 @@ func (rq *ResponseQuery) Unique(unique bool) *ResponseQuery {
 func (rq *ResponseQuery) Order(o ...response.OrderOption) *ResponseQuery {
 	rq.order = append(rq.order, o...)
 	return rq
+}
+
+// QueryTenant chains the current query on the "tenant" edge.
+func (rq *ResponseQuery) QueryTenant() *TenantQuery {
+	query := (&TenantClient{config: rq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(response.Table, response.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, response.TenantTable, response.TenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QuerySentBy chains the current query on the "sent_by" edge.
@@ -327,6 +351,7 @@ func (rq *ResponseQuery) Clone() *ResponseQuery {
 		order:         append([]response.OrderOption{}, rq.order...),
 		inters:        append([]Interceptor{}, rq.inters...),
 		predicates:    append([]predicate.Response{}, rq.predicates...),
+		withTenant:    rq.withTenant.Clone(),
 		withSentBy:    rq.withSentBy.Clone(),
 		withMessage:   rq.withMessage.Clone(),
 		withBookmarks: rq.withBookmarks.Clone(),
@@ -334,6 +359,17 @@ func (rq *ResponseQuery) Clone() *ResponseQuery {
 		sql:  rq.sql.Clone(),
 		path: rq.path,
 	}
+}
+
+// WithTenant tells the query-builder to eager-load the nodes that are connected to
+// the "tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (rq *ResponseQuery) WithTenant(opts ...func(*TenantQuery)) *ResponseQuery {
+	query := (&TenantClient{config: rq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withTenant = query
+	return rq
 }
 
 // WithSentBy tells the query-builder to eager-load the nodes that are connected to
@@ -448,7 +484,8 @@ func (rq *ResponseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Res
 		nodes       = []*Response{}
 		withFKs     = rq.withFKs
 		_spec       = rq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
+			rq.withTenant != nil,
 			rq.withSentBy != nil,
 			rq.withMessage != nil,
 			rq.withBookmarks != nil,
@@ -480,6 +517,12 @@ func (rq *ResponseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Res
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+	if query := rq.withTenant; query != nil {
+		if err := rq.loadTenant(ctx, query, nodes, nil,
+			func(n *Response, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
 	}
 	if query := rq.withSentBy; query != nil {
 		if err := rq.loadSentBy(ctx, query, nodes, nil,
@@ -515,6 +558,35 @@ func (rq *ResponseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Res
 	return nodes, nil
 }
 
+func (rq *ResponseQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Response, init func(*Response), assign func(*Response, *Tenant)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Response)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (rq *ResponseQuery) loadSentBy(ctx context.Context, query *AgentQuery, nodes []*Response, init func(*Response), assign func(*Response, *Agent)) error {
 	ids := make([]pulid.ID, 0, len(nodes))
 	nodeids := make(map[pulid.ID][]*Response)
@@ -638,6 +710,9 @@ func (rq *ResponseQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != response.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if rq.withTenant != nil {
+			_spec.Node.AddColumnOnce(response.FieldTenantID)
 		}
 	}
 	if ps := rq.predicates; len(ps) > 0 {

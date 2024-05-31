@@ -17,6 +17,7 @@ func (Thread) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		BaseMixin{},
 		pulid.MixinWithPrefix("tr"),
+		TenantMixin{},
 	}
 }
 

@@ -66,6 +66,11 @@ func UpdatedAt(v time.Time) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// TenantID applies equality check predicate on the "tenant_id" field. It's identical to TenantIDEQ.
+func TenantID(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldTenantID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldName, v))
@@ -151,6 +156,76 @@ func UpdatedAtLTE(v time.Time) predicate.Thread {
 	return predicate.Thread(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
+// TenantIDEQ applies the EQ predicate on the "tenant_id" field.
+func TenantIDEQ(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldTenantID, v))
+}
+
+// TenantIDNEQ applies the NEQ predicate on the "tenant_id" field.
+func TenantIDNEQ(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldNEQ(FieldTenantID, v))
+}
+
+// TenantIDIn applies the In predicate on the "tenant_id" field.
+func TenantIDIn(vs ...pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldIn(FieldTenantID, vs...))
+}
+
+// TenantIDNotIn applies the NotIn predicate on the "tenant_id" field.
+func TenantIDNotIn(vs ...pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldNotIn(FieldTenantID, vs...))
+}
+
+// TenantIDGT applies the GT predicate on the "tenant_id" field.
+func TenantIDGT(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldGT(FieldTenantID, v))
+}
+
+// TenantIDGTE applies the GTE predicate on the "tenant_id" field.
+func TenantIDGTE(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldGTE(FieldTenantID, v))
+}
+
+// TenantIDLT applies the LT predicate on the "tenant_id" field.
+func TenantIDLT(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldLT(FieldTenantID, v))
+}
+
+// TenantIDLTE applies the LTE predicate on the "tenant_id" field.
+func TenantIDLTE(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldLTE(FieldTenantID, v))
+}
+
+// TenantIDContains applies the Contains predicate on the "tenant_id" field.
+func TenantIDContains(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldContains(FieldTenantID, vc))
+}
+
+// TenantIDHasPrefix applies the HasPrefix predicate on the "tenant_id" field.
+func TenantIDHasPrefix(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldHasPrefix(FieldTenantID, vc))
+}
+
+// TenantIDHasSuffix applies the HasSuffix predicate on the "tenant_id" field.
+func TenantIDHasSuffix(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldHasSuffix(FieldTenantID, vc))
+}
+
+// TenantIDEqualFold applies the EqualFold predicate on the "tenant_id" field.
+func TenantIDEqualFold(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldEqualFold(FieldTenantID, vc))
+}
+
+// TenantIDContainsFold applies the ContainsFold predicate on the "tenant_id" field.
+func TenantIDContainsFold(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldContainsFold(FieldTenantID, vc))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldName, v))
@@ -214,6 +289,29 @@ func NameEqualFold(v string) predicate.Thread {
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Thread {
 	return predicate.Thread(sql.FieldContainsFold(FieldName, v))
+}
+
+// HasTenant applies the HasEdge predicate on the "tenant" edge.
+func HasTenant() predicate.Thread {
+	return predicate.Thread(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, TenantTable, TenantColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTenantWith applies the HasEdge predicate on the "tenant" edge with a given conditions (other predicates).
+func HasTenantWith(preds ...predicate.Tenant) predicate.Thread {
+	return predicate.Thread(func(s *sql.Selector) {
+		step := newTenantStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasCreatedBy applies the HasEdge predicate on the "created_by" edge.

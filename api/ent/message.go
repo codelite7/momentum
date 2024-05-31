@@ -12,6 +12,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -25,6 +26,8 @@ type Message struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Content holds the value of the "content" field.
 	Content string `json:"content,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -37,6 +40,8 @@ type Message struct {
 
 // MessageEdges holds the relations/edges for other nodes in the graph.
 type MessageEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// SentBy holds the value of the sent_by edge.
 	SentBy *User `json:"sent_by,omitempty"`
 	// Thread holds the value of the thread edge.
@@ -47,11 +52,22 @@ type MessageEdges struct {
 	Response *Response `json:"response,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
 	totalCount [4]map[string]int
 
 	namedBookmarks map[string][]*Bookmark
+}
+
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e MessageEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
 }
 
 // SentByOrErr returns the SentBy value or an error if the edge
@@ -59,7 +75,7 @@ type MessageEdges struct {
 func (e MessageEdges) SentByOrErr() (*User, error) {
 	if e.SentBy != nil {
 		return e.SentBy, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "sent_by"}
@@ -70,7 +86,7 @@ func (e MessageEdges) SentByOrErr() (*User, error) {
 func (e MessageEdges) ThreadOrErr() (*Thread, error) {
 	if e.Thread != nil {
 		return e.Thread, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: thread.Label}
 	}
 	return nil, &NotLoadedError{edge: "thread"}
@@ -79,7 +95,7 @@ func (e MessageEdges) ThreadOrErr() (*Thread, error) {
 // BookmarksOrErr returns the Bookmarks value or an error if the edge
 // was not loaded in eager-loading.
 func (e MessageEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
@@ -90,7 +106,7 @@ func (e MessageEdges) BookmarksOrErr() ([]*Bookmark, error) {
 func (e MessageEdges) ResponseOrErr() (*Response, error) {
 	if e.Response != nil {
 		return e.Response, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: response.Label}
 	}
 	return nil, &NotLoadedError{edge: "response"}
@@ -101,7 +117,7 @@ func (*Message) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case message.FieldID:
+		case message.FieldID, message.FieldTenantID:
 			values[i] = new(pulid.ID)
 		case message.FieldContent:
 			values[i] = new(sql.NullString)
@@ -144,6 +160,12 @@ func (m *Message) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				m.UpdatedAt = value.Time
 			}
+		case message.FieldTenantID:
+			if value, ok := values[i].(*pulid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
+			} else if value != nil {
+				m.TenantID = *value
+			}
 		case message.FieldContent:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
@@ -175,6 +197,11 @@ func (m *Message) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (m *Message) Value(name string) (ent.Value, error) {
 	return m.selectValues.Get(name)
+}
+
+// QueryTenant queries the "tenant" edge of the Message entity.
+func (m *Message) QueryTenant() *TenantQuery {
+	return NewMessageClient(m.config).QueryTenant(m)
 }
 
 // QuerySentBy queries the "sent_by" edge of the Message entity.
@@ -225,6 +252,9 @@ func (m *Message) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("tenant_id=")
+	builder.WriteString(fmt.Sprintf("%v", m.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(m.Content)

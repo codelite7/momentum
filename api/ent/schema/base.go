@@ -15,8 +15,8 @@ type BaseMixin struct {
 
 func (BaseMixin) Fields() []ent.Field {
 	return []ent.Field{
-		field.Time("created_at").Default(time.Now).Immutable().Annotations(entgql.OrderField("CREATED_AT")),
-		field.Time("updated_at").Default(time.Now).Annotations(entgql.OrderField("UPDATED_AT")),
+		field.Time("created_at").Default(time.Now).Immutable().Annotations(entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput), entgql.OrderField("CREATED_AT")),
+		field.Time("updated_at").Default(time.Now).Annotations(entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput), entgql.OrderField("UPDATED_AT")),
 	}
 }
 

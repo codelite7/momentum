@@ -16,6 +16,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/codelite7/momentum/api/ent/workoseventcursor"
@@ -83,6 +84,7 @@ func checkColumn(table, column string) error {
 			bookmark.Table:          bookmark.ValidColumn,
 			message.Table:           message.ValidColumn,
 			response.Table:          response.ValidColumn,
+			tenant.Table:            tenant.ValidColumn,
 			thread.Table:            thread.ValidColumn,
 			user.Table:              user.ValidColumn,
 			workoseventcursor.Table: workoseventcursor.ValidColumn,

@@ -15,6 +15,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -26,6 +27,7 @@ type BookmarkQuery struct {
 	order        []bookmark.OrderOption
 	inters       []Interceptor
 	predicates   []predicate.Bookmark
+	withTenant   *TenantQuery
 	withUser     *UserQuery
 	withThread   *ThreadQuery
 	withMessage  *MessageQuery
@@ -67,6 +69,28 @@ func (bq *BookmarkQuery) Unique(unique bool) *BookmarkQuery {
 func (bq *BookmarkQuery) Order(o ...bookmark.OrderOption) *BookmarkQuery {
 	bq.order = append(bq.order, o...)
 	return bq
+}
+
+// QueryTenant chains the current query on the "tenant" edge.
+func (bq *BookmarkQuery) QueryTenant() *TenantQuery {
+	query := (&TenantClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(bookmark.Table, bookmark.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, bookmark.TenantTable, bookmark.TenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryUser chains the current query on the "user" edge.
@@ -349,6 +373,7 @@ func (bq *BookmarkQuery) Clone() *BookmarkQuery {
 		order:        append([]bookmark.OrderOption{}, bq.order...),
 		inters:       append([]Interceptor{}, bq.inters...),
 		predicates:   append([]predicate.Bookmark{}, bq.predicates...),
+		withTenant:   bq.withTenant.Clone(),
 		withUser:     bq.withUser.Clone(),
 		withThread:   bq.withThread.Clone(),
 		withMessage:  bq.withMessage.Clone(),
@@ -357,6 +382,17 @@ func (bq *BookmarkQuery) Clone() *BookmarkQuery {
 		sql:  bq.sql.Clone(),
 		path: bq.path,
 	}
+}
+
+// WithTenant tells the query-builder to eager-load the nodes that are connected to
+// the "tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BookmarkQuery) WithTenant(opts ...func(*TenantQuery)) *BookmarkQuery {
+	query := (&TenantClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withTenant = query
+	return bq
 }
 
 // WithUser tells the query-builder to eager-load the nodes that are connected to
@@ -482,7 +518,8 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 		nodes       = []*Bookmark{}
 		withFKs     = bq.withFKs
 		_spec       = bq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
+			bq.withTenant != nil,
 			bq.withUser != nil,
 			bq.withThread != nil,
 			bq.withMessage != nil,
@@ -516,6 +553,12 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := bq.withTenant; query != nil {
+		if err := bq.loadTenant(ctx, query, nodes, nil,
+			func(n *Bookmark, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := bq.withUser; query != nil {
 		if err := bq.loadUser(ctx, query, nodes, nil,
 			func(n *Bookmark, e *User) { n.Edges.User = e }); err != nil {
@@ -548,6 +591,35 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 	return nodes, nil
 }
 
+func (bq *BookmarkQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Tenant)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Bookmark)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (bq *BookmarkQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *User)) error {
 	ids := make([]pulid.ID, 0, len(nodes))
 	nodeids := make(map[pulid.ID][]*Bookmark)
@@ -704,6 +776,9 @@ func (bq *BookmarkQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != bookmark.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if bq.withTenant != nil {
+			_spec.Node.AddColumnOnce(bookmark.FieldTenantID)
 		}
 	}
 	if ps := bq.predicates; len(ps) > 0 {

@@ -244,6 +244,9 @@ func (tu *ThreadUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tu *ThreadUpdate) check() error {
+	if _, ok := tu.mutation.TenantID(); tu.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Thread.tenant"`)
+	}
 	if _, ok := tu.mutation.CreatedByID(); tu.mutation.CreatedByCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Thread.created_by"`)
 	}
@@ -706,6 +709,9 @@ func (tuo *ThreadUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tuo *ThreadUpdateOne) check() error {
+	if _, ok := tuo.mutation.TenantID(); tuo.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Thread.tenant"`)
+	}
 	if _, ok := tuo.mutation.CreatedByID(); tuo.mutation.CreatedByCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Thread.created_by"`)
 	}

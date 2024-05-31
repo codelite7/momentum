@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/user"
 )
 
@@ -22,6 +23,8 @@ type User struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Email holds the value of the "email" field.
 	Email string `json:"email,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -32,6 +35,8 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// Bookmarks holds the value of the bookmarks edge.
 	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
 	// Threads holds the value of the threads edge.
@@ -40,7 +45,7 @@ type UserEdges struct {
 	Messages []*Message `json:"messages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
 	totalCount [3]map[string]int
 
@@ -49,10 +54,21 @@ type UserEdges struct {
 	namedMessages  map[string][]*Message
 }
 
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
+}
+
 // BookmarksOrErr returns the Bookmarks value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
@@ -61,7 +77,7 @@ func (e UserEdges) BookmarksOrErr() ([]*Bookmark, error) {
 // ThreadsOrErr returns the Threads value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ThreadsOrErr() ([]*Thread, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Threads, nil
 	}
 	return nil, &NotLoadedError{edge: "threads"}
@@ -70,7 +86,7 @@ func (e UserEdges) ThreadsOrErr() ([]*Thread, error) {
 // MessagesOrErr returns the Messages value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) MessagesOrErr() ([]*Message, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Messages, nil
 	}
 	return nil, &NotLoadedError{edge: "messages"}
@@ -81,7 +97,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldID:
+		case user.FieldID, user.FieldTenantID:
 			values[i] = new(pulid.ID)
 		case user.FieldEmail:
 			values[i] = new(sql.NullString)
@@ -120,6 +136,12 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.UpdatedAt = value.Time
 			}
+		case user.FieldTenantID:
+			if value, ok := values[i].(*pulid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
+			} else if value != nil {
+				u.TenantID = *value
+			}
 		case user.FieldEmail:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field email", values[i])
@@ -137,6 +159,11 @@ func (u *User) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
+}
+
+// QueryTenant queries the "tenant" edge of the User entity.
+func (u *User) QueryTenant() *TenantQuery {
+	return NewUserClient(u.config).QueryTenant(u)
 }
 
 // QueryBookmarks queries the "bookmarks" edge of the User entity.
@@ -182,6 +209,9 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(u.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("tenant_id=")
+	builder.WriteString(fmt.Sprintf("%v", u.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("email=")
 	builder.WriteString(u.Email)

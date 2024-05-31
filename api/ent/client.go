@@ -20,6 +20,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/codelite7/momentum/api/ent/workoseventcursor"
@@ -38,6 +39,8 @@ type Client struct {
 	Message *MessageClient
 	// Response is the client for interacting with the Response builders.
 	Response *ResponseClient
+	// Tenant is the client for interacting with the Tenant builders.
+	Tenant *TenantClient
 	// Thread is the client for interacting with the Thread builders.
 	Thread *ThreadClient
 	// User is the client for interacting with the User builders.
@@ -59,6 +62,7 @@ func (c *Client) init() {
 	c.Bookmark = NewBookmarkClient(c.config)
 	c.Message = NewMessageClient(c.config)
 	c.Response = NewResponseClient(c.config)
+	c.Tenant = NewTenantClient(c.config)
 	c.Thread = NewThreadClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.WorkosEventCursor = NewWorkosEventCursorClient(c.config)
@@ -158,6 +162,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Bookmark:          NewBookmarkClient(cfg),
 		Message:           NewMessageClient(cfg),
 		Response:          NewResponseClient(cfg),
+		Tenant:            NewTenantClient(cfg),
 		Thread:            NewThreadClient(cfg),
 		User:              NewUserClient(cfg),
 		WorkosEventCursor: NewWorkosEventCursorClient(cfg),
@@ -184,6 +189,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Bookmark:          NewBookmarkClient(cfg),
 		Message:           NewMessageClient(cfg),
 		Response:          NewResponseClient(cfg),
+		Tenant:            NewTenantClient(cfg),
 		Thread:            NewThreadClient(cfg),
 		User:              NewUserClient(cfg),
 		WorkosEventCursor: NewWorkosEventCursorClient(cfg),
@@ -216,7 +222,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Agent, c.Bookmark, c.Message, c.Response, c.Thread, c.User,
+		c.Agent, c.Bookmark, c.Message, c.Response, c.Tenant, c.Thread, c.User,
 		c.WorkosEventCursor,
 	} {
 		n.Use(hooks...)
@@ -227,7 +233,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Agent, c.Bookmark, c.Message, c.Response, c.Thread, c.User,
+		c.Agent, c.Bookmark, c.Message, c.Response, c.Tenant, c.Thread, c.User,
 		c.WorkosEventCursor,
 	} {
 		n.Intercept(interceptors...)
@@ -245,6 +251,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Message.mutate(ctx, m)
 	case *ResponseMutation:
 		return c.Response.mutate(ctx, m)
+	case *TenantMutation:
+		return c.Tenant.mutate(ctx, m)
 	case *ThreadMutation:
 		return c.Thread.mutate(ctx, m)
 	case *UserMutation:
@@ -513,6 +521,22 @@ func (c *BookmarkClient) GetX(ctx context.Context, id pulid.ID) *Bookmark {
 	return obj
 }
 
+// QueryTenant queries the tenant edge of a Bookmark.
+func (c *BookmarkClient) QueryTenant(b *Bookmark) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(bookmark.Table, bookmark.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, bookmark.TenantTable, bookmark.TenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryUser queries the user edge of a Bookmark.
 func (c *BookmarkClient) QueryUser(b *Bookmark) *UserQuery {
 	query := (&UserClient{config: c.config}).Query()
@@ -708,6 +732,22 @@ func (c *MessageClient) GetX(ctx context.Context, id pulid.ID) *Message {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryTenant queries the tenant edge of a Message.
+func (c *MessageClient) QueryTenant(m *Message) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, message.TenantTable, message.TenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QuerySentBy queries the sent_by edge of a Message.
@@ -907,6 +947,22 @@ func (c *ResponseClient) GetX(ctx context.Context, id pulid.ID) *Response {
 	return obj
 }
 
+// QueryTenant queries the tenant edge of a Response.
+func (c *ResponseClient) QueryTenant(r *Response) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(response.Table, response.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, response.TenantTable, response.TenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySentBy queries the sent_by edge of a Response.
 func (c *ResponseClient) QuerySentBy(r *Response) *AgentQuery {
 	query := (&AgentClient{config: c.config}).Query()
@@ -977,6 +1033,139 @@ func (c *ResponseClient) mutate(ctx context.Context, m *ResponseMutation) (Value
 		return (&ResponseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Response mutation op: %q", m.Op())
+	}
+}
+
+// TenantClient is a client for the Tenant schema.
+type TenantClient struct {
+	config
+}
+
+// NewTenantClient returns a client for the Tenant from the given config.
+func NewTenantClient(c config) *TenantClient {
+	return &TenantClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tenant.Hooks(f(g(h())))`.
+func (c *TenantClient) Use(hooks ...Hook) {
+	c.hooks.Tenant = append(c.hooks.Tenant, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tenant.Intercept(f(g(h())))`.
+func (c *TenantClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Tenant = append(c.inters.Tenant, interceptors...)
+}
+
+// Create returns a builder for creating a Tenant entity.
+func (c *TenantClient) Create() *TenantCreate {
+	mutation := newTenantMutation(c.config, OpCreate)
+	return &TenantCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Tenant entities.
+func (c *TenantClient) CreateBulk(builders ...*TenantCreate) *TenantCreateBulk {
+	return &TenantCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TenantClient) MapCreateBulk(slice any, setFunc func(*TenantCreate, int)) *TenantCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TenantCreateBulk{err: fmt.Errorf("calling to TenantClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TenantCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TenantCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Tenant.
+func (c *TenantClient) Update() *TenantUpdate {
+	mutation := newTenantMutation(c.config, OpUpdate)
+	return &TenantUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TenantClient) UpdateOne(t *Tenant) *TenantUpdateOne {
+	mutation := newTenantMutation(c.config, OpUpdateOne, withTenant(t))
+	return &TenantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TenantClient) UpdateOneID(id pulid.ID) *TenantUpdateOne {
+	mutation := newTenantMutation(c.config, OpUpdateOne, withTenantID(id))
+	return &TenantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Tenant.
+func (c *TenantClient) Delete() *TenantDelete {
+	mutation := newTenantMutation(c.config, OpDelete)
+	return &TenantDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TenantClient) DeleteOne(t *Tenant) *TenantDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TenantClient) DeleteOneID(id pulid.ID) *TenantDeleteOne {
+	builder := c.Delete().Where(tenant.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TenantDeleteOne{builder}
+}
+
+// Query returns a query builder for Tenant.
+func (c *TenantClient) Query() *TenantQuery {
+	return &TenantQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTenant},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Tenant entity by its id.
+func (c *TenantClient) Get(ctx context.Context, id pulid.ID) (*Tenant, error) {
+	return c.Query().Where(tenant.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TenantClient) GetX(ctx context.Context, id pulid.ID) *Tenant {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TenantClient) Hooks() []Hook {
+	return c.hooks.Tenant
+}
+
+// Interceptors returns the client interceptors.
+func (c *TenantClient) Interceptors() []Interceptor {
+	return c.inters.Tenant
+}
+
+func (c *TenantClient) mutate(ctx context.Context, m *TenantMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TenantCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TenantUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TenantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TenantDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Tenant mutation op: %q", m.Op())
 	}
 }
 
@@ -1086,6 +1275,22 @@ func (c *ThreadClient) GetX(ctx context.Context, id pulid.ID) *Thread {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryTenant queries the tenant edge of a Thread.
+func (c *ThreadClient) QueryTenant(t *Thread) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(thread.Table, thread.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, thread.TenantTable, thread.TenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryCreatedBy queries the created_by edge of a Thread.
@@ -1301,6 +1506,22 @@ func (c *UserClient) GetX(ctx context.Context, id pulid.ID) *User {
 	return obj
 }
 
+// QueryTenant queries the tenant edge of a User.
+func (c *UserClient) QueryTenant(u *User) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, user.TenantTable, user.TenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBookmarks queries the bookmarks edge of a User.
 func (c *UserClient) QueryBookmarks(u *User) *BookmarkQuery {
 	query := (&BookmarkClient{config: c.config}).Query()
@@ -1510,10 +1731,11 @@ func (c *WorkosEventCursorClient) mutate(ctx context.Context, m *WorkosEventCurs
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Agent, Bookmark, Message, Response, Thread, User, WorkosEventCursor []ent.Hook
+		Agent, Bookmark, Message, Response, Tenant, Thread, User,
+		WorkosEventCursor []ent.Hook
 	}
 	inters struct {
-		Agent, Bookmark, Message, Response, Thread, User,
+		Agent, Bookmark, Message, Response, Tenant, Thread, User,
 		WorkosEventCursor []ent.Interceptor
 	}
 )

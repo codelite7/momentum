@@ -13,6 +13,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 )
 
 // Response is the model entity for the Response schema.
@@ -24,6 +25,8 @@ type Response struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Content holds the value of the "content" field.
 	Content string `json:"content,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -36,6 +39,8 @@ type Response struct {
 
 // ResponseEdges holds the relations/edges for other nodes in the graph.
 type ResponseEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// SentBy holds the value of the sent_by edge.
 	SentBy *Agent `json:"sent_by,omitempty"`
 	// Message holds the value of the message edge.
@@ -44,11 +49,22 @@ type ResponseEdges struct {
 	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
 	totalCount [3]map[string]int
 
 	namedBookmarks map[string][]*Bookmark
+}
+
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ResponseEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
 }
 
 // SentByOrErr returns the SentBy value or an error if the edge
@@ -56,7 +72,7 @@ type ResponseEdges struct {
 func (e ResponseEdges) SentByOrErr() (*Agent, error) {
 	if e.SentBy != nil {
 		return e.SentBy, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: agent.Label}
 	}
 	return nil, &NotLoadedError{edge: "sent_by"}
@@ -67,7 +83,7 @@ func (e ResponseEdges) SentByOrErr() (*Agent, error) {
 func (e ResponseEdges) MessageOrErr() (*Message, error) {
 	if e.Message != nil {
 		return e.Message, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: message.Label}
 	}
 	return nil, &NotLoadedError{edge: "message"}
@@ -76,7 +92,7 @@ func (e ResponseEdges) MessageOrErr() (*Message, error) {
 // BookmarksOrErr returns the Bookmarks value or an error if the edge
 // was not loaded in eager-loading.
 func (e ResponseEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
@@ -87,7 +103,7 @@ func (*Response) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case response.FieldID:
+		case response.FieldID, response.FieldTenantID:
 			values[i] = new(pulid.ID)
 		case response.FieldContent:
 			values[i] = new(sql.NullString)
@@ -130,6 +146,12 @@ func (r *Response) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				r.UpdatedAt = value.Time
 			}
+		case response.FieldTenantID:
+			if value, ok := values[i].(*pulid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
+			} else if value != nil {
+				r.TenantID = *value
+			}
 		case response.FieldContent:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
@@ -161,6 +183,11 @@ func (r *Response) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (r *Response) Value(name string) (ent.Value, error) {
 	return r.selectValues.Get(name)
+}
+
+// QueryTenant queries the "tenant" edge of the Response entity.
+func (r *Response) QueryTenant() *TenantQuery {
+	return NewResponseClient(r.config).QueryTenant(r)
 }
 
 // QuerySentBy queries the "sent_by" edge of the Response entity.
@@ -206,6 +233,9 @@ func (r *Response) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(r.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("tenant_id=")
+	builder.WriteString(fmt.Sprintf("%v", r.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(r.Content)

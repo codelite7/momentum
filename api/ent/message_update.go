@@ -190,6 +190,9 @@ func (mu *MessageUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (mu *MessageUpdate) check() error {
+	if _, ok := mu.mutation.TenantID(); mu.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Message.tenant"`)
+	}
 	if _, ok := mu.mutation.SentByID(); mu.mutation.SentByCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Message.sent_by"`)
 	}
@@ -539,6 +542,9 @@ func (muo *MessageUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (muo *MessageUpdateOne) check() error {
+	if _, ok := muo.mutation.TenantID(); muo.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Message.tenant"`)
+	}
 	if _, ok := muo.mutation.SentByID(); muo.mutation.SentByCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Message.sent_by"`)
 	}

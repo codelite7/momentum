@@ -16,6 +16,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -27,6 +28,7 @@ type MessageQuery struct {
 	order              []message.OrderOption
 	inters             []Interceptor
 	predicates         []predicate.Message
+	withTenant         *TenantQuery
 	withSentBy         *UserQuery
 	withThread         *ThreadQuery
 	withBookmarks      *BookmarkQuery
@@ -69,6 +71,28 @@ func (mq *MessageQuery) Unique(unique bool) *MessageQuery {
 func (mq *MessageQuery) Order(o ...message.OrderOption) *MessageQuery {
 	mq.order = append(mq.order, o...)
 	return mq
+}
+
+// QueryTenant chains the current query on the "tenant" edge.
+func (mq *MessageQuery) QueryTenant() *TenantQuery {
+	query := (&TenantClient{config: mq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, message.TenantTable, message.TenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QuerySentBy chains the current query on the "sent_by" edge.
@@ -351,6 +375,7 @@ func (mq *MessageQuery) Clone() *MessageQuery {
 		order:         append([]message.OrderOption{}, mq.order...),
 		inters:        append([]Interceptor{}, mq.inters...),
 		predicates:    append([]predicate.Message{}, mq.predicates...),
+		withTenant:    mq.withTenant.Clone(),
 		withSentBy:    mq.withSentBy.Clone(),
 		withThread:    mq.withThread.Clone(),
 		withBookmarks: mq.withBookmarks.Clone(),
@@ -359,6 +384,17 @@ func (mq *MessageQuery) Clone() *MessageQuery {
 		sql:  mq.sql.Clone(),
 		path: mq.path,
 	}
+}
+
+// WithTenant tells the query-builder to eager-load the nodes that are connected to
+// the "tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithTenant(opts ...func(*TenantQuery)) *MessageQuery {
+	query := (&TenantClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withTenant = query
+	return mq
 }
 
 // WithSentBy tells the query-builder to eager-load the nodes that are connected to
@@ -484,7 +520,8 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 		nodes       = []*Message{}
 		withFKs     = mq.withFKs
 		_spec       = mq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
+			mq.withTenant != nil,
 			mq.withSentBy != nil,
 			mq.withThread != nil,
 			mq.withBookmarks != nil,
@@ -517,6 +554,12 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+	if query := mq.withTenant; query != nil {
+		if err := mq.loadTenant(ctx, query, nodes, nil,
+			func(n *Message, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
 	}
 	if query := mq.withSentBy; query != nil {
 		if err := mq.loadSentBy(ctx, query, nodes, nil,
@@ -558,6 +601,35 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 	return nodes, nil
 }
 
+func (mq *MessageQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Message, init func(*Message), assign func(*Message, *Tenant)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Message)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (mq *MessageQuery) loadSentBy(ctx context.Context, query *UserQuery, nodes []*Message, init func(*Message), assign func(*Message, *User)) error {
 	ids := make([]pulid.ID, 0, len(nodes))
 	nodeids := make(map[pulid.ID][]*Message)
@@ -709,6 +781,9 @@ func (mq *MessageQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != message.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if mq.withTenant != nil {
+			_spec.Node.AddColumnOnce(message.FieldTenantID)
 		}
 	}
 	if ps := mq.predicates; len(ps) > 0 {

@@ -12,6 +12,7 @@ type Agent struct {
 	ent.Schema
 }
 
+// agents are global, they don't belong to a tenant
 func (Agent) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		BaseMixin{},

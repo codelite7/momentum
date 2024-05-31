@@ -15,6 +15,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -26,6 +27,7 @@ type ThreadQuery struct {
 	order              []thread.OrderOption
 	inters             []Interceptor
 	predicates         []predicate.Thread
+	withTenant         *TenantQuery
 	withCreatedBy      *UserQuery
 	withMessages       *MessageQuery
 	withBookmarks      *BookmarkQuery
@@ -71,6 +73,28 @@ func (tq *ThreadQuery) Unique(unique bool) *ThreadQuery {
 func (tq *ThreadQuery) Order(o ...thread.OrderOption) *ThreadQuery {
 	tq.order = append(tq.order, o...)
 	return tq
+}
+
+// QueryTenant chains the current query on the "tenant" edge.
+func (tq *ThreadQuery) QueryTenant() *TenantQuery {
+	query := (&TenantClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(thread.Table, thread.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, thread.TenantTable, thread.TenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryCreatedBy chains the current query on the "created_by" edge.
@@ -375,6 +399,7 @@ func (tq *ThreadQuery) Clone() *ThreadQuery {
 		order:         append([]thread.OrderOption{}, tq.order...),
 		inters:        append([]Interceptor{}, tq.inters...),
 		predicates:    append([]predicate.Thread{}, tq.predicates...),
+		withTenant:    tq.withTenant.Clone(),
 		withCreatedBy: tq.withCreatedBy.Clone(),
 		withMessages:  tq.withMessages.Clone(),
 		withBookmarks: tq.withBookmarks.Clone(),
@@ -384,6 +409,17 @@ func (tq *ThreadQuery) Clone() *ThreadQuery {
 		sql:  tq.sql.Clone(),
 		path: tq.path,
 	}
+}
+
+// WithTenant tells the query-builder to eager-load the nodes that are connected to
+// the "tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *ThreadQuery) WithTenant(opts ...func(*TenantQuery)) *ThreadQuery {
+	query := (&TenantClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withTenant = query
+	return tq
 }
 
 // WithCreatedBy tells the query-builder to eager-load the nodes that are connected to
@@ -520,7 +556,8 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 		nodes       = []*Thread{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
+			tq.withTenant != nil,
 			tq.withCreatedBy != nil,
 			tq.withMessages != nil,
 			tq.withBookmarks != nil,
@@ -554,6 +591,12 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+	if query := tq.withTenant; query != nil {
+		if err := tq.loadTenant(ctx, query, nodes, nil,
+			func(n *Thread, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
 	}
 	if query := tq.withCreatedBy; query != nil {
 		if err := tq.loadCreatedBy(ctx, query, nodes, nil,
@@ -617,6 +660,35 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 	return nodes, nil
 }
 
+func (tq *ThreadQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Tenant)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Thread)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (tq *ThreadQuery) loadCreatedBy(ctx context.Context, query *UserQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *User)) error {
 	ids := make([]pulid.ID, 0, len(nodes))
 	nodeids := make(map[pulid.ID][]*Thread)
@@ -802,6 +874,9 @@ func (tq *ThreadQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != thread.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if tq.withTenant != nil {
+			_spec.Node.AddColumnOnce(thread.FieldTenantID)
 		}
 	}
 	if ps := tq.predicates; len(ps) > 0 {

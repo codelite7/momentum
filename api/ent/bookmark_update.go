@@ -173,6 +173,9 @@ func (bu *BookmarkUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (bu *BookmarkUpdate) check() error {
+	if _, ok := bu.mutation.TenantID(); bu.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Bookmark.tenant"`)
+	}
 	if _, ok := bu.mutation.UserID(); bu.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Bookmark.user"`)
 	}
@@ -483,6 +486,9 @@ func (buo *BookmarkUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (buo *BookmarkUpdateOne) check() error {
+	if _, ok := buo.mutation.TenantID(); buo.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Bookmark.tenant"`)
+	}
 	if _, ok := buo.mutation.UserID(); buo.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Bookmark.user"`)
 	}

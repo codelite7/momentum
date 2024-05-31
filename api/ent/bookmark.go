@@ -13,6 +13,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -26,6 +27,8 @@ type Bookmark struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BookmarkQuery when eager-loading is set.
 	Edges              BookmarkEdges `json:"edges"`
@@ -38,6 +41,8 @@ type Bookmark struct {
 
 // BookmarkEdges holds the relations/edges for other nodes in the graph.
 type BookmarkEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// User holds the value of the user edge.
 	User *User `json:"user,omitempty"`
 	// Thread holds the value of the thread edge.
@@ -48,9 +53,20 @@ type BookmarkEdges struct {
 	Response *Response `json:"response,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
 	totalCount [4]map[string]int
+}
+
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BookmarkEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -58,7 +74,7 @@ type BookmarkEdges struct {
 func (e BookmarkEdges) UserOrErr() (*User, error) {
 	if e.User != nil {
 		return e.User, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "user"}
@@ -69,7 +85,7 @@ func (e BookmarkEdges) UserOrErr() (*User, error) {
 func (e BookmarkEdges) ThreadOrErr() (*Thread, error) {
 	if e.Thread != nil {
 		return e.Thread, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: thread.Label}
 	}
 	return nil, &NotLoadedError{edge: "thread"}
@@ -80,7 +96,7 @@ func (e BookmarkEdges) ThreadOrErr() (*Thread, error) {
 func (e BookmarkEdges) MessageOrErr() (*Message, error) {
 	if e.Message != nil {
 		return e.Message, nil
-	} else if e.loadedTypes[2] {
+	} else if e.loadedTypes[3] {
 		return nil, &NotFoundError{label: message.Label}
 	}
 	return nil, &NotLoadedError{edge: "message"}
@@ -91,7 +107,7 @@ func (e BookmarkEdges) MessageOrErr() (*Message, error) {
 func (e BookmarkEdges) ResponseOrErr() (*Response, error) {
 	if e.Response != nil {
 		return e.Response, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: response.Label}
 	}
 	return nil, &NotLoadedError{edge: "response"}
@@ -102,7 +118,7 @@ func (*Bookmark) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case bookmark.FieldID:
+		case bookmark.FieldID, bookmark.FieldTenantID:
 			values[i] = new(pulid.ID)
 		case bookmark.FieldCreatedAt, bookmark.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -147,6 +163,12 @@ func (b *Bookmark) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				b.UpdatedAt = value.Time
 			}
+		case bookmark.FieldTenantID:
+			if value, ok := values[i].(*pulid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
+			} else if value != nil {
+				b.TenantID = *value
+			}
 		case bookmark.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field message_bookmarks", values[i])
@@ -186,6 +208,11 @@ func (b *Bookmark) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (b *Bookmark) Value(name string) (ent.Value, error) {
 	return b.selectValues.Get(name)
+}
+
+// QueryTenant queries the "tenant" edge of the Bookmark entity.
+func (b *Bookmark) QueryTenant() *TenantQuery {
+	return NewBookmarkClient(b.config).QueryTenant(b)
 }
 
 // QueryUser queries the "user" edge of the Bookmark entity.
@@ -236,6 +263,9 @@ func (b *Bookmark) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(b.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("tenant_id=")
+	builder.WriteString(fmt.Sprintf("%v", b.TenantID))
 	builder.WriteByte(')')
 	return builder.String()
 }

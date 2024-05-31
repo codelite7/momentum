@@ -14,6 +14,7 @@ func (Bookmark) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		BaseMixin{},
 		pulid.MixinWithPrefix("bm"),
+		TenantMixin{},
 	}
 }
 

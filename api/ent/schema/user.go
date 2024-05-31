@@ -16,6 +16,7 @@ func (User) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		BaseMixin{},
 		pulid.MixinWithPrefix("us"),
+		TenantMixin{},
 	}
 }
 

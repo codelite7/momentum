@@ -14,6 +14,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -53,6 +54,12 @@ func (bc *BookmarkCreate) SetNillableUpdatedAt(t *time.Time) *BookmarkCreate {
 	return bc
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (bc *BookmarkCreate) SetTenantID(pu pulid.ID) *BookmarkCreate {
+	bc.mutation.SetTenantID(pu)
+	return bc
+}
+
 // SetID sets the "id" field.
 func (bc *BookmarkCreate) SetID(pu pulid.ID) *BookmarkCreate {
 	bc.mutation.SetID(pu)
@@ -65,6 +72,11 @@ func (bc *BookmarkCreate) SetNillableID(pu *pulid.ID) *BookmarkCreate {
 		bc.SetID(*pu)
 	}
 	return bc
+}
+
+// SetTenant sets the "tenant" edge to the Tenant entity.
+func (bc *BookmarkCreate) SetTenant(t *Tenant) *BookmarkCreate {
+	return bc.SetTenantID(t.ID)
 }
 
 // SetUserID sets the "user" edge to the User entity by ID.
@@ -192,6 +204,12 @@ func (bc *BookmarkCreate) check() error {
 	if _, ok := bc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Bookmark.updated_at"`)}
 	}
+	if _, ok := bc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Bookmark.tenant_id"`)}
+	}
+	if _, ok := bc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant", err: errors.New(`ent: missing required edge "Bookmark.tenant"`)}
+	}
 	if _, ok := bc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Bookmark.user"`)}
 	}
@@ -237,6 +255,23 @@ func (bc *BookmarkCreate) createSpec() (*Bookmark, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.UpdatedAt(); ok {
 		_spec.SetField(bookmark.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if nodes := bc.mutation.TenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   bookmark.TenantTable,
+			Columns: []string{bookmark.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.TenantID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := bc.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

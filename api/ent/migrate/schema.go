@@ -28,6 +28,7 @@ var (
 		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "tenant_id", Type: field.TypeString},
 		{Name: "message_bookmarks", Type: field.TypeString, Nullable: true},
 		{Name: "response_bookmarks", Type: field.TypeString, Nullable: true},
 		{Name: "thread_bookmarks", Type: field.TypeString, Nullable: true},
@@ -40,26 +41,32 @@ var (
 		PrimaryKey: []*schema.Column{BookmarksColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "bookmarks_messages_bookmarks",
+				Symbol:     "bookmarks_tenants_tenant",
 				Columns:    []*schema.Column{BookmarksColumns[3]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "bookmarks_messages_bookmarks",
+				Columns:    []*schema.Column{BookmarksColumns[4]},
 				RefColumns: []*schema.Column{MessagesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "bookmarks_responses_bookmarks",
-				Columns:    []*schema.Column{BookmarksColumns[4]},
+				Columns:    []*schema.Column{BookmarksColumns[5]},
 				RefColumns: []*schema.Column{ResponsesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "bookmarks_threads_bookmarks",
-				Columns:    []*schema.Column{BookmarksColumns[5]},
+				Columns:    []*schema.Column{BookmarksColumns[6]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "bookmarks_users_bookmarks",
-				Columns:    []*schema.Column{BookmarksColumns[6]},
+				Columns:    []*schema.Column{BookmarksColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -71,6 +78,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "content", Type: field.TypeString},
+		{Name: "tenant_id", Type: field.TypeString},
 		{Name: "thread_messages", Type: field.TypeString},
 		{Name: "user_messages", Type: field.TypeString},
 	}
@@ -81,14 +89,20 @@ var (
 		PrimaryKey: []*schema.Column{MessagesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "messages_threads_messages",
+				Symbol:     "messages_tenants_tenant",
 				Columns:    []*schema.Column{MessagesColumns[4]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "messages_threads_messages",
+				Columns:    []*schema.Column{MessagesColumns[5]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "messages_users_messages",
-				Columns:    []*schema.Column{MessagesColumns[5]},
+				Columns:    []*schema.Column{MessagesColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -102,6 +116,7 @@ var (
 		{Name: "content", Type: field.TypeString, Nullable: true},
 		{Name: "agent_responses", Type: field.TypeString},
 		{Name: "message_response", Type: field.TypeString, Unique: true},
+		{Name: "tenant_id", Type: field.TypeString},
 	}
 	// ResponsesTable holds the schema information for the "responses" table.
 	ResponsesTable = &schema.Table{
@@ -121,7 +136,25 @@ var (
 				RefColumns: []*schema.Column{MessagesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
+			{
+				Symbol:     "responses_tenants_tenant",
+				Columns:    []*schema.Column{ResponsesColumns[6]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
 		},
+	}
+	// TenantsColumns holds the columns for the "tenants" table.
+	TenantsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TenantsTable holds the schema information for the "tenants" table.
+	TenantsTable = &schema.Table{
+		Name:       "tenants",
+		Columns:    TenantsColumns,
+		PrimaryKey: []*schema.Column{TenantsColumns[0]},
 	}
 	// ThreadsColumns holds the columns for the "threads" table.
 	ThreadsColumns = []*schema.Column{
@@ -129,6 +162,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
+		{Name: "tenant_id", Type: field.TypeString},
 		{Name: "thread_children", Type: field.TypeString, Nullable: true},
 		{Name: "user_threads", Type: field.TypeString},
 	}
@@ -139,14 +173,20 @@ var (
 		PrimaryKey: []*schema.Column{ThreadsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "threads_threads_children",
+				Symbol:     "threads_tenants_tenant",
 				Columns:    []*schema.Column{ThreadsColumns[4]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "threads_threads_children",
+				Columns:    []*schema.Column{ThreadsColumns[5]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "threads_users_threads",
-				Columns:    []*schema.Column{ThreadsColumns[5]},
+				Columns:    []*schema.Column{ThreadsColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -158,12 +198,21 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "email", Type: field.TypeString, Unique: true},
+		{Name: "tenant_id", Type: field.TypeString},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "users_tenants_tenant",
+				Columns:    []*schema.Column{UsersColumns[4]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// WorkosEventCursorsColumns holds the columns for the "workos_event_cursors" table.
 	WorkosEventCursorsColumns = []*schema.Column{
@@ -182,6 +231,7 @@ var (
 		BookmarksTable,
 		MessagesTable,
 		ResponsesTable,
+		TenantsTable,
 		ThreadsTable,
 		UsersTable,
 		WorkosEventCursorsTable,
@@ -189,14 +239,19 @@ var (
 )
 
 func init() {
-	BookmarksTable.ForeignKeys[0].RefTable = MessagesTable
-	BookmarksTable.ForeignKeys[1].RefTable = ResponsesTable
-	BookmarksTable.ForeignKeys[2].RefTable = ThreadsTable
-	BookmarksTable.ForeignKeys[3].RefTable = UsersTable
-	MessagesTable.ForeignKeys[0].RefTable = ThreadsTable
-	MessagesTable.ForeignKeys[1].RefTable = UsersTable
+	BookmarksTable.ForeignKeys[0].RefTable = TenantsTable
+	BookmarksTable.ForeignKeys[1].RefTable = MessagesTable
+	BookmarksTable.ForeignKeys[2].RefTable = ResponsesTable
+	BookmarksTable.ForeignKeys[3].RefTable = ThreadsTable
+	BookmarksTable.ForeignKeys[4].RefTable = UsersTable
+	MessagesTable.ForeignKeys[0].RefTable = TenantsTable
+	MessagesTable.ForeignKeys[1].RefTable = ThreadsTable
+	MessagesTable.ForeignKeys[2].RefTable = UsersTable
 	ResponsesTable.ForeignKeys[0].RefTable = AgentsTable
 	ResponsesTable.ForeignKeys[1].RefTable = MessagesTable
-	ThreadsTable.ForeignKeys[0].RefTable = ThreadsTable
-	ThreadsTable.ForeignKeys[1].RefTable = UsersTable
+	ResponsesTable.ForeignKeys[2].RefTable = TenantsTable
+	ThreadsTable.ForeignKeys[0].RefTable = TenantsTable
+	ThreadsTable.ForeignKeys[1].RefTable = ThreadsTable
+	ThreadsTable.ForeignKeys[2].RefTable = UsersTable
+	UsersTable.ForeignKeys[0].RefTable = TenantsTable
 }

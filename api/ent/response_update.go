@@ -170,6 +170,9 @@ func (ru *ResponseUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (ru *ResponseUpdate) check() error {
+	if _, ok := ru.mutation.TenantID(); ru.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Response.tenant"`)
+	}
 	if _, ok := ru.mutation.SentByID(); ru.mutation.SentByCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Response.sent_by"`)
 	}
@@ -474,6 +477,9 @@ func (ruo *ResponseUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (ruo *ResponseUpdateOne) check() error {
+	if _, ok := ruo.mutation.TenantID(); ruo.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Response.tenant"`)
+	}
 	if _, ok := ruo.mutation.SentByID(); ruo.mutation.SentByCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Response.sent_by"`)
 	}
