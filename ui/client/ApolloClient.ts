@@ -1,9 +1,11 @@
-import { HttpLink } from "@apollo/client";
+import { DocumentNode, HttpLink } from "@apollo/client";
 import {
   registerApolloClient,
   ApolloClient,
   InMemoryCache,
 } from "@apollo/experimental-nextjs-app-support";
+import { cookies } from "next/headers";
+import { unsealData } from "iron-session";
 
 export const { getClient, query, PreloadQuery } = registerApolloClient(() => {
   return new ApolloClient({
@@ -18,3 +20,24 @@ export const { getClient, query, PreloadQuery } = registerApolloClient(() => {
     }),
   });
 });
+
+export async function makeRequest(query: DocumentNode, variables?: any) {
+  const cookie = await getSessionFromCookie();
+  const context = {
+    headers: {
+      authorization: `Bearer ${cookie.accessToken}`,
+    },
+  };
+
+  return await getClient().query({ context, query, variables });
+}
+
+async function getSessionFromCookie() {
+  const cookie = cookies().get("wos-session");
+
+  if (cookie) {
+    return unsealData(cookie.value, {
+      password: process.env["WORKOS_COOKIE_PASSWORD"]!,
+    });
+  }
+}
