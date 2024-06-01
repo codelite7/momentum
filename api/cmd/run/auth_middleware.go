@@ -9,6 +9,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/workos/workos-go/v4/pkg/usermanagement"
 	"github.com/ztrue/tracerr"
+	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"time"
@@ -35,7 +36,13 @@ func authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return unauthenticated(c)
 		}
-		c.Set("token", token)
+		workosUserId := token.Subject()
+		if workosUserId == "" {
+			err := tracerr.New("authenticated token subject is empty, it should contain the workos user id")
+			common.Logger.Error("error adding user id to context", zap.Error(err))
+			return err
+		}
+		common.AddUserIdToContext(c, token.Subject())
 		return next(c)
 	}
 }

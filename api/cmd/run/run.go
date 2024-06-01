@@ -17,9 +17,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/urfave/cli/v2"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"github.com/workos/workos-go/v4/pkg/events"
 	"github.com/workos/workos-go/v4/pkg/organizations"
 	"github.com/workos/workos-go/v4/pkg/usermanagement"
+	"github.com/ztrue/tracerr"
+	"go.uber.org/zap"
 	"strings"
 	"time"
 )
@@ -118,6 +121,14 @@ func createSchema(client *ent.Client) error {
 func initGraphqlServer(client *ent.Client) *handler.Server {
 	srv := handler.NewDefaultServer(resolvers.NewSchema(client))
 	srv.Use(entgql.Transactioner{TxOpener: client})
+	srv.SetRecoverFunc(func(ctx context.Context, err interface{}) (userMessage error) {
+		if asErr, ok := err.(error); ok {
+			common.Logger.Error("recovered from panic", zap.Error(tracerr.Wrap(asErr)))
+		} else {
+			common.Logger.Error("recovered from panic", zap.Any("error", err))
+		}
+		return gqlerror.Errorf("Internal server error!")
+	})
 
 	return srv
 }
