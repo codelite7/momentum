@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { Button, Card, CardBody, CardFooter, Tooltip } from "@nextui-org/react";
 
-import ThreadButtons from "./ThreadButtons";
-
 import useAccountSettingsModalStore from "@/stores/account-settings-modal-store";
 import useSearchModalStore from "@/stores/search-modal-store";
 
@@ -131,7 +129,7 @@ export default function LeftSidebar() {
                 </Button>
               </div>
               {/* thread buttons */}
-              <ThreadButtons />
+              {/*<ThreadButtons />*/}
             </>
           )}
         </CardBody>

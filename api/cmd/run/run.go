@@ -257,11 +257,11 @@ var flags = []cli.Flag{
 		Destination: &config.WorkosPollInterval,
 	},
 	&cli.BoolFlag{
-		Name:        "validate-jwt",
-		Aliases:     []string{"vj"},
-		Value:       true,
-		Usage:       "When true, jwt tokens are validated against the workos JWKS",
-		EnvVars:     []string{"VALIDATE_JWT"},
-		Destination: &config.ValidateJwt,
+		Name:        "disable-jwt-validation",
+		Aliases:     []string{"djv"},
+		Value:       false,
+		Usage:       "When true, jwt tokens are not validated against the workos JWKS",
+		EnvVars:     []string{"DISABLE_JWT_VALIDATION"},
+		Destination: &config.DisableJwtValidation,
 	},
 }

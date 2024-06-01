@@ -8,8 +8,8 @@ import homeUserQueryNode, {
 import { SerializablePreloadedQuery } from "@/relay/loadSerializableQuery";
 
 const HomeUserQuery = graphql`
-  query homeUserQuery($email: String!) {
-    user(email: $email) {
+  query homeUserQuery {
+    user {
       id
       email
       threads(first: 1, orderBy: { field: LAST_VIEWED_AT, direction: DESC }) {

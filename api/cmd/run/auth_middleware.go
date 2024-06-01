@@ -28,21 +28,24 @@ func AuthMiddleware() echo.MiddlewareFunc {
 
 func authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		tokenString, err := getTokenFromHeader(c)
-		if err != nil {
-			return unauthenticated(c)
+		if !config.DisableJwtValidation {
+			tokenString, err := getTokenFromHeader(c)
+			if err != nil {
+				return unauthenticated(c)
+			}
+			token, err := jwt.ParseString(tokenString, jwt.WithKeySet(keyset))
+			if err != nil {
+				return unauthenticated(c)
+			}
+			workosUserId := token.Subject()
+			if workosUserId == "" {
+				err := tracerr.New("authenticated token subject is empty, it should contain the workos user id")
+				common.Logger.Error("error adding user id to context", zap.Error(err))
+				return err
+			}
+			common.AddUserIdToContext(c, token.Subject())
 		}
-		token, err := jwt.ParseString(tokenString, jwt.WithKeySet(keyset))
-		if err != nil {
-			return unauthenticated(c)
-		}
-		workosUserId := token.Subject()
-		if workosUserId == "" {
-			err := tracerr.New("authenticated token subject is empty, it should contain the workos user id")
-			common.Logger.Error("error adding user id to context", zap.Error(err))
-			return err
-		}
-		common.AddUserIdToContext(c, token.Subject())
+
 		return next(c)
 	}
 }

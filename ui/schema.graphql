@@ -667,7 +667,7 @@ type Query {
     where: UserWhereInput
   ): UserConnection!
   thread(id: ID!): Thread!
-  user(email: String!): User!
+  user: User!
 }
 
 type Response implements Node {
