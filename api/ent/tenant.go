@@ -21,8 +21,33 @@ type Tenant struct {
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
-	UpdatedAt    time.Time `json:"updated_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// WorkosOrgID holds the value of the "workos_org_id" field.
+	WorkosOrgID string `json:"workos_org_id,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the TenantQuery when eager-loading is set.
+	Edges        TenantEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// TenantEdges holds the relations/edges for other nodes in the graph.
+type TenantEdges struct {
+	// Users holds the value of the users edge.
+	Users []*User `json:"users,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+
+	namedUsers map[string][]*User
+}
+
+// UsersOrErr returns the Users value or an error if the edge
+// was not loaded in eager-loading.
+func (e TenantEdges) UsersOrErr() ([]*User, error) {
+	if e.loadedTypes[0] {
+		return e.Users, nil
+	}
+	return nil, &NotLoadedError{edge: "users"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -32,6 +57,8 @@ func (*Tenant) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tenant.FieldID:
 			values[i] = new(pulid.ID)
+		case tenant.FieldWorkosOrgID:
+			values[i] = new(sql.NullString)
 		case tenant.FieldCreatedAt, tenant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
@@ -67,6 +94,12 @@ func (t *Tenant) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.UpdatedAt = value.Time
 			}
+		case tenant.FieldWorkosOrgID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field workos_org_id", values[i])
+			} else if value.Valid {
+				t.WorkosOrgID = value.String
+			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
 		}
@@ -78,6 +111,11 @@ func (t *Tenant) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (t *Tenant) Value(name string) (ent.Value, error) {
 	return t.selectValues.Get(name)
+}
+
+// QueryUsers queries the "users" edge of the Tenant entity.
+func (t *Tenant) QueryUsers() *UserQuery {
+	return NewTenantClient(t.config).QueryUsers(t)
 }
 
 // Update returns a builder for updating this Tenant.
@@ -108,8 +146,35 @@ func (t *Tenant) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(t.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("workos_org_id=")
+	builder.WriteString(t.WorkosOrgID)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedUsers returns the Users named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Tenant) NamedUsers(name string) ([]*User, error) {
+	if t.Edges.namedUsers == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedUsers[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Tenant) appendNamedUsers(name string, edges ...*User) {
+	if t.Edges.namedUsers == nil {
+		t.Edges.namedUsers = make(map[string][]*User)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedUsers[name] = []*User{}
+	} else {
+		t.Edges.namedUsers[name] = append(t.Edges.namedUsers[name], edges...)
+	}
 }
 
 // Tenants is a parsable slice of Tenant.

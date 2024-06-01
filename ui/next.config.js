@@ -1,15 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    reactStrictMode: false,
-    swcMinify: true,
-    compiler: {
-        relay: {
-            src: "./",
-            language: "typescript",
-            artifactDirectory: "__generated__",
-            eagerEsModules: false
-        },
+  experimental: {
+    instrumentationHook: true,
+  },
+  reactStrictMode: false,
+  swcMinify: true,
+  compiler: {
+    relay: {
+      src: "./",
+      language: "typescript",
+      artifactDirectory: "__generated__",
+      eagerEsModules: false,
     },
+  },
 };
 
-module.exports = nextConfig
+module.exports = nextConfig;

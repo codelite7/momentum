@@ -11,7 +11,6 @@ import { siteConfig } from "@/config/site";
 import LeftSidebar from "@/components/left-sidebar/left-sidebar";
 import AccountSettingsModal from "@/components/account/settings-modal/account-settings-modal";
 import SearchModal from "@/components/search/search-modal";
-
 export const metadata: Metadata = {
   title: {
     default: siteConfig.name,
@@ -36,7 +35,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await getUser({ ensureSignedIn: true });
+  await getUser({ ensureSignedIn: true });
 
   return (
     <html suppressHydrationWarning lang="en">
@@ -69,7 +68,3 @@ export default async function RootLayout({
     </html>
   );
 }
-
-function ensureUser() {}
-
-function bootstrapUser() {}

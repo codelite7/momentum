@@ -76,6 +76,11 @@ func Name(v string) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldName, v))
 }
 
+// LastViewedAt applies equality check predicate on the "last_viewed_at" field. It's identical to LastViewedAtEQ.
+func LastViewedAt(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldLastViewedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldCreatedAt, v))
@@ -289,6 +294,46 @@ func NameEqualFold(v string) predicate.Thread {
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Thread {
 	return predicate.Thread(sql.FieldContainsFold(FieldName, v))
+}
+
+// LastViewedAtEQ applies the EQ predicate on the "last_viewed_at" field.
+func LastViewedAtEQ(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldLastViewedAt, v))
+}
+
+// LastViewedAtNEQ applies the NEQ predicate on the "last_viewed_at" field.
+func LastViewedAtNEQ(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldNEQ(FieldLastViewedAt, v))
+}
+
+// LastViewedAtIn applies the In predicate on the "last_viewed_at" field.
+func LastViewedAtIn(vs ...time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldIn(FieldLastViewedAt, vs...))
+}
+
+// LastViewedAtNotIn applies the NotIn predicate on the "last_viewed_at" field.
+func LastViewedAtNotIn(vs ...time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldNotIn(FieldLastViewedAt, vs...))
+}
+
+// LastViewedAtGT applies the GT predicate on the "last_viewed_at" field.
+func LastViewedAtGT(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldGT(FieldLastViewedAt, v))
+}
+
+// LastViewedAtGTE applies the GTE predicate on the "last_viewed_at" field.
+func LastViewedAtGTE(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldGTE(FieldLastViewedAt, v))
+}
+
+// LastViewedAtLT applies the LT predicate on the "last_viewed_at" field.
+func LastViewedAtLT(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldLT(FieldLastViewedAt, v))
+}
+
+// LastViewedAtLTE applies the LTE predicate on the "last_viewed_at" field.
+func LastViewedAtLTE(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldLTE(FieldLastViewedAt, v))
 }
 
 // HasTenant applies the HasEdge predicate on the "tenant" edge.

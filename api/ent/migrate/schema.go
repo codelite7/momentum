@@ -149,6 +149,7 @@ var (
 		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "workos_org_id", Type: field.TypeString, Unique: true},
 	}
 	// TenantsTable holds the schema information for the "tenants" table.
 	TenantsTable = &schema.Table{
@@ -162,6 +163,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
+		{Name: "last_viewed_at", Type: field.TypeTime},
 		{Name: "tenant_id", Type: field.TypeString},
 		{Name: "thread_children", Type: field.TypeString, Nullable: true},
 		{Name: "user_threads", Type: field.TypeString},
@@ -174,19 +176,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "threads_tenants_tenant",
-				Columns:    []*schema.Column{ThreadsColumns[4]},
+				Columns:    []*schema.Column{ThreadsColumns[5]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "threads_threads_children",
-				Columns:    []*schema.Column{ThreadsColumns[5]},
+				Columns:    []*schema.Column{ThreadsColumns[6]},
 				RefColumns: []*schema.Column{ThreadsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "threads_users_threads",
-				Columns:    []*schema.Column{ThreadsColumns[6]},
+				Columns:    []*schema.Column{ThreadsColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -198,7 +200,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "email", Type: field.TypeString, Unique: true},
-		{Name: "tenant_id", Type: field.TypeString},
+		{Name: "workos_user_id", Type: field.TypeString, Unique: true},
+		{Name: "user_active_tenant", Type: field.TypeString},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -207,8 +210,8 @@ var (
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "users_tenants_tenant",
-				Columns:    []*schema.Column{UsersColumns[4]},
+				Symbol:     "users_tenants_active_tenant",
+				Columns:    []*schema.Column{UsersColumns[5]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -225,6 +228,31 @@ var (
 		Columns:    WorkosEventCursorsColumns,
 		PrimaryKey: []*schema.Column{WorkosEventCursorsColumns[0]},
 	}
+	// UserTenantsColumns holds the columns for the "user_tenants" table.
+	UserTenantsColumns = []*schema.Column{
+		{Name: "user_id", Type: field.TypeString},
+		{Name: "tenant_id", Type: field.TypeString},
+	}
+	// UserTenantsTable holds the schema information for the "user_tenants" table.
+	UserTenantsTable = &schema.Table{
+		Name:       "user_tenants",
+		Columns:    UserTenantsColumns,
+		PrimaryKey: []*schema.Column{UserTenantsColumns[0], UserTenantsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_tenants_user_id",
+				Columns:    []*schema.Column{UserTenantsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_tenants_tenant_id",
+				Columns:    []*schema.Column{UserTenantsColumns[1]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AgentsTable,
@@ -235,6 +263,7 @@ var (
 		ThreadsTable,
 		UsersTable,
 		WorkosEventCursorsTable,
+		UserTenantsTable,
 	}
 )
 
@@ -254,4 +283,6 @@ func init() {
 	ThreadsTable.ForeignKeys[1].RefTable = ThreadsTable
 	ThreadsTable.ForeignKeys[2].RefTable = UsersTable
 	UsersTable.ForeignKeys[0].RefTable = TenantsTable
+	UserTenantsTable.ForeignKeys[0].RefTable = UsersTable
+	UserTenantsTable.ForeignKeys[1].RefTable = TenantsTable
 }

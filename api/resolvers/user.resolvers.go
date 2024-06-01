@@ -8,9 +8,15 @@ import (
 	"context"
 
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/codelite7/momentum/api/ent/user"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error) {
 	return ent.FromContext(ctx).User.Create().SetInput(input).Save(ctx)
+}
+
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context) (*ent.User, error) {
+	return r.client.User.Query().Where(user.Email("zack.st7@gmail.com")).First(ctx)
 }

@@ -1,5 +1,15 @@
-import { handleAuth } from "@workos-inc/authkit-nextjs";
+import { getUser, handleAuth } from "@workos-inc/authkit-nextjs";
+import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 
-// Redirect the user to `/` after successful sign in
-// The redirect can be customized: `handleAuth({ returnPathname: '/foo' })`
-export const GET = handleAuth();
+export const GET = async (request: NextRequest) => {
+  const webosHandler = handleAuth();
+
+  const next = webosHandler(request);
+
+  const { user } = await getUser();
+
+  cookies().set("user", JSON.stringify(user));
+
+  return next;
+};

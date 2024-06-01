@@ -53,15 +53,15 @@ func (uc *UserCreate) SetNillableUpdatedAt(t *time.Time) *UserCreate {
 	return uc
 }
 
-// SetTenantID sets the "tenant_id" field.
-func (uc *UserCreate) SetTenantID(pu pulid.ID) *UserCreate {
-	uc.mutation.SetTenantID(pu)
-	return uc
-}
-
 // SetEmail sets the "email" field.
 func (uc *UserCreate) SetEmail(s string) *UserCreate {
 	uc.mutation.SetEmail(s)
+	return uc
+}
+
+// SetWorkosUserID sets the "workos_user_id" field.
+func (uc *UserCreate) SetWorkosUserID(s string) *UserCreate {
+	uc.mutation.SetWorkosUserID(s)
 	return uc
 }
 
@@ -77,11 +77,6 @@ func (uc *UserCreate) SetNillableID(pu *pulid.ID) *UserCreate {
 		uc.SetID(*pu)
 	}
 	return uc
-}
-
-// SetTenant sets the "tenant" edge to the Tenant entity.
-func (uc *UserCreate) SetTenant(t *Tenant) *UserCreate {
-	return uc.SetTenantID(t.ID)
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
@@ -127,6 +122,32 @@ func (uc *UserCreate) AddMessages(m ...*Message) *UserCreate {
 		ids[i] = m[i].ID
 	}
 	return uc.AddMessageIDs(ids...)
+}
+
+// AddTenantIDs adds the "tenants" edge to the Tenant entity by IDs.
+func (uc *UserCreate) AddTenantIDs(ids ...pulid.ID) *UserCreate {
+	uc.mutation.AddTenantIDs(ids...)
+	return uc
+}
+
+// AddTenants adds the "tenants" edges to the Tenant entity.
+func (uc *UserCreate) AddTenants(t ...*Tenant) *UserCreate {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uc.AddTenantIDs(ids...)
+}
+
+// SetActiveTenantID sets the "active_tenant" edge to the Tenant entity by ID.
+func (uc *UserCreate) SetActiveTenantID(id pulid.ID) *UserCreate {
+	uc.mutation.SetActiveTenantID(id)
+	return uc
+}
+
+// SetActiveTenant sets the "active_tenant" edge to the Tenant entity.
+func (uc *UserCreate) SetActiveTenant(t *Tenant) *UserCreate {
+	return uc.SetActiveTenantID(t.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -186,14 +207,22 @@ func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "User.updated_at"`)}
 	}
-	if _, ok := uc.mutation.TenantID(); !ok {
-		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "User.tenant_id"`)}
-	}
 	if _, ok := uc.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "User.email"`)}
 	}
-	if _, ok := uc.mutation.TenantID(); !ok {
-		return &ValidationError{Name: "tenant", err: errors.New(`ent: missing required edge "User.tenant"`)}
+	if _, ok := uc.mutation.WorkosUserID(); !ok {
+		return &ValidationError{Name: "workos_user_id", err: errors.New(`ent: missing required field "User.workos_user_id"`)}
+	}
+	if v, ok := uc.mutation.WorkosUserID(); ok {
+		if err := user.WorkosUserIDValidator(v); err != nil {
+			return &ValidationError{Name: "workos_user_id", err: fmt.Errorf(`ent: validator failed for field "User.workos_user_id": %w`, err)}
+		}
+	}
+	if len(uc.mutation.TenantsIDs()) == 0 {
+		return &ValidationError{Name: "tenants", err: errors.New(`ent: missing required edge "User.tenants"`)}
+	}
+	if _, ok := uc.mutation.ActiveTenantID(); !ok {
+		return &ValidationError{Name: "active_tenant", err: errors.New(`ent: missing required edge "User.active_tenant"`)}
 	}
 	return nil
 }
@@ -242,22 +271,9 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 		_node.Email = value
 	}
-	if nodes := uc.mutation.TenantIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   user.TenantTable,
-			Columns: []string{user.TenantColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.TenantID = nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
+	if value, ok := uc.mutation.WorkosUserID(); ok {
+		_spec.SetField(user.FieldWorkosUserID, field.TypeString, value)
+		_node.WorkosUserID = value
 	}
 	if nodes := uc.mutation.BookmarksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -305,6 +321,39 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.TenantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ActiveTenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_active_tenant = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

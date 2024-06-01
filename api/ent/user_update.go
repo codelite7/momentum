@@ -15,6 +15,7 @@ import (
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
 )
@@ -105,6 +106,32 @@ func (uu *UserUpdate) AddMessages(m ...*Message) *UserUpdate {
 	return uu.AddMessageIDs(ids...)
 }
 
+// AddTenantIDs adds the "tenants" edge to the Tenant entity by IDs.
+func (uu *UserUpdate) AddTenantIDs(ids ...pulid.ID) *UserUpdate {
+	uu.mutation.AddTenantIDs(ids...)
+	return uu
+}
+
+// AddTenants adds the "tenants" edges to the Tenant entity.
+func (uu *UserUpdate) AddTenants(t ...*Tenant) *UserUpdate {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uu.AddTenantIDs(ids...)
+}
+
+// SetActiveTenantID sets the "active_tenant" edge to the Tenant entity by ID.
+func (uu *UserUpdate) SetActiveTenantID(id pulid.ID) *UserUpdate {
+	uu.mutation.SetActiveTenantID(id)
+	return uu
+}
+
+// SetActiveTenant sets the "active_tenant" edge to the Tenant entity.
+func (uu *UserUpdate) SetActiveTenant(t *Tenant) *UserUpdate {
+	return uu.SetActiveTenantID(t.ID)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -173,6 +200,33 @@ func (uu *UserUpdate) RemoveMessages(m ...*Message) *UserUpdate {
 	return uu.RemoveMessageIDs(ids...)
 }
 
+// ClearTenants clears all "tenants" edges to the Tenant entity.
+func (uu *UserUpdate) ClearTenants() *UserUpdate {
+	uu.mutation.ClearTenants()
+	return uu
+}
+
+// RemoveTenantIDs removes the "tenants" edge to Tenant entities by IDs.
+func (uu *UserUpdate) RemoveTenantIDs(ids ...pulid.ID) *UserUpdate {
+	uu.mutation.RemoveTenantIDs(ids...)
+	return uu
+}
+
+// RemoveTenants removes "tenants" edges to Tenant entities.
+func (uu *UserUpdate) RemoveTenants(t ...*Tenant) *UserUpdate {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uu.RemoveTenantIDs(ids...)
+}
+
+// ClearActiveTenant clears the "active_tenant" edge to the Tenant entity.
+func (uu *UserUpdate) ClearActiveTenant() *UserUpdate {
+	uu.mutation.ClearActiveTenant()
+	return uu
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
 	return withHooks(ctx, uu.sqlSave, uu.mutation, uu.hooks)
@@ -202,8 +256,8 @@ func (uu *UserUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (uu *UserUpdate) check() error {
-	if _, ok := uu.mutation.TenantID(); uu.mutation.TenantCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "User.tenant"`)
+	if _, ok := uu.mutation.ActiveTenantID(); uu.mutation.ActiveTenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "User.active_tenant"`)
 	}
 	return nil
 }
@@ -361,6 +415,80 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.TenantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedTenantsIDs(); len(nodes) > 0 && !uu.mutation.TenantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.TenantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.ActiveTenantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ActiveTenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -454,6 +582,32 @@ func (uuo *UserUpdateOne) AddMessages(m ...*Message) *UserUpdateOne {
 	return uuo.AddMessageIDs(ids...)
 }
 
+// AddTenantIDs adds the "tenants" edge to the Tenant entity by IDs.
+func (uuo *UserUpdateOne) AddTenantIDs(ids ...pulid.ID) *UserUpdateOne {
+	uuo.mutation.AddTenantIDs(ids...)
+	return uuo
+}
+
+// AddTenants adds the "tenants" edges to the Tenant entity.
+func (uuo *UserUpdateOne) AddTenants(t ...*Tenant) *UserUpdateOne {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uuo.AddTenantIDs(ids...)
+}
+
+// SetActiveTenantID sets the "active_tenant" edge to the Tenant entity by ID.
+func (uuo *UserUpdateOne) SetActiveTenantID(id pulid.ID) *UserUpdateOne {
+	uuo.mutation.SetActiveTenantID(id)
+	return uuo
+}
+
+// SetActiveTenant sets the "active_tenant" edge to the Tenant entity.
+func (uuo *UserUpdateOne) SetActiveTenant(t *Tenant) *UserUpdateOne {
+	return uuo.SetActiveTenantID(t.ID)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -522,6 +676,33 @@ func (uuo *UserUpdateOne) RemoveMessages(m ...*Message) *UserUpdateOne {
 	return uuo.RemoveMessageIDs(ids...)
 }
 
+// ClearTenants clears all "tenants" edges to the Tenant entity.
+func (uuo *UserUpdateOne) ClearTenants() *UserUpdateOne {
+	uuo.mutation.ClearTenants()
+	return uuo
+}
+
+// RemoveTenantIDs removes the "tenants" edge to Tenant entities by IDs.
+func (uuo *UserUpdateOne) RemoveTenantIDs(ids ...pulid.ID) *UserUpdateOne {
+	uuo.mutation.RemoveTenantIDs(ids...)
+	return uuo
+}
+
+// RemoveTenants removes "tenants" edges to Tenant entities.
+func (uuo *UserUpdateOne) RemoveTenants(t ...*Tenant) *UserUpdateOne {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uuo.RemoveTenantIDs(ids...)
+}
+
+// ClearActiveTenant clears the "active_tenant" edge to the Tenant entity.
+func (uuo *UserUpdateOne) ClearActiveTenant() *UserUpdateOne {
+	uuo.mutation.ClearActiveTenant()
+	return uuo
+}
+
 // Where appends a list predicates to the UserUpdate builder.
 func (uuo *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
 	uuo.mutation.Where(ps...)
@@ -564,8 +745,8 @@ func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (uuo *UserUpdateOne) check() error {
-	if _, ok := uuo.mutation.TenantID(); uuo.mutation.TenantCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "User.tenant"`)
+	if _, ok := uuo.mutation.ActiveTenantID(); uuo.mutation.ActiveTenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "User.active_tenant"`)
 	}
 	return nil
 }
@@ -733,6 +914,80 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.TenantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedTenantsIDs(); len(nodes) > 0 && !uuo.mutation.TenantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.TenantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ActiveTenantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ActiveTenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

@@ -101,8 +101,9 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "Tenant",
 		Fields: map[string]*sqlgraph.FieldSpec{
-			tenant.FieldCreatedAt: {Type: field.TypeTime, Column: tenant.FieldCreatedAt},
-			tenant.FieldUpdatedAt: {Type: field.TypeTime, Column: tenant.FieldUpdatedAt},
+			tenant.FieldCreatedAt:   {Type: field.TypeTime, Column: tenant.FieldCreatedAt},
+			tenant.FieldUpdatedAt:   {Type: field.TypeTime, Column: tenant.FieldUpdatedAt},
+			tenant.FieldWorkosOrgID: {Type: field.TypeString, Column: tenant.FieldWorkosOrgID},
 		},
 	}
 	graph.Nodes[5] = &sqlgraph.Node{
@@ -116,10 +117,11 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "Thread",
 		Fields: map[string]*sqlgraph.FieldSpec{
-			thread.FieldCreatedAt: {Type: field.TypeTime, Column: thread.FieldCreatedAt},
-			thread.FieldUpdatedAt: {Type: field.TypeTime, Column: thread.FieldUpdatedAt},
-			thread.FieldTenantID:  {Type: field.TypeString, Column: thread.FieldTenantID},
-			thread.FieldName:      {Type: field.TypeString, Column: thread.FieldName},
+			thread.FieldCreatedAt:    {Type: field.TypeTime, Column: thread.FieldCreatedAt},
+			thread.FieldUpdatedAt:    {Type: field.TypeTime, Column: thread.FieldUpdatedAt},
+			thread.FieldTenantID:     {Type: field.TypeString, Column: thread.FieldTenantID},
+			thread.FieldName:         {Type: field.TypeString, Column: thread.FieldName},
+			thread.FieldLastViewedAt: {Type: field.TypeTime, Column: thread.FieldLastViewedAt},
 		},
 	}
 	graph.Nodes[6] = &sqlgraph.Node{
@@ -133,10 +135,10 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "User",
 		Fields: map[string]*sqlgraph.FieldSpec{
-			user.FieldCreatedAt: {Type: field.TypeTime, Column: user.FieldCreatedAt},
-			user.FieldUpdatedAt: {Type: field.TypeTime, Column: user.FieldUpdatedAt},
-			user.FieldTenantID:  {Type: field.TypeString, Column: user.FieldTenantID},
-			user.FieldEmail:     {Type: field.TypeString, Column: user.FieldEmail},
+			user.FieldCreatedAt:    {Type: field.TypeTime, Column: user.FieldCreatedAt},
+			user.FieldUpdatedAt:    {Type: field.TypeTime, Column: user.FieldUpdatedAt},
+			user.FieldEmail:        {Type: field.TypeString, Column: user.FieldEmail},
+			user.FieldWorkosUserID: {Type: field.TypeString, Column: user.FieldWorkosUserID},
 		},
 	}
 	graph.Nodes[7] = &sqlgraph.Node{
@@ -334,6 +336,18 @@ var schemaGraph = func() *sqlgraph.Schema {
 		"Bookmark",
 	)
 	graph.MustAddE(
+		"users",
+		&sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   tenant.UsersTable,
+			Columns: tenant.UsersPrimaryKey,
+			Bidi:    false,
+		},
+		"Tenant",
+		"User",
+	)
+	graph.MustAddE(
 		"tenant",
 		&sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -406,18 +420,6 @@ var schemaGraph = func() *sqlgraph.Schema {
 		"Thread",
 	)
 	graph.MustAddE(
-		"tenant",
-		&sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   user.TenantTable,
-			Columns: []string{user.TenantColumn},
-			Bidi:    false,
-		},
-		"User",
-		"Tenant",
-	)
-	graph.MustAddE(
 		"bookmarks",
 		&sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -452,6 +454,30 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		"User",
 		"Message",
+	)
+	graph.MustAddE(
+		"tenants",
+		&sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+		},
+		"User",
+		"Tenant",
+	)
+	graph.MustAddE(
+		"active_tenant",
+		&sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+		},
+		"User",
+		"Tenant",
 	)
 	return graph
 }()
@@ -962,6 +988,25 @@ func (f *TenantFilter) WhereUpdatedAt(p entql.TimeP) {
 	f.Where(p.Field(tenant.FieldUpdatedAt))
 }
 
+// WhereWorkosOrgID applies the entql string predicate on the workos_org_id field.
+func (f *TenantFilter) WhereWorkosOrgID(p entql.StringP) {
+	f.Where(p.Field(tenant.FieldWorkosOrgID))
+}
+
+// WhereHasUsers applies a predicate to check if query has an edge users.
+func (f *TenantFilter) WhereHasUsers() {
+	f.Where(entql.HasEdge("users"))
+}
+
+// WhereHasUsersWith applies a predicate to check if query has an edge users with a given conditions (other predicates).
+func (f *TenantFilter) WhereHasUsersWith(preds ...predicate.User) {
+	f.Where(entql.HasEdgeWith("users", sqlgraph.WrapFunc(func(s *sql.Selector) {
+		for _, p := range preds {
+			p(s)
+		}
+	})))
+}
+
 // addPredicate implements the predicateAdder interface.
 func (tq *ThreadQuery) addPredicate(pred func(s *sql.Selector)) {
 	tq.predicates = append(tq.predicates, pred)
@@ -1020,6 +1065,11 @@ func (f *ThreadFilter) WhereTenantID(p entql.StringP) {
 // WhereName applies the entql string predicate on the name field.
 func (f *ThreadFilter) WhereName(p entql.StringP) {
 	f.Where(p.Field(thread.FieldName))
+}
+
+// WhereLastViewedAt applies the entql time.Time predicate on the last_viewed_at field.
+func (f *ThreadFilter) WhereLastViewedAt(p entql.TimeP) {
+	f.Where(p.Field(thread.FieldLastViewedAt))
 }
 
 // WhereHasTenant applies a predicate to check if query has an edge tenant.
@@ -1156,28 +1206,14 @@ func (f *UserFilter) WhereUpdatedAt(p entql.TimeP) {
 	f.Where(p.Field(user.FieldUpdatedAt))
 }
 
-// WhereTenantID applies the entql string predicate on the tenant_id field.
-func (f *UserFilter) WhereTenantID(p entql.StringP) {
-	f.Where(p.Field(user.FieldTenantID))
-}
-
 // WhereEmail applies the entql string predicate on the email field.
 func (f *UserFilter) WhereEmail(p entql.StringP) {
 	f.Where(p.Field(user.FieldEmail))
 }
 
-// WhereHasTenant applies a predicate to check if query has an edge tenant.
-func (f *UserFilter) WhereHasTenant() {
-	f.Where(entql.HasEdge("tenant"))
-}
-
-// WhereHasTenantWith applies a predicate to check if query has an edge tenant with a given conditions (other predicates).
-func (f *UserFilter) WhereHasTenantWith(preds ...predicate.Tenant) {
-	f.Where(entql.HasEdgeWith("tenant", sqlgraph.WrapFunc(func(s *sql.Selector) {
-		for _, p := range preds {
-			p(s)
-		}
-	})))
+// WhereWorkosUserID applies the entql string predicate on the workos_user_id field.
+func (f *UserFilter) WhereWorkosUserID(p entql.StringP) {
+	f.Where(p.Field(user.FieldWorkosUserID))
 }
 
 // WhereHasBookmarks applies a predicate to check if query has an edge bookmarks.
@@ -1216,6 +1252,34 @@ func (f *UserFilter) WhereHasMessages() {
 // WhereHasMessagesWith applies a predicate to check if query has an edge messages with a given conditions (other predicates).
 func (f *UserFilter) WhereHasMessagesWith(preds ...predicate.Message) {
 	f.Where(entql.HasEdgeWith("messages", sqlgraph.WrapFunc(func(s *sql.Selector) {
+		for _, p := range preds {
+			p(s)
+		}
+	})))
+}
+
+// WhereHasTenants applies a predicate to check if query has an edge tenants.
+func (f *UserFilter) WhereHasTenants() {
+	f.Where(entql.HasEdge("tenants"))
+}
+
+// WhereHasTenantsWith applies a predicate to check if query has an edge tenants with a given conditions (other predicates).
+func (f *UserFilter) WhereHasTenantsWith(preds ...predicate.Tenant) {
+	f.Where(entql.HasEdgeWith("tenants", sqlgraph.WrapFunc(func(s *sql.Selector) {
+		for _, p := range preds {
+			p(s)
+		}
+	})))
+}
+
+// WhereHasActiveTenant applies a predicate to check if query has an edge active_tenant.
+func (f *UserFilter) WhereHasActiveTenant() {
+	f.Where(entql.HasEdge("active_tenant"))
+}
+
+// WhereHasActiveTenantWith applies a predicate to check if query has an edge active_tenant with a given conditions (other predicates).
+func (f *UserFilter) WhereHasActiveTenantWith(preds ...predicate.Tenant) {
+	f.Where(entql.HasEdgeWith("active_tenant", sqlgraph.WrapFunc(func(s *sql.Selector) {
 		for _, p := range preds {
 			p(s)
 		}

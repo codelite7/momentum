@@ -16,13 +16,13 @@ func (User) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		BaseMixin{},
 		pulid.MixinWithPrefix("us"),
-		TenantMixin{},
 	}
 }
 
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("email").Unique().Annotations(entgql.OrderField("EMAIL")),
+		field.String("workos_user_id").Unique().Immutable().NotEmpty().Annotations(entgql.Skip()),
 	}
 }
 
@@ -34,5 +34,11 @@ func (User) Edges() []ent.Edge {
 		edge.To("threads", Thread.Type).Annotations(entgql.RelayConnection()),
 		// a user can send many messages
 		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection()),
+		// a user can belong to many tenants
+		edge.To("tenants", Tenant.Type).
+			Required().
+			Annotations(entgql.Skip()),
+		// a user can only have one active tenant at a time
+		edge.To("active_tenant", Tenant.Type).Unique().Required().Annotations(entgql.Skip()),
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/codelite7/momentum/api/cmd/run/queue"
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/config"
 	"github.com/codelite7/momentum/api/ent"
@@ -16,6 +17,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/urfave/cli/v2"
+	"github.com/workos/workos-go/v4/pkg/events"
+	"github.com/workos/workos-go/v4/pkg/organizations"
+	"github.com/workos/workos-go/v4/pkg/usermanagement"
 	"strings"
 	"time"
 )
@@ -30,7 +34,12 @@ var RunCommand = &cli.Command{
 }
 
 func run() error {
-	err := common.InitializeEntClient()
+	err := common.InitializeLogging()
+	if err != nil {
+		return err
+	}
+	initializeWorkos()
+	err = common.InitializeEntClient()
 	if err != nil {
 		return err
 	}
@@ -43,6 +52,10 @@ func run() error {
 		return err
 	}
 	graphqlServer := initGraphqlServer(common.EntClient)
+	err = queue.Initialize()
+	if err != nil {
+		return err
+	}
 	go HandleAuthEvents()
 	err = runHttpServer(graphqlServer)
 	if err != nil {
@@ -109,11 +122,51 @@ func initGraphqlServer(client *ent.Client) *handler.Server {
 	return srv
 }
 
+type JwksResponse struct {
+	Keys []Key `json:"keys"`
+}
+type Key struct {
+	Alg     string   `json:"alg"`
+	Kty     string   `json:"kty"`
+	Use     string   `json:"use"`
+	N       string   `json:"n"`
+	E       string   `json:"e"`
+	Kid     string   `json:"kid"`
+	X5C     []string `json:"x5c"`
+	X5TS256 string   `json:"x5t#S256"`
+}
+
 func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
+	//signingKeys, err := getJWKSKeys()
+	//if err != nil {
+	//	return nil, err
+	//}
 	e := echo.New()
 	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
+	e.Use(AuthMiddleware())
+	//e.Use(echojwt.WithConfig(echojwt.Config{
+	//	Skipper: func(c echo.Context) bool {
+	//		if c.Request().Method == echo.OPTIONS {
+	//			return true
+	//		}
+	//		if c.Request().URL.Path == "/health" {
+	//			return true
+	//		}
+	//		return false
+	//	},
+	//	SigningKeys:            signingKeys,
+	//	SigningMethod:          "RS256",
+	//	ContinueOnIgnoredError: !config.ValidateJwt,
+	//	ErrorHandler: func(c echo.Context, err error) error {
+	//		common.Logger.Error("error getting jwt", zap.Error(err))
+	//		return nil
+	//	},
+	//	SuccessHandler: func(c echo.Context) {
+	//
+	//	},
+	//}))
 	e.GET("/health", func(c echo.Context) error {
 		return nil
 	})
@@ -121,6 +174,12 @@ func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
 	e.POST("/query", echo.WrapHandler(graphqlServer))
 
 	return e, nil
+}
+
+func initializeWorkos() {
+	events.SetAPIKey(config.WorkosApiKey)
+	usermanagement.SetAPIKey(config.WorkosApiKey)
+	organizations.SetAPIKey(config.WorkosApiKey)
 }
 
 var flags = []cli.Flag{
@@ -165,6 +224,13 @@ var flags = []cli.Flag{
 		Destination: &config.SessionRequired,
 	},
 	&cli.StringFlag{
+		Name:        "workos-client-id",
+		Aliases:     []string{"wci"},
+		Usage:       "workos client id",
+		EnvVars:     []string{"WORKOS_CLIENT_ID"},
+		Destination: &config.WorkosClientId,
+	},
+	&cli.StringFlag{
 		Name:        "workos-api-key",
 		Aliases:     []string{"wak"},
 		Usage:       "workos api key",
@@ -178,5 +244,13 @@ var flags = []cli.Flag{
 		Usage:       "How often to poll workos for events",
 		EnvVars:     []string{"WORKOS_POLL_INTERVAL"},
 		Destination: &config.WorkosPollInterval,
+	},
+	&cli.BoolFlag{
+		Name:        "validate-jwt",
+		Aliases:     []string{"vj"},
+		Value:       true,
+		Usage:       "When true, jwt tokens are validated against the workos JWKS",
+		EnvVars:     []string{"VALIDATE_JWT"},
+		Destination: &config.ValidateJwt,
 	},
 }

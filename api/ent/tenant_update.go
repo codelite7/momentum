@@ -12,7 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
+	"github.com/codelite7/momentum/api/ent/user"
 )
 
 // TenantUpdate is the builder for updating Tenant entities.
@@ -42,9 +44,45 @@ func (tu *TenantUpdate) SetNillableUpdatedAt(t *time.Time) *TenantUpdate {
 	return tu
 }
 
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (tu *TenantUpdate) AddUserIDs(ids ...pulid.ID) *TenantUpdate {
+	tu.mutation.AddUserIDs(ids...)
+	return tu
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (tu *TenantUpdate) AddUsers(u ...*User) *TenantUpdate {
+	ids := make([]pulid.ID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tu.AddUserIDs(ids...)
+}
+
 // Mutation returns the TenantMutation object of the builder.
 func (tu *TenantUpdate) Mutation() *TenantMutation {
 	return tu.mutation
+}
+
+// ClearUsers clears all "users" edges to the User entity.
+func (tu *TenantUpdate) ClearUsers() *TenantUpdate {
+	tu.mutation.ClearUsers()
+	return tu
+}
+
+// RemoveUserIDs removes the "users" edge to User entities by IDs.
+func (tu *TenantUpdate) RemoveUserIDs(ids ...pulid.ID) *TenantUpdate {
+	tu.mutation.RemoveUserIDs(ids...)
+	return tu
+}
+
+// RemoveUsers removes "users" edges to User entities.
+func (tu *TenantUpdate) RemoveUsers(u ...*User) *TenantUpdate {
+	ids := make([]pulid.ID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tu.RemoveUserIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -86,6 +124,51 @@ func (tu *TenantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenant.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if tu.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   tenant.UsersTable,
+			Columns: tenant.UsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedUsersIDs(); len(nodes) > 0 && !tu.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   tenant.UsersTable,
+			Columns: tenant.UsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   tenant.UsersTable,
+			Columns: tenant.UsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tenant.Label}
@@ -120,9 +203,45 @@ func (tuo *TenantUpdateOne) SetNillableUpdatedAt(t *time.Time) *TenantUpdateOne 
 	return tuo
 }
 
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (tuo *TenantUpdateOne) AddUserIDs(ids ...pulid.ID) *TenantUpdateOne {
+	tuo.mutation.AddUserIDs(ids...)
+	return tuo
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (tuo *TenantUpdateOne) AddUsers(u ...*User) *TenantUpdateOne {
+	ids := make([]pulid.ID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tuo.AddUserIDs(ids...)
+}
+
 // Mutation returns the TenantMutation object of the builder.
 func (tuo *TenantUpdateOne) Mutation() *TenantMutation {
 	return tuo.mutation
+}
+
+// ClearUsers clears all "users" edges to the User entity.
+func (tuo *TenantUpdateOne) ClearUsers() *TenantUpdateOne {
+	tuo.mutation.ClearUsers()
+	return tuo
+}
+
+// RemoveUserIDs removes the "users" edge to User entities by IDs.
+func (tuo *TenantUpdateOne) RemoveUserIDs(ids ...pulid.ID) *TenantUpdateOne {
+	tuo.mutation.RemoveUserIDs(ids...)
+	return tuo
+}
+
+// RemoveUsers removes "users" edges to User entities.
+func (tuo *TenantUpdateOne) RemoveUsers(u ...*User) *TenantUpdateOne {
+	ids := make([]pulid.ID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tuo.RemoveUserIDs(ids...)
 }
 
 // Where appends a list predicates to the TenantUpdate builder.
@@ -193,6 +312,51 @@ func (tuo *TenantUpdateOne) sqlSave(ctx context.Context) (_node *Tenant, err err
 	}
 	if value, ok := tuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenant.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if tuo.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   tenant.UsersTable,
+			Columns: tenant.UsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedUsersIDs(); len(nodes) > 0 && !tuo.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   tenant.UsersTable,
+			Columns: tenant.UsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   tenant.UsersTable,
+			Columns: tenant.UsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Tenant{config: tuo.config}
 	_spec.Assign = _node.assignValues

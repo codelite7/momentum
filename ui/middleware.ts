@@ -1,7 +1,6 @@
-import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
+import { withLogging } from "@/middlewares/withLogging";
+import { stackMiddlewares } from "@/middlewares/stackMiddlewares";
+import { withAuth } from "@/middlewares/withAuth";
 
-export default authkitMiddleware();
-
-// Match against pages that require authentication
-// Leave this out if you want authentication on every page in your application
-// export const config = { matcher: ["/"] };
+// with cookie has to be last
+export default stackMiddlewares([withLogging, withAuth]);

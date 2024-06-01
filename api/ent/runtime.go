@@ -109,6 +109,10 @@ func init() {
 	tenantDescUpdatedAt := tenantFields[1].Descriptor()
 	// tenant.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	tenant.DefaultUpdatedAt = tenantDescUpdatedAt.Default.(func() time.Time)
+	// tenantDescWorkosOrgID is the schema descriptor for workos_org_id field.
+	tenantDescWorkosOrgID := tenantFields[2].Descriptor()
+	// tenant.WorkosOrgIDValidator is a validator for the "workos_org_id" field. It is called by the builders before save.
+	tenant.WorkosOrgIDValidator = tenantDescWorkosOrgID.Validators[0].(func(string) error)
 	// tenantDescID is the schema descriptor for id field.
 	tenantDescID := tenantMixinFields0[0].Descriptor()
 	// tenant.DefaultID holds the default value on creation for the id field.
@@ -128,6 +132,10 @@ func init() {
 	threadDescUpdatedAt := threadMixinFields0[1].Descriptor()
 	// thread.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	thread.DefaultUpdatedAt = threadDescUpdatedAt.Default.(func() time.Time)
+	// threadDescLastViewedAt is the schema descriptor for last_viewed_at field.
+	threadDescLastViewedAt := threadFields[1].Descriptor()
+	// thread.DefaultLastViewedAt holds the default value on creation for the last_viewed_at field.
+	thread.DefaultLastViewedAt = threadDescLastViewedAt.Default.(func() time.Time)
 	// threadDescID is the schema descriptor for id field.
 	threadDescID := threadMixinFields1[0].Descriptor()
 	// thread.DefaultID holds the default value on creation for the id field.
@@ -147,6 +155,10 @@ func init() {
 	userDescUpdatedAt := userMixinFields0[1].Descriptor()
 	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
+	// userDescWorkosUserID is the schema descriptor for workos_user_id field.
+	userDescWorkosUserID := userFields[1].Descriptor()
+	// user.WorkosUserIDValidator is a validator for the "workos_user_id" field. It is called by the builders before save.
+	user.WorkosUserIDValidator = userDescWorkosUserID.Validators[0].(func(string) error)
 	// userDescID is the schema descriptor for id field.
 	userDescID := userMixinFields1[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.

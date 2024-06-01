@@ -1,3 +1,5 @@
+"use server";
+
 import {
   GraphQLResponse,
   OperationType,
@@ -5,11 +7,14 @@ import {
   VariablesOf,
 } from "relay-runtime";
 import { ConcreteRequest } from "relay-runtime/lib/util/RelayConcreteNode";
+
 import { networkFetch } from "./environment";
+
+import getAccessToken from "@/actions/token";
 
 export interface SerializablePreloadedQuery<
   TRequest extends ConcreteRequest,
-  TQuery extends OperationType
+  TQuery extends OperationType,
 > {
   params: TRequest["params"];
   variables: VariablesOf<TQuery>;
@@ -21,12 +26,16 @@ export interface SerializablePreloadedQuery<
 // to avoid the client fetches.
 export default async function loadSerializableQuery<
   TRequest extends ConcreteRequest,
-  TQuery extends OperationType
+  TQuery extends OperationType,
 >(
   params: RequestParameters,
-  variables: VariablesOf<TQuery>
+  variables: VariablesOf<TQuery>,
 ): Promise<SerializablePreloadedQuery<TRequest, TQuery>> {
-  const response = await networkFetch(params, variables);
+  const token = await getAccessToken();
+
+  console.log("loadSerialize", token);
+  const response = await networkFetch(params, variables, token);
+
   return {
     params,
     variables,

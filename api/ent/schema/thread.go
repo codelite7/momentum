@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"time"
 )
 
 type Thread struct {
@@ -24,6 +25,7 @@ func (Thread) Mixin() []ent.Mixin {
 func (Thread) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").Annotations(entgql.OrderField("NAME")),
+		field.Time("last_viewed_at").Default(time.Now).Annotations(entgql.OrderField("LAST_VIEWED_AT")),
 	}
 }
 

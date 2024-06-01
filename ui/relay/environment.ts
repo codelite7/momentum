@@ -16,15 +16,20 @@ const CACHE_TTL = 5 * 1000; // 5 seconds, to resolve preloaded results
 
 export async function networkFetch(
   request: RequestParameters,
-  variables: Variables
+  variables: Variables,
+  accessToken?: string,
 ): Promise<GraphQLResponse> {
+  let headers: any = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
 
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
   const resp = await fetch(HTTP_ENDPOINT, {
     method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
+    headers: headers,
     body: JSON.stringify({
       query: request.text,
       variables,
@@ -41,8 +46,8 @@ export async function networkFetch(
       `Error fetching GraphQL query '${
         request.name
       }' with variables '${JSON.stringify(variables)}': ${JSON.stringify(
-        json.errors
-      )}`
+        json.errors,
+      )}`,
     );
   }
 
@@ -60,13 +65,15 @@ function createNetwork() {
   async function fetchResponse(
     params: RequestParameters,
     variables: Variables,
-    cacheConfig: CacheConfig
+    cacheConfig: CacheConfig,
   ) {
     const isQuery = params.operationKind === "query";
     const cacheKey = params.id ?? params.cacheID;
     const forceFetch = cacheConfig && cacheConfig.force;
+
     if (responseCache != null && isQuery && !forceFetch) {
       const fromCache = responseCache.get(cacheKey, variables);
+
       if (fromCache != null) {
         return Promise.resolve(fromCache);
       }
@@ -76,6 +83,7 @@ function createNetwork() {
   }
 
   const network = Network.create(fetchResponse);
+
   return network;
 }
 

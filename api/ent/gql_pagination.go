@@ -1827,6 +1827,20 @@ var (
 			}
 		},
 	}
+	// ThreadOrderFieldLastViewedAt orders Thread by last_viewed_at.
+	ThreadOrderFieldLastViewedAt = &ThreadOrderField{
+		Value: func(t *Thread) (ent.Value, error) {
+			return t.LastViewedAt, nil
+		},
+		column: thread.FieldLastViewedAt,
+		toTerm: thread.ByLastViewedAt,
+		toCursor: func(t *Thread) Cursor {
+			return Cursor{
+				ID:    t.ID,
+				Value: t.LastViewedAt,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -1839,6 +1853,8 @@ func (f ThreadOrderField) String() string {
 		str = "UPDATED_AT"
 	case ThreadOrderFieldName.column:
 		str = "NAME"
+	case ThreadOrderFieldLastViewedAt.column:
+		str = "LAST_VIEWED_AT"
 	}
 	return str
 }
@@ -1861,6 +1877,8 @@ func (f *ThreadOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *ThreadOrderFieldUpdatedAt
 	case "NAME":
 		*f = *ThreadOrderFieldName
+	case "LAST_VIEWED_AT":
+		*f = *ThreadOrderFieldLastViewedAt
 	default:
 		return fmt.Errorf("%s is not a valid ThreadOrderField", str)
 	}

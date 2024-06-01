@@ -65,6 +65,20 @@ func (tc *ThreadCreate) SetName(s string) *ThreadCreate {
 	return tc
 }
 
+// SetLastViewedAt sets the "last_viewed_at" field.
+func (tc *ThreadCreate) SetLastViewedAt(t time.Time) *ThreadCreate {
+	tc.mutation.SetLastViewedAt(t)
+	return tc
+}
+
+// SetNillableLastViewedAt sets the "last_viewed_at" field if the given value is not nil.
+func (tc *ThreadCreate) SetNillableLastViewedAt(t *time.Time) *ThreadCreate {
+	if t != nil {
+		tc.SetLastViewedAt(*t)
+	}
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *ThreadCreate) SetID(pu pulid.ID) *ThreadCreate {
 	tc.mutation.SetID(pu)
@@ -202,6 +216,10 @@ func (tc *ThreadCreate) defaults() {
 		v := thread.DefaultUpdatedAt()
 		tc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := tc.mutation.LastViewedAt(); !ok {
+		v := thread.DefaultLastViewedAt()
+		tc.mutation.SetLastViewedAt(v)
+	}
 	if _, ok := tc.mutation.ID(); !ok {
 		v := thread.DefaultID()
 		tc.mutation.SetID(v)
@@ -221,6 +239,9 @@ func (tc *ThreadCreate) check() error {
 	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Thread.name"`)}
+	}
+	if _, ok := tc.mutation.LastViewedAt(); !ok {
+		return &ValidationError{Name: "last_viewed_at", err: errors.New(`ent: missing required field "Thread.last_viewed_at"`)}
 	}
 	if _, ok := tc.mutation.TenantID(); !ok {
 		return &ValidationError{Name: "tenant", err: errors.New(`ent: missing required edge "Thread.tenant"`)}
@@ -274,6 +295,10 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.SetField(thread.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := tc.mutation.LastViewedAt(); ok {
+		_spec.SetField(thread.FieldLastViewedAt, field.TypeTime, value)
+		_node.LastViewedAt = value
 	}
 	if nodes := tc.mutation.TenantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

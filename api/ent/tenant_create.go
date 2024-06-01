@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
+	"github.com/codelite7/momentum/api/ent/user"
 )
 
 // TenantCreate is the builder for creating a Tenant entity.
@@ -49,6 +50,12 @@ func (tc *TenantCreate) SetNillableUpdatedAt(t *time.Time) *TenantCreate {
 	return tc
 }
 
+// SetWorkosOrgID sets the "workos_org_id" field.
+func (tc *TenantCreate) SetWorkosOrgID(s string) *TenantCreate {
+	tc.mutation.SetWorkosOrgID(s)
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *TenantCreate) SetID(pu pulid.ID) *TenantCreate {
 	tc.mutation.SetID(pu)
@@ -61,6 +68,21 @@ func (tc *TenantCreate) SetNillableID(pu *pulid.ID) *TenantCreate {
 		tc.SetID(*pu)
 	}
 	return tc
+}
+
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (tc *TenantCreate) AddUserIDs(ids ...pulid.ID) *TenantCreate {
+	tc.mutation.AddUserIDs(ids...)
+	return tc
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (tc *TenantCreate) AddUsers(u ...*User) *TenantCreate {
+	ids := make([]pulid.ID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return tc.AddUserIDs(ids...)
 }
 
 // Mutation returns the TenantMutation object of the builder.
@@ -120,6 +142,14 @@ func (tc *TenantCreate) check() error {
 	if _, ok := tc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Tenant.updated_at"`)}
 	}
+	if _, ok := tc.mutation.WorkosOrgID(); !ok {
+		return &ValidationError{Name: "workos_org_id", err: errors.New(`ent: missing required field "Tenant.workos_org_id"`)}
+	}
+	if v, ok := tc.mutation.WorkosOrgID(); ok {
+		if err := tenant.WorkosOrgIDValidator(v); err != nil {
+			return &ValidationError{Name: "workos_org_id", err: fmt.Errorf(`ent: validator failed for field "Tenant.workos_org_id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -162,6 +192,26 @@ func (tc *TenantCreate) createSpec() (*Tenant, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenant.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := tc.mutation.WorkosOrgID(); ok {
+		_spec.SetField(tenant.FieldWorkosOrgID, field.TypeString, value)
+		_node.WorkosOrgID = value
+	}
+	if nodes := tc.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   tenant.UsersTable,
+			Columns: tenant.UsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

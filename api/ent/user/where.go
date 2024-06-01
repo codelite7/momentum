@@ -66,14 +66,14 @@ func UpdatedAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// TenantID applies equality check predicate on the "tenant_id" field. It's identical to TenantIDEQ.
-func TenantID(v pulid.ID) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldTenantID, v))
-}
-
 // Email applies equality check predicate on the "email" field. It's identical to EmailEQ.
 func Email(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldEmail, v))
+}
+
+// WorkosUserID applies equality check predicate on the "workos_user_id" field. It's identical to WorkosUserIDEQ.
+func WorkosUserID(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldWorkosUserID, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -156,76 +156,6 @@ func UpdatedAtLTE(v time.Time) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// TenantIDEQ applies the EQ predicate on the "tenant_id" field.
-func TenantIDEQ(v pulid.ID) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldTenantID, v))
-}
-
-// TenantIDNEQ applies the NEQ predicate on the "tenant_id" field.
-func TenantIDNEQ(v pulid.ID) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldTenantID, v))
-}
-
-// TenantIDIn applies the In predicate on the "tenant_id" field.
-func TenantIDIn(vs ...pulid.ID) predicate.User {
-	return predicate.User(sql.FieldIn(FieldTenantID, vs...))
-}
-
-// TenantIDNotIn applies the NotIn predicate on the "tenant_id" field.
-func TenantIDNotIn(vs ...pulid.ID) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldTenantID, vs...))
-}
-
-// TenantIDGT applies the GT predicate on the "tenant_id" field.
-func TenantIDGT(v pulid.ID) predicate.User {
-	return predicate.User(sql.FieldGT(FieldTenantID, v))
-}
-
-// TenantIDGTE applies the GTE predicate on the "tenant_id" field.
-func TenantIDGTE(v pulid.ID) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldTenantID, v))
-}
-
-// TenantIDLT applies the LT predicate on the "tenant_id" field.
-func TenantIDLT(v pulid.ID) predicate.User {
-	return predicate.User(sql.FieldLT(FieldTenantID, v))
-}
-
-// TenantIDLTE applies the LTE predicate on the "tenant_id" field.
-func TenantIDLTE(v pulid.ID) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldTenantID, v))
-}
-
-// TenantIDContains applies the Contains predicate on the "tenant_id" field.
-func TenantIDContains(v pulid.ID) predicate.User {
-	vc := string(v)
-	return predicate.User(sql.FieldContains(FieldTenantID, vc))
-}
-
-// TenantIDHasPrefix applies the HasPrefix predicate on the "tenant_id" field.
-func TenantIDHasPrefix(v pulid.ID) predicate.User {
-	vc := string(v)
-	return predicate.User(sql.FieldHasPrefix(FieldTenantID, vc))
-}
-
-// TenantIDHasSuffix applies the HasSuffix predicate on the "tenant_id" field.
-func TenantIDHasSuffix(v pulid.ID) predicate.User {
-	vc := string(v)
-	return predicate.User(sql.FieldHasSuffix(FieldTenantID, vc))
-}
-
-// TenantIDEqualFold applies the EqualFold predicate on the "tenant_id" field.
-func TenantIDEqualFold(v pulid.ID) predicate.User {
-	vc := string(v)
-	return predicate.User(sql.FieldEqualFold(FieldTenantID, vc))
-}
-
-// TenantIDContainsFold applies the ContainsFold predicate on the "tenant_id" field.
-func TenantIDContainsFold(v pulid.ID) predicate.User {
-	vc := string(v)
-	return predicate.User(sql.FieldContainsFold(FieldTenantID, vc))
-}
-
 // EmailEQ applies the EQ predicate on the "email" field.
 func EmailEQ(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldEmail, v))
@@ -291,27 +221,69 @@ func EmailContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldEmail, v))
 }
 
-// HasTenant applies the HasEdge predicate on the "tenant" edge.
-func HasTenant() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, TenantTable, TenantColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
+// WorkosUserIDEQ applies the EQ predicate on the "workos_user_id" field.
+func WorkosUserIDEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldWorkosUserID, v))
 }
 
-// HasTenantWith applies the HasEdge predicate on the "tenant" edge with a given conditions (other predicates).
-func HasTenantWith(preds ...predicate.Tenant) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := newTenantStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
+// WorkosUserIDNEQ applies the NEQ predicate on the "workos_user_id" field.
+func WorkosUserIDNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDIn applies the In predicate on the "workos_user_id" field.
+func WorkosUserIDIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldWorkosUserID, vs...))
+}
+
+// WorkosUserIDNotIn applies the NotIn predicate on the "workos_user_id" field.
+func WorkosUserIDNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldWorkosUserID, vs...))
+}
+
+// WorkosUserIDGT applies the GT predicate on the "workos_user_id" field.
+func WorkosUserIDGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDGTE applies the GTE predicate on the "workos_user_id" field.
+func WorkosUserIDGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDLT applies the LT predicate on the "workos_user_id" field.
+func WorkosUserIDLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDLTE applies the LTE predicate on the "workos_user_id" field.
+func WorkosUserIDLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDContains applies the Contains predicate on the "workos_user_id" field.
+func WorkosUserIDContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDHasPrefix applies the HasPrefix predicate on the "workos_user_id" field.
+func WorkosUserIDHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDHasSuffix applies the HasSuffix predicate on the "workos_user_id" field.
+func WorkosUserIDHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDEqualFold applies the EqualFold predicate on the "workos_user_id" field.
+func WorkosUserIDEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldWorkosUserID, v))
+}
+
+// WorkosUserIDContainsFold applies the ContainsFold predicate on the "workos_user_id" field.
+func WorkosUserIDContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldWorkosUserID, v))
 }
 
 // HasBookmarks applies the HasEdge predicate on the "bookmarks" edge.
@@ -375,6 +347,52 @@ func HasMessages() predicate.User {
 func HasMessagesWith(preds ...predicate.Message) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newMessagesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasTenants applies the HasEdge predicate on the "tenants" edge.
+func HasTenants() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, TenantsTable, TenantsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTenantsWith applies the HasEdge predicate on the "tenants" edge with a given conditions (other predicates).
+func HasTenantsWith(preds ...predicate.Tenant) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newTenantsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasActiveTenant applies the HasEdge predicate on the "active_tenant" edge.
+func HasActiveTenant() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ActiveTenantTable, ActiveTenantColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasActiveTenantWith applies the HasEdge predicate on the "active_tenant" edge with a given conditions (other predicates).
+func HasActiveTenantWith(preds ...predicate.Tenant) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newActiveTenantStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -28,6 +28,8 @@ type Thread struct {
 	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// LastViewedAt holds the value of the "last_viewed_at" field.
+	LastViewedAt time.Time `json:"last_viewed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ThreadQuery when eager-loading is set.
 	Edges           ThreadEdges `json:"edges"`
@@ -130,7 +132,7 @@ func (*Thread) scanValues(columns []string) ([]any, error) {
 			values[i] = new(pulid.ID)
 		case thread.FieldName:
 			values[i] = new(sql.NullString)
-		case thread.FieldCreatedAt, thread.FieldUpdatedAt:
+		case thread.FieldCreatedAt, thread.FieldUpdatedAt, thread.FieldLastViewedAt:
 			values[i] = new(sql.NullTime)
 		case thread.ForeignKeys[0]: // thread_children
 			values[i] = &sql.NullScanner{S: new(pulid.ID)}
@@ -180,6 +182,12 @@ func (t *Thread) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				t.Name = value.String
+			}
+		case thread.FieldLastViewedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_viewed_at", values[i])
+			} else if value.Valid {
+				t.LastViewedAt = value.Time
 			}
 		case thread.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -272,6 +280,9 @@ func (t *Thread) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
+	builder.WriteString(", ")
+	builder.WriteString("last_viewed_at=")
+	builder.WriteString(t.LastViewedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

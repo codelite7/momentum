@@ -23,52 +23,45 @@ type User struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// TenantID holds the value of the "tenant_id" field.
-	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Email holds the value of the "email" field.
 	Email string `json:"email,omitempty"`
+	// WorkosUserID holds the value of the "workos_user_id" field.
+	WorkosUserID string `json:"workos_user_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges        UserEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges              UserEdges `json:"edges"`
+	user_active_tenant *pulid.ID
+	selectValues       sql.SelectValues
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
-	// Tenant holds the value of the tenant edge.
-	Tenant *Tenant `json:"tenant,omitempty"`
 	// Bookmarks holds the value of the bookmarks edge.
 	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
 	// Threads holds the value of the threads edge.
 	Threads []*Thread `json:"threads,omitempty"`
 	// Messages holds the value of the messages edge.
 	Messages []*Message `json:"messages,omitempty"`
+	// Tenants holds the value of the tenants edge.
+	Tenants []*Tenant `json:"tenants,omitempty"`
+	// ActiveTenant holds the value of the active_tenant edge.
+	ActiveTenant *Tenant `json:"active_tenant,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
 	totalCount [3]map[string]int
 
 	namedBookmarks map[string][]*Bookmark
 	namedThreads   map[string][]*Thread
 	namedMessages  map[string][]*Message
-}
-
-// TenantOrErr returns the Tenant value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e UserEdges) TenantOrErr() (*Tenant, error) {
-	if e.Tenant != nil {
-		return e.Tenant, nil
-	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: tenant.Label}
-	}
-	return nil, &NotLoadedError{edge: "tenant"}
+	namedTenants   map[string][]*Tenant
 }
 
 // BookmarksOrErr returns the Bookmarks value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[0] {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
@@ -77,7 +70,7 @@ func (e UserEdges) BookmarksOrErr() ([]*Bookmark, error) {
 // ThreadsOrErr returns the Threads value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ThreadsOrErr() ([]*Thread, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		return e.Threads, nil
 	}
 	return nil, &NotLoadedError{edge: "threads"}
@@ -86,10 +79,30 @@ func (e UserEdges) ThreadsOrErr() ([]*Thread, error) {
 // MessagesOrErr returns the Messages value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) MessagesOrErr() ([]*Message, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[2] {
 		return e.Messages, nil
 	}
 	return nil, &NotLoadedError{edge: "messages"}
+}
+
+// TenantsOrErr returns the Tenants value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) TenantsOrErr() ([]*Tenant, error) {
+	if e.loadedTypes[3] {
+		return e.Tenants, nil
+	}
+	return nil, &NotLoadedError{edge: "tenants"}
+}
+
+// ActiveTenantOrErr returns the ActiveTenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) ActiveTenantOrErr() (*Tenant, error) {
+	if e.ActiveTenant != nil {
+		return e.ActiveTenant, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "active_tenant"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -97,12 +110,14 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldID, user.FieldTenantID:
+		case user.FieldID:
 			values[i] = new(pulid.ID)
-		case user.FieldEmail:
+		case user.FieldEmail, user.FieldWorkosUserID:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case user.ForeignKeys[0]: // user_active_tenant
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -136,17 +151,24 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.UpdatedAt = value.Time
 			}
-		case user.FieldTenantID:
-			if value, ok := values[i].(*pulid.ID); !ok {
-				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
-			} else if value != nil {
-				u.TenantID = *value
-			}
 		case user.FieldEmail:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field email", values[i])
 			} else if value.Valid {
 				u.Email = value.String
+			}
+		case user.FieldWorkosUserID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field workos_user_id", values[i])
+			} else if value.Valid {
+				u.WorkosUserID = value.String
+			}
+		case user.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field user_active_tenant", values[i])
+			} else if value.Valid {
+				u.user_active_tenant = new(pulid.ID)
+				*u.user_active_tenant = *value.S.(*pulid.ID)
 			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
@@ -159,11 +181,6 @@ func (u *User) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
-}
-
-// QueryTenant queries the "tenant" edge of the User entity.
-func (u *User) QueryTenant() *TenantQuery {
-	return NewUserClient(u.config).QueryTenant(u)
 }
 
 // QueryBookmarks queries the "bookmarks" edge of the User entity.
@@ -179,6 +196,16 @@ func (u *User) QueryThreads() *ThreadQuery {
 // QueryMessages queries the "messages" edge of the User entity.
 func (u *User) QueryMessages() *MessageQuery {
 	return NewUserClient(u.config).QueryMessages(u)
+}
+
+// QueryTenants queries the "tenants" edge of the User entity.
+func (u *User) QueryTenants() *TenantQuery {
+	return NewUserClient(u.config).QueryTenants(u)
+}
+
+// QueryActiveTenant queries the "active_tenant" edge of the User entity.
+func (u *User) QueryActiveTenant() *TenantQuery {
+	return NewUserClient(u.config).QueryActiveTenant(u)
 }
 
 // Update returns a builder for updating this User.
@@ -210,11 +237,11 @@ func (u *User) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(u.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", u.TenantID))
-	builder.WriteString(", ")
 	builder.WriteString("email=")
 	builder.WriteString(u.Email)
+	builder.WriteString(", ")
+	builder.WriteString("workos_user_id=")
+	builder.WriteString(u.WorkosUserID)
 	builder.WriteByte(')')
 	return builder.String()
 }
@@ -288,6 +315,30 @@ func (u *User) appendNamedMessages(name string, edges ...*Message) {
 		u.Edges.namedMessages[name] = []*Message{}
 	} else {
 		u.Edges.namedMessages[name] = append(u.Edges.namedMessages[name], edges...)
+	}
+}
+
+// NamedTenants returns the Tenants named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedTenants(name string) ([]*Tenant, error) {
+	if u.Edges.namedTenants == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedTenants[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedTenants(name string, edges ...*Tenant) {
+	if u.Edges.namedTenants == nil {
+		u.Edges.namedTenants = make(map[string][]*Tenant)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedTenants[name] = []*Tenant{}
+	} else {
+		u.Edges.namedTenants[name] = append(u.Edges.namedTenants[name], edges...)
 	}
 }
 

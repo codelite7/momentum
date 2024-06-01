@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
@@ -63,6 +64,11 @@ func CreatedAt(v time.Time) predicate.Tenant {
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.Tenant {
 	return predicate.Tenant(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// WorkosOrgID applies equality check predicate on the "workos_org_id" field. It's identical to WorkosOrgIDEQ.
+func WorkosOrgID(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldWorkosOrgID, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -143,6 +149,94 @@ func UpdatedAtLT(v time.Time) predicate.Tenant {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Tenant {
 	return predicate.Tenant(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// WorkosOrgIDEQ applies the EQ predicate on the "workos_org_id" field.
+func WorkosOrgIDEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDNEQ applies the NEQ predicate on the "workos_org_id" field.
+func WorkosOrgIDNEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDIn applies the In predicate on the "workos_org_id" field.
+func WorkosOrgIDIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldWorkosOrgID, vs...))
+}
+
+// WorkosOrgIDNotIn applies the NotIn predicate on the "workos_org_id" field.
+func WorkosOrgIDNotIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldWorkosOrgID, vs...))
+}
+
+// WorkosOrgIDGT applies the GT predicate on the "workos_org_id" field.
+func WorkosOrgIDGT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGT(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDGTE applies the GTE predicate on the "workos_org_id" field.
+func WorkosOrgIDGTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGTE(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDLT applies the LT predicate on the "workos_org_id" field.
+func WorkosOrgIDLT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLT(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDLTE applies the LTE predicate on the "workos_org_id" field.
+func WorkosOrgIDLTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLTE(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDContains applies the Contains predicate on the "workos_org_id" field.
+func WorkosOrgIDContains(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContains(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDHasPrefix applies the HasPrefix predicate on the "workos_org_id" field.
+func WorkosOrgIDHasPrefix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasPrefix(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDHasSuffix applies the HasSuffix predicate on the "workos_org_id" field.
+func WorkosOrgIDHasSuffix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasSuffix(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDEqualFold applies the EqualFold predicate on the "workos_org_id" field.
+func WorkosOrgIDEqualFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEqualFold(FieldWorkosOrgID, v))
+}
+
+// WorkosOrgIDContainsFold applies the ContainsFold predicate on the "workos_org_id" field.
+func WorkosOrgIDContainsFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContainsFold(FieldWorkosOrgID, v))
+}
+
+// HasUsers applies the HasEdge predicate on the "users" edge.
+func HasUsers() predicate.Tenant {
+	return predicate.Tenant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, UsersTable, UsersPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUsersWith applies the HasEdge predicate on the "users" edge with a given conditions (other predicates).
+func HasUsersWith(preds ...predicate.User) predicate.Tenant {
+	return predicate.Tenant(func(s *sql.Selector) {
+		step := newUsersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

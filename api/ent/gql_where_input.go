@@ -1379,6 +1379,16 @@ type ThreadWhereInput struct {
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
 
+	// "last_viewed_at" field predicates.
+	LastViewedAt      *time.Time  `json:"lastViewedAt,omitempty"`
+	LastViewedAtNEQ   *time.Time  `json:"lastViewedAtNEQ,omitempty"`
+	LastViewedAtIn    []time.Time `json:"lastViewedAtIn,omitempty"`
+	LastViewedAtNotIn []time.Time `json:"lastViewedAtNotIn,omitempty"`
+	LastViewedAtGT    *time.Time  `json:"lastViewedAtGT,omitempty"`
+	LastViewedAtGTE   *time.Time  `json:"lastViewedAtGTE,omitempty"`
+	LastViewedAtLT    *time.Time  `json:"lastViewedAtLT,omitempty"`
+	LastViewedAtLTE   *time.Time  `json:"lastViewedAtLTE,omitempty"`
+
 	// "created_by" edge predicates.
 	HasCreatedBy     *bool             `json:"hasCreatedBy,omitempty"`
 	HasCreatedByWith []*UserWhereInput `json:"hasCreatedByWith,omitempty"`
@@ -1581,6 +1591,30 @@ func (i *ThreadWhereInput) P() (predicate.Thread, error) {
 	}
 	if i.NameContainsFold != nil {
 		predicates = append(predicates, thread.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.LastViewedAt != nil {
+		predicates = append(predicates, thread.LastViewedAtEQ(*i.LastViewedAt))
+	}
+	if i.LastViewedAtNEQ != nil {
+		predicates = append(predicates, thread.LastViewedAtNEQ(*i.LastViewedAtNEQ))
+	}
+	if len(i.LastViewedAtIn) > 0 {
+		predicates = append(predicates, thread.LastViewedAtIn(i.LastViewedAtIn...))
+	}
+	if len(i.LastViewedAtNotIn) > 0 {
+		predicates = append(predicates, thread.LastViewedAtNotIn(i.LastViewedAtNotIn...))
+	}
+	if i.LastViewedAtGT != nil {
+		predicates = append(predicates, thread.LastViewedAtGT(*i.LastViewedAtGT))
+	}
+	if i.LastViewedAtGTE != nil {
+		predicates = append(predicates, thread.LastViewedAtGTE(*i.LastViewedAtGTE))
+	}
+	if i.LastViewedAtLT != nil {
+		predicates = append(predicates, thread.LastViewedAtLT(*i.LastViewedAtLT))
+	}
+	if i.LastViewedAtLTE != nil {
+		predicates = append(predicates, thread.LastViewedAtLTE(*i.LastViewedAtLTE))
 	}
 
 	if i.HasCreatedBy != nil {

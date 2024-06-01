@@ -29,6 +29,14 @@ func (Tenant) Fields() []ent.Field {
 	return []ent.Field{
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now),
+		field.String("workos_org_id").Unique().Immutable().NotEmpty(),
+	}
+}
+
+func (Tenant) Edges() []ent.Edge {
+	return []ent.Edge{
+		// a tenant can have many users
+		edge.From("users", User.Type).Ref("tenants").Annotations(entgql.Skip()),
 	}
 }
 

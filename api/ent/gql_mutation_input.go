@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"time"
+
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
@@ -306,17 +308,21 @@ func (c *ResponseUpdateOne) SetInput(i UpdateResponseInput) *ResponseUpdateOne {
 
 // CreateThreadInput represents a mutation input for creating threads.
 type CreateThreadInput struct {
-	Name        string
-	CreatedByID pulid.ID
-	MessageIDs  []pulid.ID
-	BookmarkIDs []pulid.ID
-	ParentID    *pulid.ID
-	ChildIDs    []pulid.ID
+	Name         string
+	LastViewedAt *time.Time
+	CreatedByID  pulid.ID
+	MessageIDs   []pulid.ID
+	BookmarkIDs  []pulid.ID
+	ParentID     *pulid.ID
+	ChildIDs     []pulid.ID
 }
 
 // Mutate applies the CreateThreadInput on the ThreadMutation builder.
 func (i *CreateThreadInput) Mutate(m *ThreadMutation) {
 	m.SetName(i.Name)
+	if v := i.LastViewedAt; v != nil {
+		m.SetLastViewedAt(*v)
+	}
 	m.SetCreatedByID(i.CreatedByID)
 	if v := i.MessageIDs; len(v) > 0 {
 		m.AddMessageIDs(v...)
@@ -341,6 +347,7 @@ func (c *ThreadCreate) SetInput(i CreateThreadInput) *ThreadCreate {
 // UpdateThreadInput represents a mutation input for updating threads.
 type UpdateThreadInput struct {
 	Name              *string
+	LastViewedAt      *time.Time
 	CreatedByID       *pulid.ID
 	ClearMessages     bool
 	AddMessageIDs     []pulid.ID
@@ -359,6 +366,9 @@ type UpdateThreadInput struct {
 func (i *UpdateThreadInput) Mutate(m *ThreadMutation) {
 	if v := i.Name; v != nil {
 		m.SetName(*v)
+	}
+	if v := i.LastViewedAt; v != nil {
+		m.SetLastViewedAt(*v)
 	}
 	if v := i.CreatedByID; v != nil {
 		m.SetCreatedByID(*v)

@@ -1135,6 +1135,11 @@ func (t *ThreadQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 				selectedFields = append(selectedFields, thread.FieldName)
 				fieldSeen[thread.FieldName] = struct{}{}
 			}
+		case "lastViewedAt":
+			if _, ok := fieldSeen[thread.FieldLastViewedAt]; !ok {
+				selectedFields = append(selectedFields, thread.FieldLastViewedAt)
+				fieldSeen[thread.FieldLastViewedAt] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

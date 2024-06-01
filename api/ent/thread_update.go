@@ -60,6 +60,20 @@ func (tu *ThreadUpdate) SetNillableName(s *string) *ThreadUpdate {
 	return tu
 }
 
+// SetLastViewedAt sets the "last_viewed_at" field.
+func (tu *ThreadUpdate) SetLastViewedAt(t time.Time) *ThreadUpdate {
+	tu.mutation.SetLastViewedAt(t)
+	return tu
+}
+
+// SetNillableLastViewedAt sets the "last_viewed_at" field if the given value is not nil.
+func (tu *ThreadUpdate) SetNillableLastViewedAt(t *time.Time) *ThreadUpdate {
+	if t != nil {
+		tu.SetLastViewedAt(*t)
+	}
+	return tu
+}
+
 // SetCreatedByID sets the "created_by" edge to the User entity by ID.
 func (tu *ThreadUpdate) SetCreatedByID(id pulid.ID) *ThreadUpdate {
 	tu.mutation.SetCreatedByID(id)
@@ -270,6 +284,9 @@ func (tu *ThreadUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.Name(); ok {
 		_spec.SetField(thread.FieldName, field.TypeString, value)
+	}
+	if value, ok := tu.mutation.LastViewedAt(); ok {
+		_spec.SetField(thread.FieldLastViewedAt, field.TypeTime, value)
 	}
 	if tu.mutation.CreatedByCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -508,6 +525,20 @@ func (tuo *ThreadUpdateOne) SetName(s string) *ThreadUpdateOne {
 func (tuo *ThreadUpdateOne) SetNillableName(s *string) *ThreadUpdateOne {
 	if s != nil {
 		tuo.SetName(*s)
+	}
+	return tuo
+}
+
+// SetLastViewedAt sets the "last_viewed_at" field.
+func (tuo *ThreadUpdateOne) SetLastViewedAt(t time.Time) *ThreadUpdateOne {
+	tuo.mutation.SetLastViewedAt(t)
+	return tuo
+}
+
+// SetNillableLastViewedAt sets the "last_viewed_at" field if the given value is not nil.
+func (tuo *ThreadUpdateOne) SetNillableLastViewedAt(t *time.Time) *ThreadUpdateOne {
+	if t != nil {
+		tuo.SetLastViewedAt(*t)
 	}
 	return tuo
 }
@@ -752,6 +783,9 @@ func (tuo *ThreadUpdateOne) sqlSave(ctx context.Context) (_node *Thread, err err
 	}
 	if value, ok := tuo.mutation.Name(); ok {
 		_spec.SetField(thread.FieldName, field.TypeString, value)
+	}
+	if value, ok := tuo.mutation.LastViewedAt(); ok {
+		_spec.SetField(thread.FieldLastViewedAt, field.TypeTime, value)
 	}
 	if tuo.mutation.CreatedByCleared() {
 		edge := &sqlgraph.EdgeSpec{

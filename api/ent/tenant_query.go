@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,17 +14,20 @@ import (
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
+	"github.com/codelite7/momentum/api/ent/user"
 )
 
 // TenantQuery is the builder for querying Tenant entities.
 type TenantQuery struct {
 	config
-	ctx        *QueryContext
-	order      []tenant.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Tenant
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Tenant) error
+	ctx            *QueryContext
+	order          []tenant.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Tenant
+	withUsers      *UserQuery
+	modifiers      []func(*sql.Selector)
+	loadTotal      []func(context.Context, []*Tenant) error
+	withNamedUsers map[string]*UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (tq *TenantQuery) Unique(unique bool) *TenantQuery {
 func (tq *TenantQuery) Order(o ...tenant.OrderOption) *TenantQuery {
 	tq.order = append(tq.order, o...)
 	return tq
+}
+
+// QueryUsers chains the current query on the "users" edge.
+func (tq *TenantQuery) QueryUsers() *UserQuery {
+	query := (&UserClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tenant.Table, tenant.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tenant.UsersTable, tenant.UsersPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Tenant entity from the query.
@@ -252,10 +278,22 @@ func (tq *TenantQuery) Clone() *TenantQuery {
 		order:      append([]tenant.OrderOption{}, tq.order...),
 		inters:     append([]Interceptor{}, tq.inters...),
 		predicates: append([]predicate.Tenant{}, tq.predicates...),
+		withUsers:  tq.withUsers.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
 	}
+}
+
+// WithUsers tells the query-builder to eager-load the nodes that are connected to
+// the "users" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TenantQuery) WithUsers(opts ...func(*UserQuery)) *TenantQuery {
+	query := (&UserClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withUsers = query
+	return tq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -334,8 +372,11 @@ func (tq *TenantQuery) prepareQuery(ctx context.Context) error {
 
 func (tq *TenantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tenant, error) {
 	var (
-		nodes = []*Tenant{}
-		_spec = tq.querySpec()
+		nodes       = []*Tenant{}
+		_spec       = tq.querySpec()
+		loadedTypes = [1]bool{
+			tq.withUsers != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Tenant).scanValues(nil, columns)
@@ -343,6 +384,7 @@ func (tq *TenantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tenan
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Tenant{config: tq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(tq.modifiers) > 0 {
@@ -357,12 +399,88 @@ func (tq *TenantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tenan
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := tq.withUsers; query != nil {
+		if err := tq.loadUsers(ctx, query, nodes,
+			func(n *Tenant) { n.Edges.Users = []*User{} },
+			func(n *Tenant, e *User) { n.Edges.Users = append(n.Edges.Users, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedUsers {
+		if err := tq.loadUsers(ctx, query, nodes,
+			func(n *Tenant) { n.appendNamedUsers(name) },
+			func(n *Tenant, e *User) { n.appendNamedUsers(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range tq.loadTotal {
 		if err := tq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (tq *TenantQuery) loadUsers(ctx context.Context, query *UserQuery, nodes []*Tenant, init func(*Tenant), assign func(*Tenant, *User)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[pulid.ID]*Tenant)
+	nids := make(map[pulid.ID]map[*Tenant]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(tenant.UsersTable)
+		s.Join(joinT).On(s.C(user.FieldID), joinT.C(tenant.UsersPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(tenant.UsersPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(tenant.UsersPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(pulid.ID)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := *values[0].(*pulid.ID)
+				inValue := *values[1].(*pulid.ID)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Tenant]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*User](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "users" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
 }
 
 func (tq *TenantQuery) sqlCount(ctx context.Context) (int, error) {
@@ -447,6 +565,20 @@ func (tq *TenantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedUsers tells the query-builder to eager-load the nodes that are connected to the "users"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *TenantQuery) WithNamedUsers(name string, opts ...func(*UserQuery)) *TenantQuery {
+	query := (&UserClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedUsers == nil {
+		tq.withNamedUsers = make(map[string]*UserQuery)
+	}
+	tq.withNamedUsers[name] = query
+	return tq
 }
 
 // TenantGroupBy is the group-by builder for Tenant entities.

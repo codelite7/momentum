@@ -3004,7 +3004,11 @@ type TenantMutation struct {
 	id            *pulid.ID
 	created_at    *time.Time
 	updated_at    *time.Time
+	workos_org_id *string
 	clearedFields map[string]struct{}
+	users         map[pulid.ID]struct{}
+	removedusers  map[pulid.ID]struct{}
+	clearedusers  bool
 	done          bool
 	oldValue      func(context.Context) (*Tenant, error)
 	predicates    []predicate.Tenant
@@ -3186,6 +3190,96 @@ func (m *TenantMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetWorkosOrgID sets the "workos_org_id" field.
+func (m *TenantMutation) SetWorkosOrgID(s string) {
+	m.workos_org_id = &s
+}
+
+// WorkosOrgID returns the value of the "workos_org_id" field in the mutation.
+func (m *TenantMutation) WorkosOrgID() (r string, exists bool) {
+	v := m.workos_org_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkosOrgID returns the old "workos_org_id" field's value of the Tenant entity.
+// If the Tenant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantMutation) OldWorkosOrgID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkosOrgID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkosOrgID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkosOrgID: %w", err)
+	}
+	return oldValue.WorkosOrgID, nil
+}
+
+// ResetWorkosOrgID resets all changes to the "workos_org_id" field.
+func (m *TenantMutation) ResetWorkosOrgID() {
+	m.workos_org_id = nil
+}
+
+// AddUserIDs adds the "users" edge to the User entity by ids.
+func (m *TenantMutation) AddUserIDs(ids ...pulid.ID) {
+	if m.users == nil {
+		m.users = make(map[pulid.ID]struct{})
+	}
+	for i := range ids {
+		m.users[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUsers clears the "users" edge to the User entity.
+func (m *TenantMutation) ClearUsers() {
+	m.clearedusers = true
+}
+
+// UsersCleared reports if the "users" edge to the User entity was cleared.
+func (m *TenantMutation) UsersCleared() bool {
+	return m.clearedusers
+}
+
+// RemoveUserIDs removes the "users" edge to the User entity by IDs.
+func (m *TenantMutation) RemoveUserIDs(ids ...pulid.ID) {
+	if m.removedusers == nil {
+		m.removedusers = make(map[pulid.ID]struct{})
+	}
+	for i := range ids {
+		delete(m.users, ids[i])
+		m.removedusers[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUsers returns the removed IDs of the "users" edge to the User entity.
+func (m *TenantMutation) RemovedUsersIDs() (ids []pulid.ID) {
+	for id := range m.removedusers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UsersIDs returns the "users" edge IDs in the mutation.
+func (m *TenantMutation) UsersIDs() (ids []pulid.ID) {
+	for id := range m.users {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUsers resets all changes to the "users" edge.
+func (m *TenantMutation) ResetUsers() {
+	m.users = nil
+	m.clearedusers = false
+	m.removedusers = nil
+}
+
 // Where appends a list predicates to the TenantMutation builder.
 func (m *TenantMutation) Where(ps ...predicate.Tenant) {
 	m.predicates = append(m.predicates, ps...)
@@ -3220,12 +3314,15 @@ func (m *TenantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m.created_at != nil {
 		fields = append(fields, tenant.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, tenant.FieldUpdatedAt)
+	}
+	if m.workos_org_id != nil {
+		fields = append(fields, tenant.FieldWorkosOrgID)
 	}
 	return fields
 }
@@ -3239,6 +3336,8 @@ func (m *TenantMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case tenant.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case tenant.FieldWorkosOrgID:
+		return m.WorkosOrgID()
 	}
 	return nil, false
 }
@@ -3252,6 +3351,8 @@ func (m *TenantMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldCreatedAt(ctx)
 	case tenant.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case tenant.FieldWorkosOrgID:
+		return m.OldWorkosOrgID(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tenant field %s", name)
 }
@@ -3274,6 +3375,13 @@ func (m *TenantMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case tenant.FieldWorkosOrgID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkosOrgID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Tenant field %s", name)
@@ -3330,55 +3438,94 @@ func (m *TenantMutation) ResetField(name string) error {
 	case tenant.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case tenant.FieldWorkosOrgID:
+		m.ResetWorkosOrgID()
+		return nil
 	}
 	return fmt.Errorf("unknown Tenant field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TenantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.users != nil {
+		edges = append(edges, tenant.EdgeUsers)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *TenantMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case tenant.EdgeUsers:
+		ids := make([]ent.Value, 0, len(m.users))
+		for id := range m.users {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TenantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedusers != nil {
+		edges = append(edges, tenant.EdgeUsers)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *TenantMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case tenant.EdgeUsers:
+		ids := make([]ent.Value, 0, len(m.removedusers))
+		for id := range m.removedusers {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TenantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedusers {
+		edges = append(edges, tenant.EdgeUsers)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *TenantMutation) EdgeCleared(name string) bool {
+	switch name {
+	case tenant.EdgeUsers:
+		return m.clearedusers
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *TenantMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Tenant unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *TenantMutation) ResetEdge(name string) error {
+	switch name {
+	case tenant.EdgeUsers:
+		m.ResetUsers()
+		return nil
+	}
 	return fmt.Errorf("unknown Tenant edge %s", name)
 }
 
@@ -3391,6 +3538,7 @@ type ThreadMutation struct {
 	created_at        *time.Time
 	updated_at        *time.Time
 	name              *string
+	last_viewed_at    *time.Time
 	clearedFields     map[string]struct{}
 	tenant            *pulid.ID
 	clearedtenant     bool
@@ -3658,6 +3806,42 @@ func (m *ThreadMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName resets all changes to the "name" field.
 func (m *ThreadMutation) ResetName() {
 	m.name = nil
+}
+
+// SetLastViewedAt sets the "last_viewed_at" field.
+func (m *ThreadMutation) SetLastViewedAt(t time.Time) {
+	m.last_viewed_at = &t
+}
+
+// LastViewedAt returns the value of the "last_viewed_at" field in the mutation.
+func (m *ThreadMutation) LastViewedAt() (r time.Time, exists bool) {
+	v := m.last_viewed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastViewedAt returns the old "last_viewed_at" field's value of the Thread entity.
+// If the Thread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadMutation) OldLastViewedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastViewedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastViewedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastViewedAt: %w", err)
+	}
+	return oldValue.LastViewedAt, nil
+}
+
+// ResetLastViewedAt resets all changes to the "last_viewed_at" field.
+func (m *ThreadMutation) ResetLastViewedAt() {
+	m.last_viewed_at = nil
 }
 
 // ClearTenant clears the "tenant" edge to the Tenant entity.
@@ -3961,7 +4145,7 @@ func (m *ThreadMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ThreadMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, thread.FieldCreatedAt)
 	}
@@ -3973,6 +4157,9 @@ func (m *ThreadMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, thread.FieldName)
+	}
+	if m.last_viewed_at != nil {
+		fields = append(fields, thread.FieldLastViewedAt)
 	}
 	return fields
 }
@@ -3990,6 +4177,8 @@ func (m *ThreadMutation) Field(name string) (ent.Value, bool) {
 		return m.TenantID()
 	case thread.FieldName:
 		return m.Name()
+	case thread.FieldLastViewedAt:
+		return m.LastViewedAt()
 	}
 	return nil, false
 }
@@ -4007,6 +4196,8 @@ func (m *ThreadMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldTenantID(ctx)
 	case thread.FieldName:
 		return m.OldName(ctx)
+	case thread.FieldLastViewedAt:
+		return m.OldLastViewedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Thread field %s", name)
 }
@@ -4043,6 +4234,13 @@ func (m *ThreadMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case thread.FieldLastViewedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastViewedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Thread field %s", name)
@@ -4104,6 +4302,9 @@ func (m *ThreadMutation) ResetField(name string) error {
 		return nil
 	case thread.FieldName:
 		m.ResetName()
+		return nil
+	case thread.FieldLastViewedAt:
+		m.ResetLastViewedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Thread field %s", name)
@@ -4302,27 +4503,31 @@ func (m *ThreadMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *pulid.ID
-	created_at       *time.Time
-	updated_at       *time.Time
-	email            *string
-	clearedFields    map[string]struct{}
-	tenant           *pulid.ID
-	clearedtenant    bool
-	bookmarks        map[pulid.ID]struct{}
-	removedbookmarks map[pulid.ID]struct{}
-	clearedbookmarks bool
-	threads          map[pulid.ID]struct{}
-	removedthreads   map[pulid.ID]struct{}
-	clearedthreads   bool
-	messages         map[pulid.ID]struct{}
-	removedmessages  map[pulid.ID]struct{}
-	clearedmessages  bool
-	done             bool
-	oldValue         func(context.Context) (*User, error)
-	predicates       []predicate.User
+	op                   Op
+	typ                  string
+	id                   *pulid.ID
+	created_at           *time.Time
+	updated_at           *time.Time
+	email                *string
+	workos_user_id       *string
+	clearedFields        map[string]struct{}
+	bookmarks            map[pulid.ID]struct{}
+	removedbookmarks     map[pulid.ID]struct{}
+	clearedbookmarks     bool
+	threads              map[pulid.ID]struct{}
+	removedthreads       map[pulid.ID]struct{}
+	clearedthreads       bool
+	messages             map[pulid.ID]struct{}
+	removedmessages      map[pulid.ID]struct{}
+	clearedmessages      bool
+	tenants              map[pulid.ID]struct{}
+	removedtenants       map[pulid.ID]struct{}
+	clearedtenants       bool
+	active_tenant        *pulid.ID
+	clearedactive_tenant bool
+	done                 bool
+	oldValue             func(context.Context) (*User, error)
+	predicates           []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -4501,42 +4706,6 @@ func (m *UserMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// SetTenantID sets the "tenant_id" field.
-func (m *UserMutation) SetTenantID(pu pulid.ID) {
-	m.tenant = &pu
-}
-
-// TenantID returns the value of the "tenant_id" field in the mutation.
-func (m *UserMutation) TenantID() (r pulid.ID, exists bool) {
-	v := m.tenant
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTenantID returns the old "tenant_id" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldTenantID(ctx context.Context) (v pulid.ID, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTenantID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
-	}
-	return oldValue.TenantID, nil
-}
-
-// ResetTenantID resets all changes to the "tenant_id" field.
-func (m *UserMutation) ResetTenantID() {
-	m.tenant = nil
-}
-
 // SetEmail sets the "email" field.
 func (m *UserMutation) SetEmail(s string) {
 	m.email = &s
@@ -4573,31 +4742,40 @@ func (m *UserMutation) ResetEmail() {
 	m.email = nil
 }
 
-// ClearTenant clears the "tenant" edge to the Tenant entity.
-func (m *UserMutation) ClearTenant() {
-	m.clearedtenant = true
-	m.clearedFields[user.FieldTenantID] = struct{}{}
+// SetWorkosUserID sets the "workos_user_id" field.
+func (m *UserMutation) SetWorkosUserID(s string) {
+	m.workos_user_id = &s
 }
 
-// TenantCleared reports if the "tenant" edge to the Tenant entity was cleared.
-func (m *UserMutation) TenantCleared() bool {
-	return m.clearedtenant
-}
-
-// TenantIDs returns the "tenant" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TenantID instead. It exists only for internal usage by the builders.
-func (m *UserMutation) TenantIDs() (ids []pulid.ID) {
-	if id := m.tenant; id != nil {
-		ids = append(ids, *id)
+// WorkosUserID returns the value of the "workos_user_id" field in the mutation.
+func (m *UserMutation) WorkosUserID() (r string, exists bool) {
+	v := m.workos_user_id
+	if v == nil {
+		return
 	}
-	return
+	return *v, true
 }
 
-// ResetTenant resets all changes to the "tenant" edge.
-func (m *UserMutation) ResetTenant() {
-	m.tenant = nil
-	m.clearedtenant = false
+// OldWorkosUserID returns the old "workos_user_id" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldWorkosUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkosUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkosUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkosUserID: %w", err)
+	}
+	return oldValue.WorkosUserID, nil
+}
+
+// ResetWorkosUserID resets all changes to the "workos_user_id" field.
+func (m *UserMutation) ResetWorkosUserID() {
+	m.workos_user_id = nil
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
@@ -4762,6 +4940,99 @@ func (m *UserMutation) ResetMessages() {
 	m.removedmessages = nil
 }
 
+// AddTenantIDs adds the "tenants" edge to the Tenant entity by ids.
+func (m *UserMutation) AddTenantIDs(ids ...pulid.ID) {
+	if m.tenants == nil {
+		m.tenants = make(map[pulid.ID]struct{})
+	}
+	for i := range ids {
+		m.tenants[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTenants clears the "tenants" edge to the Tenant entity.
+func (m *UserMutation) ClearTenants() {
+	m.clearedtenants = true
+}
+
+// TenantsCleared reports if the "tenants" edge to the Tenant entity was cleared.
+func (m *UserMutation) TenantsCleared() bool {
+	return m.clearedtenants
+}
+
+// RemoveTenantIDs removes the "tenants" edge to the Tenant entity by IDs.
+func (m *UserMutation) RemoveTenantIDs(ids ...pulid.ID) {
+	if m.removedtenants == nil {
+		m.removedtenants = make(map[pulid.ID]struct{})
+	}
+	for i := range ids {
+		delete(m.tenants, ids[i])
+		m.removedtenants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTenants returns the removed IDs of the "tenants" edge to the Tenant entity.
+func (m *UserMutation) RemovedTenantsIDs() (ids []pulid.ID) {
+	for id := range m.removedtenants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TenantsIDs returns the "tenants" edge IDs in the mutation.
+func (m *UserMutation) TenantsIDs() (ids []pulid.ID) {
+	for id := range m.tenants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTenants resets all changes to the "tenants" edge.
+func (m *UserMutation) ResetTenants() {
+	m.tenants = nil
+	m.clearedtenants = false
+	m.removedtenants = nil
+}
+
+// SetActiveTenantID sets the "active_tenant" edge to the Tenant entity by id.
+func (m *UserMutation) SetActiveTenantID(id pulid.ID) {
+	m.active_tenant = &id
+}
+
+// ClearActiveTenant clears the "active_tenant" edge to the Tenant entity.
+func (m *UserMutation) ClearActiveTenant() {
+	m.clearedactive_tenant = true
+}
+
+// ActiveTenantCleared reports if the "active_tenant" edge to the Tenant entity was cleared.
+func (m *UserMutation) ActiveTenantCleared() bool {
+	return m.clearedactive_tenant
+}
+
+// ActiveTenantID returns the "active_tenant" edge ID in the mutation.
+func (m *UserMutation) ActiveTenantID() (id pulid.ID, exists bool) {
+	if m.active_tenant != nil {
+		return *m.active_tenant, true
+	}
+	return
+}
+
+// ActiveTenantIDs returns the "active_tenant" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ActiveTenantID instead. It exists only for internal usage by the builders.
+func (m *UserMutation) ActiveTenantIDs() (ids []pulid.ID) {
+	if id := m.active_tenant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetActiveTenant resets all changes to the "active_tenant" edge.
+func (m *UserMutation) ResetActiveTenant() {
+	m.active_tenant = nil
+	m.clearedactive_tenant = false
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -4803,11 +5074,11 @@ func (m *UserMutation) Fields() []string {
 	if m.updated_at != nil {
 		fields = append(fields, user.FieldUpdatedAt)
 	}
-	if m.tenant != nil {
-		fields = append(fields, user.FieldTenantID)
-	}
 	if m.email != nil {
 		fields = append(fields, user.FieldEmail)
+	}
+	if m.workos_user_id != nil {
+		fields = append(fields, user.FieldWorkosUserID)
 	}
 	return fields
 }
@@ -4821,10 +5092,10 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case user.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case user.FieldTenantID:
-		return m.TenantID()
 	case user.FieldEmail:
 		return m.Email()
+	case user.FieldWorkosUserID:
+		return m.WorkosUserID()
 	}
 	return nil, false
 }
@@ -4838,10 +5109,10 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case user.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case user.FieldTenantID:
-		return m.OldTenantID(ctx)
 	case user.FieldEmail:
 		return m.OldEmail(ctx)
+	case user.FieldWorkosUserID:
+		return m.OldWorkosUserID(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -4865,19 +5136,19 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case user.FieldTenantID:
-		v, ok := value.(pulid.ID)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTenantID(v)
-		return nil
 	case user.FieldEmail:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEmail(v)
+		return nil
+	case user.FieldWorkosUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkosUserID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -4934,11 +5205,11 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case user.FieldTenantID:
-		m.ResetTenantID()
-		return nil
 	case user.FieldEmail:
 		m.ResetEmail()
+		return nil
+	case user.FieldWorkosUserID:
+		m.ResetWorkosUserID()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -4946,10 +5217,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.tenant != nil {
-		edges = append(edges, user.EdgeTenant)
-	}
+	edges := make([]string, 0, 5)
 	if m.bookmarks != nil {
 		edges = append(edges, user.EdgeBookmarks)
 	}
@@ -4959,6 +5227,12 @@ func (m *UserMutation) AddedEdges() []string {
 	if m.messages != nil {
 		edges = append(edges, user.EdgeMessages)
 	}
+	if m.tenants != nil {
+		edges = append(edges, user.EdgeTenants)
+	}
+	if m.active_tenant != nil {
+		edges = append(edges, user.EdgeActiveTenant)
+	}
 	return edges
 }
 
@@ -4966,10 +5240,6 @@ func (m *UserMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeTenant:
-		if id := m.tenant; id != nil {
-			return []ent.Value{*id}
-		}
 	case user.EdgeBookmarks:
 		ids := make([]ent.Value, 0, len(m.bookmarks))
 		for id := range m.bookmarks {
@@ -4988,13 +5258,23 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeTenants:
+		ids := make([]ent.Value, 0, len(m.tenants))
+		for id := range m.tenants {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeActiveTenant:
+		if id := m.active_tenant; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedbookmarks != nil {
 		edges = append(edges, user.EdgeBookmarks)
 	}
@@ -5003,6 +5283,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedmessages != nil {
 		edges = append(edges, user.EdgeMessages)
+	}
+	if m.removedtenants != nil {
+		edges = append(edges, user.EdgeTenants)
 	}
 	return edges
 }
@@ -5029,16 +5312,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeTenants:
+		ids := make([]ent.Value, 0, len(m.removedtenants))
+		for id := range m.removedtenants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.clearedtenant {
-		edges = append(edges, user.EdgeTenant)
-	}
+	edges := make([]string, 0, 5)
 	if m.clearedbookmarks {
 		edges = append(edges, user.EdgeBookmarks)
 	}
@@ -5048,6 +5334,12 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedmessages {
 		edges = append(edges, user.EdgeMessages)
 	}
+	if m.clearedtenants {
+		edges = append(edges, user.EdgeTenants)
+	}
+	if m.clearedactive_tenant {
+		edges = append(edges, user.EdgeActiveTenant)
+	}
 	return edges
 }
 
@@ -5055,14 +5347,16 @@ func (m *UserMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
-	case user.EdgeTenant:
-		return m.clearedtenant
 	case user.EdgeBookmarks:
 		return m.clearedbookmarks
 	case user.EdgeThreads:
 		return m.clearedthreads
 	case user.EdgeMessages:
 		return m.clearedmessages
+	case user.EdgeTenants:
+		return m.clearedtenants
+	case user.EdgeActiveTenant:
+		return m.clearedactive_tenant
 	}
 	return false
 }
@@ -5071,8 +5365,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
 	switch name {
-	case user.EdgeTenant:
-		m.ClearTenant()
+	case user.EdgeActiveTenant:
+		m.ClearActiveTenant()
 		return nil
 	}
 	return fmt.Errorf("unknown User unique edge %s", name)
@@ -5082,9 +5376,6 @@ func (m *UserMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
-	case user.EdgeTenant:
-		m.ResetTenant()
-		return nil
 	case user.EdgeBookmarks:
 		m.ResetBookmarks()
 		return nil
@@ -5093,6 +5384,12 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeMessages:
 		m.ResetMessages()
+		return nil
+	case user.EdgeTenants:
+		m.ResetTenants()
+		return nil
+	case user.EdgeActiveTenant:
+		m.ResetActiveTenant()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

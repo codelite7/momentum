@@ -23,6 +23,8 @@ const (
 	FieldTenantID = "tenant_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldLastViewedAt holds the string denoting the last_viewed_at field in the database.
+	FieldLastViewedAt = "last_viewed_at"
 	// EdgeTenant holds the string denoting the tenant edge name in mutations.
 	EdgeTenant = "tenant"
 	// EdgeCreatedBy holds the string denoting the created_by edge name in mutations.
@@ -82,6 +84,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldTenantID,
 	FieldName,
+	FieldLastViewedAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "threads"
@@ -111,6 +114,8 @@ var (
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
+	// DefaultLastViewedAt holds the default value on creation for the "last_viewed_at" field.
+	DefaultLastViewedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() pulid.ID
 )
@@ -141,6 +146,11 @@ func ByTenantID(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByLastViewedAt orders the results by the last_viewed_at field.
+func ByLastViewedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastViewedAt, opts...).ToFunc()
 }
 
 // ByTenantField orders the results by tenant field.
