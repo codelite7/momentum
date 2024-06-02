@@ -3,21 +3,52 @@
 import { useState, useEffect } from "react";
 import { Button, Card, CardBody, CardFooter, Tooltip } from "@nextui-org/react";
 import { redirect } from "next/navigation";
+import { gql, useSuspenseQuery } from "@apollo/client";
 
 import useAccountSettingsModalStore from "@/stores/account-settings-modal-store";
 import useSearchModalStore from "@/stores/search-modal-store";
 import ThreadButtons from "@/components/left-sidebar/ThreadButtons";
 
-type props = {
-  user: any;
-};
-export default function LeftSidebar({ user }: props) {
+export default function LeftSidebar() {
+  const { data, error } = useSuspenseQuery(gql`
+    query homeUserQuery {
+      user {
+        id
+        email
+        threads(
+          first: 50
+          orderBy: { field: LAST_VIEWED_AT, direction: DESC }
+        ) {
+          totalCount
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  `);
+
+  if (error) {
+    console.log("left-sidebar error", error);
+  } else {
+    console.log("left-sidebar ", data);
+  }
   const toggleAccountSettings = useAccountSettingsModalStore(
     (state: any) => state.toggle,
   );
   const toggleSearch = useSearchModalStore((state: any) => state.toggle);
   const [collapsed, setCollapsed] = useState(false);
   const [width, setWidth] = useState("w-52");
+  const user = data?.user;
 
   useEffect(() => {
     let width = "w-52";

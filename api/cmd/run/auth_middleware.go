@@ -34,6 +34,9 @@ func authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		if tokenString != "" {
 			token, err := jwt.ParseString(tokenString, jwt.WithKeySet(keyset))
+			if err != nil && !config.DisableJwtValidation {
+				return unauthenticated(c)
+			}
 			if err != nil {
 				return unauthenticated(c)
 			}

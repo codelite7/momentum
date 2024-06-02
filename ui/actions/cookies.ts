@@ -6,6 +6,10 @@ import { getUser } from "@workos-inc/authkit-nextjs";
 
 import { getClient } from "@/client/ApolloClient";
 
+export async function getCookie(name: string) {
+  return cookies().get(name);
+}
+
 export async function setUserCookie() {
   // cookies().set("name", "lee");
   console.log("set name cookie");

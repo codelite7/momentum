@@ -33,7 +33,7 @@
 		"@types/react-dom": "18.3.0",
 		"@typescript-eslint/eslint-plugin": "^7.10.0",
 		"@typescript-eslint/parser": "^7.10.0",
-		"@workos-inc/authkit-nextjs": "^0.5.3",
+		"@workos-inc/authkit-nextjs": "^0.6.1",
 		"@workos-inc/node": "^7.6.0",
 		"autoprefixer": "10.4.19",
 		"clsx": "^2.0.0",
@@ -51,6 +51,7 @@
 		"intl-messageformat": "^10.5.0",
 		"iron-session": "^8.0.1",
 		"jotai": "^2.8.2",
+		"js-cookie": "^3.0.5",
 		"lodash": "^4.17.21",
 		"next": "14.2.3",
 		"next-themes": "^0.2.1",
@@ -72,6 +73,7 @@
 		"zustand": "^4.5.2"
 	},
 	"devDependencies": {
+		"@types/js-cookie": "^3.0.6",
 		"@types/lodash": "^4.17.4",
 		"@types/react-lines-ellipsis": "^0.15.6",
 		"@types/react-relay": "^16.0.6",
