@@ -1,61 +1,31 @@
-import { graphql, usePaginationFragment } from "react-relay";
-
 import InfiniteScroller from "@/components/common/scroll/infinite-scroller";
 import Message from "@/components/thread/messages/message";
 import PromptInput from "@/app/thread/[id]/prompt-input";
-import { messagesFragment$key } from "@/__generated__/messagesFragment.graphql";
 
 type props = {
-  thread: messagesFragment$key;
-  threadId: string;
+  thread: any;
 };
 
-const MessagesFragment = graphql`
-  fragment messagesFragment on Thread
-  @argumentDefinitions(
-    first: { type: "Int", defaultValue: 3 }
-    after: { type: "Cursor" }
-  )
-  @refetchable(queryName: "MessagesPaginationQuery") {
-    messages(first: $first, after: $after) @connection(key: "Thread_messages") {
-      totalCount
-      edges {
-        node {
-          id
-          ...messageFragment
-        }
-      }
-      pageInfo {
-        endCursor
-        hasNextPage
-      }
-    }
-  }
-`;
-
-export default function Messages({ thread, threadId }: props) {
-  const { data, loadNext, hasNext } = usePaginationFragment(
-    MessagesFragment,
-    thread,
-  );
-  const maybeLoadMore = (num: number) => {
-    if (hasNext) {
-      loadNext(num);
-    }
-  };
-  const messages = data.messages;
+export default function Messages({ thread }: props) {
+  const messages = thread?.messages;
 
   return (
     <>
-      {messages.totalCount > 0 ? (
-        <InfiniteScroller hideScrollBar onScrollDown={() => maybeLoadMore(1)}>
-          {messages.edges?.map((edge) => {
+      {messages?.totalCount > 0 ? (
+        <InfiniteScroller
+          hideScrollBar
+          onScrollDown={() => {
+            if (thread.messages.pageInfo.hasNextPage) {
+            }
+          }}
+        >
+          {messages.edges?.map((edge: any) => {
             return (
               edge?.node && (
                 <Message
                   key={edge.node.id}
                   message={edge.node}
-                  threadId={threadId}
+                  threadId={thread.id}
                 />
               )
             );
@@ -68,7 +38,7 @@ export default function Messages({ thread, threadId }: props) {
       )}
       {/* prompt input */}
       <div className="mt-6">
-        <PromptInput showModelSelect={messages.totalCount == 0} />
+        <PromptInput showModelSelect={!messages} />
       </div>
     </>
   );

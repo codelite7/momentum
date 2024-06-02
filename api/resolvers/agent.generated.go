@@ -23,6 +23,7 @@ type MutationResolver interface {
 	DeleteBookmark(ctx context.Context, id pulid.ID) (pulid.ID, error)
 	CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error)
 	CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error)
+	UpdateThread(ctx context.Context, id pulid.ID, input ent.UpdateThreadInput) (*ent.Thread, error)
 	DeleteThread(ctx context.Context, id pulid.ID) (pulid.ID, error)
 	CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error)
 }
@@ -136,6 +137,30 @@ func (ec *executionContext) field_Mutation_deleteThread_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateThread_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 pulid.ID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 ent.UpdateThreadInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNUpdateThreadInput2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUpdateThreadInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 // endregion ***************************** args.gotpl *****************************
 
 // region    ************************** directives.gotpl **************************
@@ -190,8 +215,6 @@ func (ec *executionContext) fieldContext_Mutation_createAgent(ctx context.Contex
 				return ec.fieldContext_Agent_provider(ctx, field)
 			case "model":
 				return ec.fieldContext_Agent_model(ctx, field)
-			case "apiKey":
-				return ec.fieldContext_Agent_apiKey(ctx, field)
 			case "responses":
 				return ec.fieldContext_Agent_responses(ctx, field)
 			}
@@ -474,6 +497,83 @@ func (ec *executionContext) fieldContext_Mutation_createThread(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateThread(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateThread(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateThread(rctx, fc.Args["id"].(pulid.ID), fc.Args["input"].(ent.UpdateThreadInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Thread)
+	fc.Result = res
+	return ec.marshalNThread2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThread(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateThread(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Thread_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Thread_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Thread_updatedAt(ctx, field)
+			case "name":
+				return ec.fieldContext_Thread_name(ctx, field)
+			case "lastViewedAt":
+				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
+			case "createdBy":
+				return ec.fieldContext_Thread_createdBy(ctx, field)
+			case "messages":
+				return ec.fieldContext_Thread_messages(ctx, field)
+			case "bookmarks":
+				return ec.fieldContext_Thread_bookmarks(ctx, field)
+			case "parent":
+				return ec.fieldContext_Thread_parent(ctx, field)
+			case "children":
+				return ec.fieldContext_Thread_children(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Thread", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateThread_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_deleteThread(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_deleteThread(ctx, field)
 	if err != nil {
@@ -650,6 +750,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createThread":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createThread(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateThread":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateThread(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

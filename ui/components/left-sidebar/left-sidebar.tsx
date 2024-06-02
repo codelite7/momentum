@@ -2,11 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { Button, Card, CardBody, CardFooter, Tooltip } from "@nextui-org/react";
+import { redirect } from "next/navigation";
 
 import useAccountSettingsModalStore from "@/stores/account-settings-modal-store";
 import useSearchModalStore from "@/stores/search-modal-store";
+import ThreadButtons from "@/components/left-sidebar/ThreadButtons";
 
-export default function LeftSidebar() {
+type props = {
+  user: any;
+};
+export default function LeftSidebar({ user }: props) {
   const toggleAccountSettings = useAccountSettingsModalStore(
     (state: any) => state.toggle,
   );
@@ -124,12 +129,13 @@ export default function LeftSidebar() {
                   color="primary"
                   size="sm"
                   startContent={<img alt="new thread" src="/layers.svg" />}
+                  onPress={() => redirect("/thread/new")}
                 >
                   New thread
                 </Button>
               </div>
               {/* thread buttons */}
-              {/*<ThreadButtons />*/}
+              <ThreadButtons threads={user.threads} />
             </>
           )}
         </CardBody>

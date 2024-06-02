@@ -84,21 +84,6 @@ type AgentWhereInput struct {
 	ModelEqualFold    *string  `json:"modelEqualFold,omitempty"`
 	ModelContainsFold *string  `json:"modelContainsFold,omitempty"`
 
-	// "api_key" field predicates.
-	APIKey             *string  `json:"apiKey,omitempty"`
-	APIKeyNEQ          *string  `json:"apiKeyNEQ,omitempty"`
-	APIKeyIn           []string `json:"apiKeyIn,omitempty"`
-	APIKeyNotIn        []string `json:"apiKeyNotIn,omitempty"`
-	APIKeyGT           *string  `json:"apiKeyGT,omitempty"`
-	APIKeyGTE          *string  `json:"apiKeyGTE,omitempty"`
-	APIKeyLT           *string  `json:"apiKeyLT,omitempty"`
-	APIKeyLTE          *string  `json:"apiKeyLTE,omitempty"`
-	APIKeyContains     *string  `json:"apiKeyContains,omitempty"`
-	APIKeyHasPrefix    *string  `json:"apiKeyHasPrefix,omitempty"`
-	APIKeyHasSuffix    *string  `json:"apiKeyHasSuffix,omitempty"`
-	APIKeyEqualFold    *string  `json:"apiKeyEqualFold,omitempty"`
-	APIKeyContainsFold *string  `json:"apiKeyContainsFold,omitempty"`
-
 	// "responses" edge predicates.
 	HasResponses     *bool                 `json:"hasResponses,omitempty"`
 	HasResponsesWith []*ResponseWhereInput `json:"hasResponsesWith,omitempty"`
@@ -324,45 +309,6 @@ func (i *AgentWhereInput) P() (predicate.Agent, error) {
 	}
 	if i.ModelContainsFold != nil {
 		predicates = append(predicates, agent.ModelContainsFold(*i.ModelContainsFold))
-	}
-	if i.APIKey != nil {
-		predicates = append(predicates, agent.APIKeyEQ(*i.APIKey))
-	}
-	if i.APIKeyNEQ != nil {
-		predicates = append(predicates, agent.APIKeyNEQ(*i.APIKeyNEQ))
-	}
-	if len(i.APIKeyIn) > 0 {
-		predicates = append(predicates, agent.APIKeyIn(i.APIKeyIn...))
-	}
-	if len(i.APIKeyNotIn) > 0 {
-		predicates = append(predicates, agent.APIKeyNotIn(i.APIKeyNotIn...))
-	}
-	if i.APIKeyGT != nil {
-		predicates = append(predicates, agent.APIKeyGT(*i.APIKeyGT))
-	}
-	if i.APIKeyGTE != nil {
-		predicates = append(predicates, agent.APIKeyGTE(*i.APIKeyGTE))
-	}
-	if i.APIKeyLT != nil {
-		predicates = append(predicates, agent.APIKeyLT(*i.APIKeyLT))
-	}
-	if i.APIKeyLTE != nil {
-		predicates = append(predicates, agent.APIKeyLTE(*i.APIKeyLTE))
-	}
-	if i.APIKeyContains != nil {
-		predicates = append(predicates, agent.APIKeyContains(*i.APIKeyContains))
-	}
-	if i.APIKeyHasPrefix != nil {
-		predicates = append(predicates, agent.APIKeyHasPrefix(*i.APIKeyHasPrefix))
-	}
-	if i.APIKeyHasSuffix != nil {
-		predicates = append(predicates, agent.APIKeyHasSuffix(*i.APIKeyHasSuffix))
-	}
-	if i.APIKeyEqualFold != nil {
-		predicates = append(predicates, agent.APIKeyEqualFold(*i.APIKeyEqualFold))
-	}
-	if i.APIKeyContainsFold != nil {
-		predicates = append(predicates, agent.APIKeyContainsFold(*i.APIKeyContainsFold))
 	}
 
 	if i.HasResponses != nil {

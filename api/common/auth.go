@@ -9,29 +9,40 @@ import (
 	"go.uber.org/zap"
 )
 
-var userIdContextKey = &contextKey{"userId"}
+var userInfoContextKey = &contextKey{"userInfo"}
 
 type contextKey struct {
 	name string
 }
 
-func AddUserIdToContext(c echo.Context, workosUserId string) {
-	user, err := EntClient.User.Query().Where(user2.WorkosUserID(workosUserId)).First(c.Request().Context())
-	if err != nil {
-		panic(err)
-	}
-	ctx := context.WithValue(c.Request().Context(), userIdContextKey, user.ID)
-	c.SetRequest(c.Request().WithContext(ctx))
+type UserInfo struct {
+	UserId         pulid.ID
+	ActiveTenantId pulid.ID
 }
 
-func GetUserIdFromContext(ctx context.Context) pulid.ID {
-	val := ctx.Value(userIdContextKey)
+func AddUserInfoToContext(c echo.Context, workosUserId string) error {
+	user, err := EntClient.User.Query().Where(user2.WorkosUserID(workosUserId)).First(c.Request().Context())
+	if err != nil {
+		return err
+	}
+	activeTenant, err := user.QueryActiveTenant().First(c.Request().Context())
+	if err != nil {
+		return err
+	}
+	userInfo := UserInfo{UserId: user.ID, ActiveTenantId: activeTenant.ID}
+	ctx := context.WithValue(c.Request().Context(), userInfoContextKey, userInfo)
+	c.SetRequest(c.Request().WithContext(ctx))
+	return nil
+}
+
+func GetUserIdFromContext(ctx context.Context) UserInfo {
+	val := ctx.Value(userInfoContextKey)
 	if val == nil {
 		err := tracerr.New("user id not found in context")
 		Logger.Error("user id not found in context", zap.Error(err))
 		panic(err)
 	}
-	userId, ok := val.(pulid.ID)
+	userId, ok := val.(UserInfo)
 	if !ok {
 		err := tracerr.New("user id found in context but it is not a pulid")
 		Logger.Error("user id not found in context", zap.Error(err))

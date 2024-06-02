@@ -7,7 +7,7 @@ import {
 import { cookies } from "next/headers";
 import { unsealData } from "iron-session";
 
-export const { getClient, query, PreloadQuery } = registerApolloClient(() => {
+export const { getClient, PreloadQuery } = registerApolloClient(() => {
   return new ApolloClient({
     cache: new InMemoryCache(),
     link: new HttpLink({
@@ -21,22 +21,33 @@ export const { getClient, query, PreloadQuery } = registerApolloClient(() => {
   });
 });
 
-export async function makeRequest(query: DocumentNode, variables?: any) {
-  const cookie = await getSessionFromCookie();
-  const context = {
-    headers: {
-      authorization: `Bearer ${cookie.accessToken}`,
-    },
-  };
+export async function query(query: DocumentNode, variables?: any) {
+  const context = await getContext();
 
   return await getClient().query({ context, query, variables });
+}
+
+export async function mutation(mutation: DocumentNode, variables?: any) {
+  const context = await getContext();
+
+  return await getClient().mutate({ context, mutation, variables });
+}
+
+async function getContext() {
+  const session = await getSessionFromCookie();
+
+  return {
+    headers: {
+      authorization: `Bearer ${session?.accessToken}`,
+    },
+  };
 }
 
 async function getSessionFromCookie() {
   const cookie = cookies().get("wos-session");
 
   if (cookie) {
-    return unsealData(cookie.value, {
+    return unsealData<any>(cookie.value, {
       password: process.env["WORKOS_COOKIE_PASSWORD"]!,
     });
   }

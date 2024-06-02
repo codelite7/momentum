@@ -1,5 +1,6 @@
 extend type Mutation {
     createThread(input: CreateThreadInput!): Thread!
+    updateThread(id: ID!, input: UpdateThreadInput!): Thread!
     deleteThread(id: ID!):ID!
 }
 

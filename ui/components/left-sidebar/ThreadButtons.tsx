@@ -1,66 +1,23 @@
-"use client";
-import { graphql } from "react-relay";
+import ThreadButton from "./ThreadButton";
 
-const ThreadButtonsQuery = graphql`
-  query ThreadButtonsQuery {
-    ...ThreadButtonsPaginationFragment
-  }
-`;
+import InfiniteScroller from "@/components/common/scroll/infinite-scroller";
 
-const ThreadButtonsPaginationFragment = graphql`
-  fragment ThreadButtonsPaginationFragment on Query
-  @refetchable(queryName: "ThreadButtonsPaginationQuery")
-  @argumentDefinitions(
-    first: { type: "Int", defaultValue: 50 }
-    after: { type: "Cursor" }
-  ) {
-    threads(first: $first, after: $after) @connection(key: "Query_threads") {
-      totalCount
-      edges {
-        node {
-          id
-          ...ThreadButtonFragment
-        }
-      }
-      pageInfo {
-        endCursor
-        hasNextPage
-      }
-    }
-  }
-`;
+type props = {
+  threads: any;
+};
+export default function ThreadButtons({ threads }: props) {
+  console.log("threads", threads);
 
-export default function ThreadButtons() {
-  return <></>;
-  // const loaderRef = useRef(null);
-  // const queryData = useLazyLoadQuery<ThreadButtonsQueryType>(
-  //   ThreadButtonsQuery,
-  //   {},
-  // );
-  // const { loadNext, hasNext } = usePaginationFragment(
-  //   ThreadButtonsPaginationFragment,
-  //   queryData,
-  // );
-  // const data = useFragment<ThreadButtonsPaginationFragment$key>(
-  //   ThreadButtonsPaginationFragment,
-  //   queryData,
-  // );
-  // const maybeLoadMore = (num: number) => {
-  //   if (hasNext) {
-  //     loadNext(num);
-  //   }
-  // };
-  //
-  // return (
-  //   <InfiniteScroller
-  //     hideScrollBar
-  //     onScrollDown={() => maybeLoadMore(50)}
-  //     // onScrollUp={() => console.log("up")}
-  //   >
-  //     {data.threads.edges?.map(
-  //       (edge) =>
-  //         edge?.node && <ThreadButton key={edge.node?.id} thread={edge.node} />,
-  //     )}
-  //   </InfiniteScroller>
-  // );
+  return (
+    <InfiniteScroller
+      hideScrollBar
+      // onScrollDown={() => maybeLoadMore(50)}
+      // onScrollUp={() => console.log("up")}
+    >
+      {threads.edges?.map(
+        (edge: any) =>
+          edge?.node && <ThreadButton key={edge.node?.id} thread={edge.node} />,
+      )}
+    </InfiniteScroller>
+  );
 }

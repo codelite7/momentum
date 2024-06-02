@@ -7,18 +7,21 @@ package resolvers
 import (
 	"context"
 
+	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // CreateThread is the resolver for the createThread field.
 func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error) {
-	//threadName, err := common.GetThreadName(input.Name)
-	//if err != nil {
-	//	return nil, gqlerror.Errorf(err.Error())
-	//}
-	//input.Name = threadName
-	return ent.FromContext(ctx).Thread.Create().SetInput(input).Save(ctx)
+	userInfo := common.GetUserIdFromContext(ctx)
+	thread, err := ent.FromContext(ctx).Thread.Create().SetCreatedByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(input).Save(ctx)
+	return thread, err
+}
+
+// UpdateThread is the resolver for the updateThread field.
+func (r *mutationResolver) UpdateThread(ctx context.Context, id pulid.ID, input ent.UpdateThreadInput) (*ent.Thread, error) {
+	return ent.FromContext(ctx).Thread.UpdateOneID(id).SetInput(input).Save(ctx)
 }
 
 // DeleteThread is the resolver for the deleteThread field.

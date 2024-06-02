@@ -6,6 +6,7 @@ package resolvers
 
 import (
 	"context"
+
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/user"
@@ -18,6 +19,6 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input ent.CreateUserI
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context) (*ent.User, error) {
-	userId := common.GetUserIdFromContext(ctx)
-	return r.client.User.Query().Where(user.ID(userId)).First(ctx)
+	userInfo := common.GetUserIdFromContext(ctx)
+	return r.client.User.Query().Where(user.ID(userInfo.UserId)).First(ctx)
 }

@@ -5,29 +5,22 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
+  Input,
 } from "@nextui-org/react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { graphql, useFragment } from "react-relay";
+import { redirect, useRouter } from "next/navigation";
 
-import DeleteThreadButton from "@/components/left-sidebar/delete-thread-button";
-import { ThreadButtonFragment$key } from "@/__generated__/ThreadButtonFragment.graphql";
+import { deleteThread, renameThread } from "@/client/thread";
 
 type props = {
-  thread: ThreadButtonFragment$key;
+  thread: any;
 };
 
-export const ThreadButtonFragment = graphql`
-  fragment ThreadButtonFragment on Thread {
-    id
-    name
-  }
-`;
-
 export default function ThreadButton({ thread }: props) {
-  const data = useFragment(ThreadButtonFragment, thread);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(thread.name);
   const router = useRouter();
 
   return (
@@ -36,52 +29,104 @@ export default function ThreadButton({ thread }: props) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {hovered || popoverOpen ? (
-        <>
-          <Button
-            className="flex flex-row start w-full"
-            size="sm"
-            onClick={() => router.push(`/thread/${data.id}`)}
-          >
-            <div className="flex start items-center justify-between w-full">
-              <div>{data.name}</div>
-              <Popover
-                classNames={{
-                  content: ["rounded border border-default-200 p-0 m-0"],
-                }}
-                placement="bottom-start"
-                onOpenChange={(isOpen) => {
-                  setPopoverOpen(isOpen);
-                }}
-              >
-                <PopoverTrigger>
-                  <i className="pi pi-ellipsis-v" />
-                </PopoverTrigger>
-                <PopoverContent>
-                  <div className="flex flex-col">
-                    <div className="flex flex-row items-center hover:bg-default-200 cursor-pointer pl-4 pr-4 pt-2 pb-2">
-                      <div className="mr-4">
-                        <img alt="edit thread name" src="/edit.svg" />
-                      </div>
-                      Rename
-                    </div>
-                    <DeleteThreadButton thread={data} />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </Button>
-        </>
-      ) : (
-        <Button
-          className="flex flex-row start w-full bg-transparent"
-          size="sm"
-          onClick={() => router.push(`/thread/${data.id}`)}
+      {(hovered && !renaming) || popoverOpen ? (
+        <div
+          className="flex flex-row start w-full hover:bg-default-200 cursor-pointer pl-2 text-sm rounded-md"
+          onClick={() => router.push(`/thread/${thread.id}`)}
         >
           <div className="flex start items-center justify-between w-full">
-            <div>{data.name}</div>
+            <div>{thread.name}</div>
+            <Popover
+              classNames={{
+                content: ["rounded border border-default-200"],
+              }}
+              isOpen={popoverOpen}
+              placement="bottom-start"
+              onOpenChange={(open) => setPopoverOpen(open)}
+            >
+              <PopoverTrigger>
+                <Button
+                  className="flex flex-row start min-w-9 px-0 hover:bg-default-100 rounded-l-none"
+                  size="sm"
+                  onClick={() => router.push(`/thread/${thread.id}`)}
+                >
+                  <div className="flex start items-center justify-between h-full">
+                    <i className="pi pi-ellipsis-v" />
+                  </div>
+                </Button>
+                {/*<div className="w-full h-full bg-red-500 place-items-center">*/}
+                {/*  <i className="pi pi-ellipsis-v" />*/}
+                {/*</div>*/}
+              </PopoverTrigger>
+              <PopoverContent className="p-0">
+                <div className="flex flex-col w-full h-full">
+                  <Button
+                    fullWidth
+                    className="bg-transparent hover:bg-default-200"
+                    radius="none"
+                    onPress={() => {
+                      setRenaming(true);
+                      setPopoverOpen(false);
+                      setHovered(false);
+                    }}
+                  >
+                    <div className="flex w-full items-center gap-4">
+                      <i className="pi pi-pencil" />
+                      Rename
+                    </div>
+                  </Button>
+                  <Button
+                    fullWidth
+                    className="bg-transparent hover:bg-default-200"
+                    radius="none"
+                    onPress={async () => {
+                      await deleteThread(thread.id);
+                      redirect("/");
+                    }}
+                  >
+                    <div className="flex w-full items-center gap-4">
+                      <i className="pi pi-trash text-danger" />
+                      Delete
+                    </div>
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
-        </Button>
+        </div>
+      ) : renaming ? (
+        <div className="flex flex-row start w-full pt-1">
+          <Input
+            autoFocus
+            className="focus:border-0"
+            size="sm"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onFocusChange={(focused) => {
+              if (!focused) {
+                setRenameValue(thread.name);
+                setRenaming(false);
+              }
+            }}
+            onKeyPress={async (e) => {
+              if (e.key === "Enter") {
+                const { data } = await renameThread(thread.id, renameValue);
+
+                thread.name = data.updateThread.name;
+                setRenaming(false);
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          className="flex flex-row start w-full h-8 pl-2 text-sm"
+          onClick={() => router.push(`/thread/${thread.id}`)}
+        >
+          <div className="flex start items-center justify-between w-full h-full">
+            <div>{thread.name}</div>
+          </div>
+        </div>
       )}
     </div>
   );

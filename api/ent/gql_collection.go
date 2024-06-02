@@ -149,11 +149,6 @@ func (a *AgentQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				selectedFields = append(selectedFields, agent.FieldModel)
 				fieldSeen[agent.FieldModel] = struct{}{}
 			}
-		case "apiKey":
-			if _, ok := fieldSeen[agent.FieldAPIKey]; !ok {
-				selectedFields = append(selectedFields, agent.FieldAPIKey)
-				fieldSeen[agent.FieldAPIKey] = struct{}{}
-			}
 		case "id":
 		case "__typename":
 		default:

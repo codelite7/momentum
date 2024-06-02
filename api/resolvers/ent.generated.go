@@ -1226,50 +1226,6 @@ func (ec *executionContext) fieldContext_Agent_model(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Agent_apiKey(ctx context.Context, field graphql.CollectedField, obj *ent.Agent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Agent_apiKey(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.APIKey, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Agent_apiKey(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Agent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Agent_responses(ctx context.Context, field graphql.CollectedField, obj *ent.Agent) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Agent_responses(ctx, field)
 	if err != nil {
@@ -1524,8 +1480,6 @@ func (ec *executionContext) fieldContext_AgentEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Agent_provider(ctx, field)
 			case "model":
 				return ec.fieldContext_Agent_model(ctx, field)
-			case "apiKey":
-				return ec.fieldContext_Agent_apiKey(ctx, field)
 			case "responses":
 				return ec.fieldContext_Agent_responses(ctx, field)
 			}
@@ -4009,8 +3963,6 @@ func (ec *executionContext) fieldContext_Response_sentBy(ctx context.Context, fi
 				return ec.fieldContext_Agent_provider(ctx, field)
 			case "model":
 				return ec.fieldContext_Agent_model(ctx, field)
-			case "apiKey":
-				return ec.fieldContext_Agent_apiKey(ctx, field)
 			case "responses":
 				return ec.fieldContext_Agent_responses(ctx, field)
 			}
@@ -5835,7 +5787,7 @@ func (ec *executionContext) unmarshalInputAgentWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "provider", "providerNEQ", "providerIn", "providerNotIn", "providerGT", "providerGTE", "providerLT", "providerLTE", "providerContains", "providerHasPrefix", "providerHasSuffix", "providerEqualFold", "providerContainsFold", "model", "modelNEQ", "modelIn", "modelNotIn", "modelGT", "modelGTE", "modelLT", "modelLTE", "modelContains", "modelHasPrefix", "modelHasSuffix", "modelEqualFold", "modelContainsFold", "apiKey", "apiKeyNEQ", "apiKeyIn", "apiKeyNotIn", "apiKeyGT", "apiKeyGTE", "apiKeyLT", "apiKeyLTE", "apiKeyContains", "apiKeyHasPrefix", "apiKeyHasSuffix", "apiKeyEqualFold", "apiKeyContainsFold", "hasResponses", "hasResponsesWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "provider", "providerNEQ", "providerIn", "providerNotIn", "providerGT", "providerGTE", "providerLT", "providerLTE", "providerContains", "providerHasPrefix", "providerHasSuffix", "providerEqualFold", "providerContainsFold", "model", "modelNEQ", "modelIn", "modelNotIn", "modelGT", "modelGTE", "modelLT", "modelLTE", "modelContains", "modelHasPrefix", "modelHasSuffix", "modelEqualFold", "modelContainsFold", "hasResponses", "hasResponsesWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6213,97 +6165,6 @@ func (ec *executionContext) unmarshalInputAgentWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.ModelContainsFold = data
-		case "apiKey":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKey"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKey = data
-		case "apiKeyNEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyNEQ"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyNEQ = data
-		case "apiKeyIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyIn"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyIn = data
-		case "apiKeyNotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyNotIn"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyNotIn = data
-		case "apiKeyGT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyGT"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyGT = data
-		case "apiKeyGTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyGTE"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyGTE = data
-		case "apiKeyLT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyLT"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyLT = data
-		case "apiKeyLTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyLTE"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyLTE = data
-		case "apiKeyContains":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyContains"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyContains = data
-		case "apiKeyHasPrefix":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyHasPrefix"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyHasPrefix = data
-		case "apiKeyHasSuffix":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyHasSuffix"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyHasSuffix = data
-		case "apiKeyEqualFold":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyEqualFold"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyEqualFold = data
-		case "apiKeyContainsFold":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKeyContainsFold"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKeyContainsFold = data
 		case "hasResponses":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasResponses"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -6634,7 +6495,7 @@ func (ec *executionContext) unmarshalInputCreateAgentInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"provider", "model", "apiKey", "responseIDs"}
+	fieldsInOrder := [...]string{"provider", "model", "responseIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6655,13 +6516,6 @@ func (ec *executionContext) unmarshalInputCreateAgentInput(ctx context.Context, 
 				return it, err
 			}
 			it.Model = data
-		case "apiKey":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKey"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKey = data
 		case "responseIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("responseIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
@@ -6833,7 +6687,7 @@ func (ec *executionContext) unmarshalInputCreateThreadInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "lastViewedAt", "createdByID", "messageIDs", "bookmarkIDs", "parentID", "childIDs"}
+	fieldsInOrder := [...]string{"name", "lastViewedAt", "messageIDs", "bookmarkIDs", "parentID", "childIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6854,13 +6708,6 @@ func (ec *executionContext) unmarshalInputCreateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.LastViewedAt = data
-		case "createdByID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdByID"))
-			data, err := ec.unmarshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CreatedByID = data
 		case "messageIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
@@ -8202,7 +8049,7 @@ func (ec *executionContext) unmarshalInputUpdateAgentInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"provider", "model", "apiKey", "addResponseIDs", "removeResponseIDs", "clearResponses"}
+	fieldsInOrder := [...]string{"provider", "model", "addResponseIDs", "removeResponseIDs", "clearResponses"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8223,13 +8070,6 @@ func (ec *executionContext) unmarshalInputUpdateAgentInput(ctx context.Context, 
 				return it, err
 			}
 			it.Model = data
-		case "apiKey":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiKey"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.APIKey = data
 		case "addResponseIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addResponseIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
@@ -8478,7 +8318,7 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "lastViewedAt", "createdByID", "addMessageIDs", "removeMessageIDs", "clearMessages", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "parentID", "clearParent", "addChildIDs", "removeChildIDs", "clearChildren"}
+	fieldsInOrder := [...]string{"name", "lastViewedAt", "addMessageIDs", "removeMessageIDs", "clearMessages", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "parentID", "clearParent", "addChildIDs", "removeChildIDs", "clearChildren"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8499,13 +8339,6 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.LastViewedAt = data
-		case "createdByID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdByID"))
-			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CreatedByID = data
 		case "addMessageIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addMessageIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
@@ -9139,11 +8972,6 @@ func (ec *executionContext) _Agent(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "model":
 			out.Values[i] = ec._Agent_model(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "apiKey":
-			out.Values[i] = ec._Agent_apiKey(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
@@ -11317,6 +11145,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNUpdateThreadInput2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUpdateThreadInput(ctx context.Context, v interface{}) (ent.UpdateThreadInput, error) {
+	res, err := ec.unmarshalInputUpdateThreadInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v ent.User) graphql.Marshaler {

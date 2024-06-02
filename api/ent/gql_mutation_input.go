@@ -12,7 +12,6 @@ import (
 type CreateAgentInput struct {
 	Provider    string
 	Model       string
-	APIKey      string
 	ResponseIDs []pulid.ID
 }
 
@@ -20,7 +19,6 @@ type CreateAgentInput struct {
 func (i *CreateAgentInput) Mutate(m *AgentMutation) {
 	m.SetProvider(i.Provider)
 	m.SetModel(i.Model)
-	m.SetAPIKey(i.APIKey)
 	if v := i.ResponseIDs; len(v) > 0 {
 		m.AddResponseIDs(v...)
 	}
@@ -36,7 +34,6 @@ func (c *AgentCreate) SetInput(i CreateAgentInput) *AgentCreate {
 type UpdateAgentInput struct {
 	Provider          *string
 	Model             *string
-	APIKey            *string
 	ClearResponses    bool
 	AddResponseIDs    []pulid.ID
 	RemoveResponseIDs []pulid.ID
@@ -49,9 +46,6 @@ func (i *UpdateAgentInput) Mutate(m *AgentMutation) {
 	}
 	if v := i.Model; v != nil {
 		m.SetModel(*v)
-	}
-	if v := i.APIKey; v != nil {
-		m.SetAPIKey(*v)
 	}
 	if i.ClearResponses {
 		m.ClearResponses()
@@ -310,7 +304,6 @@ func (c *ResponseUpdateOne) SetInput(i UpdateResponseInput) *ResponseUpdateOne {
 type CreateThreadInput struct {
 	Name         string
 	LastViewedAt *time.Time
-	CreatedByID  pulid.ID
 	MessageIDs   []pulid.ID
 	BookmarkIDs  []pulid.ID
 	ParentID     *pulid.ID
@@ -323,7 +316,6 @@ func (i *CreateThreadInput) Mutate(m *ThreadMutation) {
 	if v := i.LastViewedAt; v != nil {
 		m.SetLastViewedAt(*v)
 	}
-	m.SetCreatedByID(i.CreatedByID)
 	if v := i.MessageIDs; len(v) > 0 {
 		m.AddMessageIDs(v...)
 	}
@@ -348,7 +340,6 @@ func (c *ThreadCreate) SetInput(i CreateThreadInput) *ThreadCreate {
 type UpdateThreadInput struct {
 	Name              *string
 	LastViewedAt      *time.Time
-	CreatedByID       *pulid.ID
 	ClearMessages     bool
 	AddMessageIDs     []pulid.ID
 	RemoveMessageIDs  []pulid.ID
@@ -369,9 +360,6 @@ func (i *UpdateThreadInput) Mutate(m *ThreadMutation) {
 	}
 	if v := i.LastViewedAt; v != nil {
 		m.SetLastViewedAt(*v)
-	}
-	if v := i.CreatedByID; v != nil {
-		m.SetCreatedByID(*v)
 	}
 	if i.ClearMessages {
 		m.ClearMessages()

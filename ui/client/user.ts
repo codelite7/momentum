@@ -1,21 +1,29 @@
 import { gql } from "@apollo/client";
 
-import { makeRequest } from "@/client/ApolloClient";
+import { query } from "@/client/ApolloClient";
 
 export async function getUser() {
-  return makeRequest(
+  return query(
     gql`
       query homeUserQuery {
         user {
           id
           email
           threads(
-            first: 1
+            first: 50
             orderBy: { field: LAST_VIEWED_AT, direction: DESC }
           ) {
+            totalCount
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
             edges {
               node {
                 id
+                name
               }
             }
           }

@@ -28,11 +28,11 @@ func AuthMiddleware() echo.MiddlewareFunc {
 
 func authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if !config.DisableJwtValidation {
-			tokenString, err := getTokenFromHeader(c)
-			if err != nil {
-				return unauthenticated(c)
-			}
+		tokenString, err := getTokenFromHeader(c)
+		if err != nil && !config.DisableJwtValidation {
+			return unauthenticated(c)
+		}
+		if tokenString != "" {
 			token, err := jwt.ParseString(tokenString, jwt.WithKeySet(keyset))
 			if err != nil {
 				return unauthenticated(c)
@@ -43,7 +43,10 @@ func authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 				common.Logger.Error("error adding user id to context", zap.Error(err))
 				return err
 			}
-			common.AddUserIdToContext(c, token.Subject())
+			err = common.AddUserInfoToContext(c, token.Subject())
+			if err != nil && !config.DisableJwtValidation {
+				return unauthenticated(c)
+			}
 		}
 
 		return next(c)
@@ -51,10 +54,6 @@ func authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func getTokenFromHeader(c echo.Context) (string, error) {
-	cookies := c.Cookies()
-	for _, cookie := range cookies {
-		common.Logger.Info(cookie.String())
-	}
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" {
 		return "", tracerr.Errorf("no authorization header")

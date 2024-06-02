@@ -3,13 +3,14 @@ import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
-import { getUser } from "@workos-inc/authkit-nextjs";
+import { getUser as getAuthUser } from "@workos-inc/authkit-nextjs";
 
 import { Providers } from "./providers";
 
 import { siteConfig } from "@/config/site";
 import LeftSidebar from "@/components/left-sidebar/left-sidebar";
 import AccountSettingsModal from "@/components/account/settings-modal/account-settings-modal";
+import { getUser } from "@/client/user";
 export const metadata: Metadata = {
   title: {
     default: siteConfig.name,
@@ -34,7 +35,10 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await getUser({ ensureSignedIn: true });
+  await getAuthUser({ ensureSignedIn: true });
+  const { data } = await getUser();
+
+  console.log("user", data);
 
   return (
     <html suppressHydrationWarning lang="en">
@@ -47,7 +51,7 @@ export default async function RootLayout({
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <div className="flex h-full w-full overflow-hidden">
-            <LeftSidebar />
+            <LeftSidebar user={data.user} />
             <div className="h-full w-full">{children}</div>
           </div>
           <AccountSettingsModal />

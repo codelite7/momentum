@@ -24,7 +24,7 @@ func (Agent) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("provider").Annotations(entgql.OrderField("PROVIDER")),
 		field.String("model").Annotations(entgql.OrderField("MODEL")),
-		field.String("api_key"),
+		field.String("api_key").Annotations(entgql.Skip()),
 	}
 }
 
