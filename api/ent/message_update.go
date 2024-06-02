@@ -17,7 +17,6 @@ import (
 	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
-	"github.com/codelite7/momentum/api/ent/user"
 )
 
 // MessageUpdate is the builder for updating Message entities.
@@ -59,17 +58,6 @@ func (mu *MessageUpdate) SetNillableContent(s *string) *MessageUpdate {
 		mu.SetContent(*s)
 	}
 	return mu
-}
-
-// SetSentByID sets the "sent_by" edge to the User entity by ID.
-func (mu *MessageUpdate) SetSentByID(id pulid.ID) *MessageUpdate {
-	mu.mutation.SetSentByID(id)
-	return mu
-}
-
-// SetSentBy sets the "sent_by" edge to the User entity.
-func (mu *MessageUpdate) SetSentBy(u *User) *MessageUpdate {
-	return mu.SetSentByID(u.ID)
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by ID.
@@ -120,12 +108,6 @@ func (mu *MessageUpdate) SetResponse(r *Response) *MessageUpdate {
 // Mutation returns the MessageMutation object of the builder.
 func (mu *MessageUpdate) Mutation() *MessageMutation {
 	return mu.mutation
-}
-
-// ClearSentBy clears the "sent_by" edge to the User entity.
-func (mu *MessageUpdate) ClearSentBy() *MessageUpdate {
-	mu.mutation.ClearSentBy()
-	return mu
 }
 
 // ClearThread clears the "thread" edge to the Thread entity.
@@ -219,35 +201,6 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := mu.mutation.Content(); ok {
 		_spec.SetField(message.FieldContent, field.TypeString, value)
-	}
-	if mu.mutation.SentByCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByTable,
-			Columns: []string{message.SentByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := mu.mutation.SentByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByTable,
-			Columns: []string{message.SentByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if mu.mutation.ThreadCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -400,17 +353,6 @@ func (muo *MessageUpdateOne) SetNillableContent(s *string) *MessageUpdateOne {
 	return muo
 }
 
-// SetSentByID sets the "sent_by" edge to the User entity by ID.
-func (muo *MessageUpdateOne) SetSentByID(id pulid.ID) *MessageUpdateOne {
-	muo.mutation.SetSentByID(id)
-	return muo
-}
-
-// SetSentBy sets the "sent_by" edge to the User entity.
-func (muo *MessageUpdateOne) SetSentBy(u *User) *MessageUpdateOne {
-	return muo.SetSentByID(u.ID)
-}
-
 // SetThreadID sets the "thread" edge to the Thread entity by ID.
 func (muo *MessageUpdateOne) SetThreadID(id pulid.ID) *MessageUpdateOne {
 	muo.mutation.SetThreadID(id)
@@ -459,12 +401,6 @@ func (muo *MessageUpdateOne) SetResponse(r *Response) *MessageUpdateOne {
 // Mutation returns the MessageMutation object of the builder.
 func (muo *MessageUpdateOne) Mutation() *MessageMutation {
 	return muo.mutation
-}
-
-// ClearSentBy clears the "sent_by" edge to the User entity.
-func (muo *MessageUpdateOne) ClearSentBy() *MessageUpdateOne {
-	muo.mutation.ClearSentBy()
-	return muo
 }
 
 // ClearThread clears the "thread" edge to the Thread entity.
@@ -588,35 +524,6 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 	}
 	if value, ok := muo.mutation.Content(); ok {
 		_spec.SetField(message.FieldContent, field.TypeString, value)
-	}
-	if muo.mutation.SentByCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByTable,
-			Columns: []string{message.SentByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := muo.mutation.SentByIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   message.SentByTable,
-			Columns: []string{message.SentByColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if muo.mutation.ThreadCleared() {
 		edge := &sqlgraph.EdgeSpec{

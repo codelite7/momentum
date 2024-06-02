@@ -6584,7 +6584,7 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"content", "sentByID", "threadID", "bookmarkIDs", "responseID"}
+	fieldsInOrder := [...]string{"content", "threadID", "bookmarkIDs", "responseID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6598,13 +6598,6 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 				return it, err
 			}
 			it.Content = data
-		case "sentByID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentByID"))
-			data, err := ec.unmarshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.SentByID = data
 		case "threadID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("threadID"))
 			data, err := ec.unmarshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
@@ -8173,7 +8166,7 @@ func (ec *executionContext) unmarshalInputUpdateMessageInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"content", "sentByID", "threadID", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "responseID", "clearResponse"}
+	fieldsInOrder := [...]string{"content", "threadID", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "responseID", "clearResponse"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8187,13 +8180,6 @@ func (ec *executionContext) unmarshalInputUpdateMessageInput(ctx context.Context
 				return it, err
 			}
 			it.Content = data
-		case "sentByID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sentByID"))
-			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.SentByID = data
 		case "threadID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("threadID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)

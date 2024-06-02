@@ -22,7 +22,7 @@ type MutationResolver interface {
 	CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.BookmarkConnection, error)
 	DeleteBookmark(ctx context.Context, id pulid.ID) (pulid.ID, error)
 	CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error)
-	CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error)
+	CreateThread(ctx context.Context, input ent.CreateThreadInput, messageInput ent.CreateMessageInput) (*ent.Thread, error)
 	UpdateThread(ctx context.Context, id pulid.ID, input ent.UpdateThreadInput) (*ent.Thread, error)
 	DeleteThread(ctx context.Context, id pulid.ID) (pulid.ID, error)
 	CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error)
@@ -89,6 +89,15 @@ func (ec *executionContext) field_Mutation_createThread_args(ctx context.Context
 		}
 	}
 	args["input"] = arg0
+	var arg1 ent.CreateMessageInput
+	if tmp, ok := rawArgs["messageInput"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageInput"))
+		arg1, err = ec.unmarshalNCreateMessageInput2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐCreateMessageInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["messageInput"] = arg1
 	return args, nil
 }
 
@@ -434,7 +443,7 @@ func (ec *executionContext) _Mutation_createThread(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateThread(rctx, fc.Args["input"].(ent.CreateThreadInput))
+		return ec.resolvers.Mutation().CreateThread(rctx, fc.Args["input"].(ent.CreateThreadInput), fc.Args["messageInput"].(ent.CreateMessageInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

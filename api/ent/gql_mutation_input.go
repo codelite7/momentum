@@ -149,7 +149,6 @@ func (c *BookmarkUpdateOne) SetInput(i UpdateBookmarkInput) *BookmarkUpdateOne {
 // CreateMessageInput represents a mutation input for creating messages.
 type CreateMessageInput struct {
 	Content     string
-	SentByID    pulid.ID
 	ThreadID    pulid.ID
 	BookmarkIDs []pulid.ID
 	ResponseID  *pulid.ID
@@ -158,7 +157,6 @@ type CreateMessageInput struct {
 // Mutate applies the CreateMessageInput on the MessageMutation builder.
 func (i *CreateMessageInput) Mutate(m *MessageMutation) {
 	m.SetContent(i.Content)
-	m.SetSentByID(i.SentByID)
 	m.SetThreadID(i.ThreadID)
 	if v := i.BookmarkIDs; len(v) > 0 {
 		m.AddBookmarkIDs(v...)
@@ -177,7 +175,6 @@ func (c *MessageCreate) SetInput(i CreateMessageInput) *MessageCreate {
 // UpdateMessageInput represents a mutation input for updating messages.
 type UpdateMessageInput struct {
 	Content           *string
-	SentByID          *pulid.ID
 	ThreadID          *pulid.ID
 	ClearBookmarks    bool
 	AddBookmarkIDs    []pulid.ID
@@ -190,9 +187,6 @@ type UpdateMessageInput struct {
 func (i *UpdateMessageInput) Mutate(m *MessageMutation) {
 	if v := i.Content; v != nil {
 		m.SetContent(*v)
-	}
-	if v := i.SentByID; v != nil {
-		m.SetSentByID(*v)
 	}
 	if v := i.ThreadID; v != nil {
 		m.SetThreadID(*v)

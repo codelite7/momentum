@@ -10,13 +10,23 @@ import (
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateThread is the resolver for the createThread field.
-func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error) {
+func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThreadInput, messageInput ent.CreateMessageInput) (*ent.Thread, error) {
+	client := ent.FromContext(ctx)
 	userInfo := common.GetUserIdFromContext(ctx)
-	thread, err := ent.FromContext(ctx).Thread.Create().SetCreatedByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(input).Save(ctx)
-	return thread, err
+	thread, err := client.Thread.Create().SetCreatedByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf(err.Error())
+	}
+	_, err = client.Message.Create().SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(messageInput).SetThread(thread).Save(ctx)
+	if err != nil {
+		return nil, gqlerror.Errorf(err.Error())
+	}
+	// get so we get the messages back
+	return client.Thread.Get(ctx, thread.ID)
 }
 
 // UpdateThread is the resolver for the updateThread field.

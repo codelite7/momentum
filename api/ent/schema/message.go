@@ -30,7 +30,7 @@ func (Message) Fields() []ent.Field {
 func (Message) Edges() []ent.Edge {
 	return []ent.Edge{
 		// a message is sent by a user
-		edge.From("sent_by", User.Type).Ref("messages").Unique().Required(),
+		edge.From("sent_by", User.Type).Ref("messages").Unique().Required().Immutable().Annotations(entgql.Skip(entgql.SkipMutationCreateInput | entgql.SkipMutationUpdateInput)),
 		// a message belongs to a thread
 		edge.From("thread", Thread.Type).Ref("messages").Unique().Required(),
 		// a message may have many bookmarks

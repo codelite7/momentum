@@ -9,53 +9,59 @@ interface modelOption {
 }
 
 const models = [
-  { label: "GPT 4", value: "gpt-4", icon: "openai.png" },
-  { label: "Opus", value: "opus", icon: "anthropic.png" },
-  { label: "Mistral", value: "mistral", icon: "mistral.svg" },
-  { label: "Groq", value: "groq", icon: "groq.png" },
+  { label: "GPT 4", value: "gpt-4", iconExtension: "png" },
+  { label: "Opus", value: "opus", iconExtension: "png" },
+  { label: "Mistral", value: "mistral", iconExtension: "svg" },
+  { label: "Groq", value: "groq", iconExtension: "png" },
 ];
 
-const logos = {
-  "gpt-4": "openai.png",
-  opus: "anthropic.png",
-  mistral: "mistral.svg",
-  groq: "groq.png",
-};
-
 export default function ModelSelect() {
-  const [selectedLogo, setSelectedLogo] = useState("openai.png");
+  const [value, setValue] = useState(new Set(["gpt-4"]));
 
   return (
     <div className="flex w-36">
       <Select
-        defaultSelectedKeys={["gpt-4"]}
+        aria-label="Select a model"
+        classNames={{
+          base: "max-w-xs",
+          trigger: "h-12",
+        }}
+        items={models}
+        renderValue={(items) => {
+          return items.map((item) => (
+            <div key={item.key} className="flex items-center gap-2">
+              <img
+                alt={item.data?.label}
+                src={`/llm-logos/${item.data?.value}.${item.data?.iconExtension}`}
+              />
+              <div className="flex flex-col">
+                <span>{item.data?.label}</span>
+              </div>
+            </div>
+          ));
+        }}
+        selectedKeys={value}
         size="sm"
-        startContent={<img src={`/llm-logos/${selectedLogo}`} />}
-        variant="bordered"
-        onSelectionChange={(event: any) =>
-          updateSelectedLogo(setSelectedLogo, event)
-        }
+        onSelectionChange={(e: any) => {
+          if (e.size > 0) {
+            setValue(e);
+          }
+        }}
       >
-        {models.map((model) => (
-          <SelectItem
-            key={model.value}
-            startContent={
-              <img alt={model.label} src={`/llm-logos/${model.icon}`} />
-            }
-            value={model.value}
-          >
-            {model.label}
+        {(model) => (
+          <SelectItem key={model.value} textValue={model.label}>
+            <div className="flex gap-2 items-center">
+              <img
+                alt={model.label}
+                src={`/llm-logos/${model.value}.${model.iconExtension}`}
+              />
+              <div className="flex flex-col">
+                <span className="text-small">{model.label}</span>
+              </div>
+            </div>
           </SelectItem>
-        ))}
+        )}
       </Select>
     </div>
   );
-}
-
-function updateSelectedLogo(setter: any, { anchorKey }: any) {
-  console.log(anchorKey);
-  // @ts-ignore
-  console.log(`setting logo to: ${logos[anchorKey]}`);
-  // @ts-ignore
-  setter(logos[anchorKey]);
 }
