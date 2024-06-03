@@ -6,6 +6,9 @@ package resolvers
 
 import (
 	"context"
+	"entgo.io/ent/dialect/sql"
+	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
@@ -15,6 +18,15 @@ import (
 func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
 	userInfo := common.GetUserIdFromContext(ctx)
 	client := ent.FromContext(ctx)
+	// if the last message in the thread was sent by a human, return an error, we can't have two human messages in a row
+	previousMessage, err := client.Message.Query().Order(message.ByCreatedAt(sql.OrderAsc())).First(ctx)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
+	}
+	if previousMessage != nil && previousMessage.MessageType == message.MessageTypeHuman {
+		return nil, gqlerror.Errorf("please wait to get a response before sending another message")
+	}
 	// create message
+	// todo: enqueue stuff
 	return client.Message.Create().SetInput(input).SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).Save(ctx)
 }
