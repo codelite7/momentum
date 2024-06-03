@@ -13,8 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // AgentUpdate is the builder for updating Agent entities.
@@ -86,45 +84,9 @@ func (au *AgentUpdate) SetNillableAPIKey(s *string) *AgentUpdate {
 	return au
 }
 
-// AddResponseIDs adds the "responses" edge to the Response entity by IDs.
-func (au *AgentUpdate) AddResponseIDs(ids ...pulid.ID) *AgentUpdate {
-	au.mutation.AddResponseIDs(ids...)
-	return au
-}
-
-// AddResponses adds the "responses" edges to the Response entity.
-func (au *AgentUpdate) AddResponses(r ...*Response) *AgentUpdate {
-	ids := make([]pulid.ID, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
-	}
-	return au.AddResponseIDs(ids...)
-}
-
 // Mutation returns the AgentMutation object of the builder.
 func (au *AgentUpdate) Mutation() *AgentMutation {
 	return au.mutation
-}
-
-// ClearResponses clears all "responses" edges to the Response entity.
-func (au *AgentUpdate) ClearResponses() *AgentUpdate {
-	au.mutation.ClearResponses()
-	return au
-}
-
-// RemoveResponseIDs removes the "responses" edge to Response entities by IDs.
-func (au *AgentUpdate) RemoveResponseIDs(ids ...pulid.ID) *AgentUpdate {
-	au.mutation.RemoveResponseIDs(ids...)
-	return au
-}
-
-// RemoveResponses removes "responses" edges to Response entities.
-func (au *AgentUpdate) RemoveResponses(r ...*Response) *AgentUpdate {
-	ids := make([]pulid.ID, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
-	}
-	return au.RemoveResponseIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -174,51 +136,6 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := au.mutation.APIKey(); ok {
 		_spec.SetField(agent.FieldAPIKey, field.TypeString, value)
-	}
-	if au.mutation.ResponsesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := au.mutation.RemovedResponsesIDs(); len(nodes) > 0 && !au.mutation.ResponsesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := au.mutation.ResponsesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -296,45 +213,9 @@ func (auo *AgentUpdateOne) SetNillableAPIKey(s *string) *AgentUpdateOne {
 	return auo
 }
 
-// AddResponseIDs adds the "responses" edge to the Response entity by IDs.
-func (auo *AgentUpdateOne) AddResponseIDs(ids ...pulid.ID) *AgentUpdateOne {
-	auo.mutation.AddResponseIDs(ids...)
-	return auo
-}
-
-// AddResponses adds the "responses" edges to the Response entity.
-func (auo *AgentUpdateOne) AddResponses(r ...*Response) *AgentUpdateOne {
-	ids := make([]pulid.ID, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
-	}
-	return auo.AddResponseIDs(ids...)
-}
-
 // Mutation returns the AgentMutation object of the builder.
 func (auo *AgentUpdateOne) Mutation() *AgentMutation {
 	return auo.mutation
-}
-
-// ClearResponses clears all "responses" edges to the Response entity.
-func (auo *AgentUpdateOne) ClearResponses() *AgentUpdateOne {
-	auo.mutation.ClearResponses()
-	return auo
-}
-
-// RemoveResponseIDs removes the "responses" edge to Response entities by IDs.
-func (auo *AgentUpdateOne) RemoveResponseIDs(ids ...pulid.ID) *AgentUpdateOne {
-	auo.mutation.RemoveResponseIDs(ids...)
-	return auo
-}
-
-// RemoveResponses removes "responses" edges to Response entities.
-func (auo *AgentUpdateOne) RemoveResponses(r ...*Response) *AgentUpdateOne {
-	ids := make([]pulid.ID, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
-	}
-	return auo.RemoveResponseIDs(ids...)
 }
 
 // Where appends a list predicates to the AgentUpdate builder.
@@ -414,51 +295,6 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 	}
 	if value, ok := auo.mutation.APIKey(); ok {
 		_spec.SetField(agent.FieldAPIKey, field.TypeString, value)
-	}
-	if auo.mutation.ResponsesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := auo.mutation.RemovedResponsesIDs(); len(nodes) > 0 && !auo.mutation.ResponsesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := auo.mutation.ResponsesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Agent{config: auo.config}
 	_spec.Assign = _node.assignValues

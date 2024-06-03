@@ -10,18 +10,14 @@ import (
 
 // CreateAgentInput represents a mutation input for creating agents.
 type CreateAgentInput struct {
-	Provider    string
-	Model       string
-	ResponseIDs []pulid.ID
+	Provider string
+	Model    string
 }
 
 // Mutate applies the CreateAgentInput on the AgentMutation builder.
 func (i *CreateAgentInput) Mutate(m *AgentMutation) {
 	m.SetProvider(i.Provider)
 	m.SetModel(i.Model)
-	if v := i.ResponseIDs; len(v) > 0 {
-		m.AddResponseIDs(v...)
-	}
 }
 
 // SetInput applies the change-set in the CreateAgentInput on the AgentCreate builder.
@@ -32,11 +28,8 @@ func (c *AgentCreate) SetInput(i CreateAgentInput) *AgentCreate {
 
 // UpdateAgentInput represents a mutation input for updating agents.
 type UpdateAgentInput struct {
-	Provider          *string
-	Model             *string
-	ClearResponses    bool
-	AddResponseIDs    []pulid.ID
-	RemoveResponseIDs []pulid.ID
+	Provider *string
+	Model    *string
 }
 
 // Mutate applies the UpdateAgentInput on the AgentMutation builder.
@@ -46,15 +39,6 @@ func (i *UpdateAgentInput) Mutate(m *AgentMutation) {
 	}
 	if v := i.Model; v != nil {
 		m.SetModel(*v)
-	}
-	if i.ClearResponses {
-		m.ClearResponses()
-	}
-	if v := i.AddResponseIDs; len(v) > 0 {
-		m.AddResponseIDs(v...)
-	}
-	if v := i.RemoveResponseIDs; len(v) > 0 {
-		m.RemoveResponseIDs(v...)
 	}
 }
 
@@ -72,10 +56,9 @@ func (c *AgentUpdateOne) SetInput(i UpdateAgentInput) *AgentUpdateOne {
 
 // CreateBookmarkInput represents a mutation input for creating bookmarks.
 type CreateBookmarkInput struct {
-	UserID     pulid.ID
-	ThreadID   *pulid.ID
-	MessageID  *pulid.ID
-	ResponseID *pulid.ID
+	UserID    pulid.ID
+	ThreadID  *pulid.ID
+	MessageID *pulid.ID
 }
 
 // Mutate applies the CreateBookmarkInput on the BookmarkMutation builder.
@@ -87,9 +70,6 @@ func (i *CreateBookmarkInput) Mutate(m *BookmarkMutation) {
 	if v := i.MessageID; v != nil {
 		m.SetMessageID(*v)
 	}
-	if v := i.ResponseID; v != nil {
-		m.SetResponseID(*v)
-	}
 }
 
 // SetInput applies the change-set in the CreateBookmarkInput on the BookmarkCreate builder.
@@ -100,13 +80,11 @@ func (c *BookmarkCreate) SetInput(i CreateBookmarkInput) *BookmarkCreate {
 
 // UpdateBookmarkInput represents a mutation input for updating bookmarks.
 type UpdateBookmarkInput struct {
-	UserID        *pulid.ID
-	ClearThread   bool
-	ThreadID      *pulid.ID
-	ClearMessage  bool
-	MessageID     *pulid.ID
-	ClearResponse bool
-	ResponseID    *pulid.ID
+	UserID       *pulid.ID
+	ClearThread  bool
+	ThreadID     *pulid.ID
+	ClearMessage bool
+	MessageID    *pulid.ID
 }
 
 // Mutate applies the UpdateBookmarkInput on the BookmarkMutation builder.
@@ -125,12 +103,6 @@ func (i *UpdateBookmarkInput) Mutate(m *BookmarkMutation) {
 	}
 	if v := i.MessageID; v != nil {
 		m.SetMessageID(*v)
-	}
-	if i.ClearResponse {
-		m.ClearResponse()
-	}
-	if v := i.ResponseID; v != nil {
-		m.SetResponseID(*v)
 	}
 }
 
@@ -151,7 +123,6 @@ type CreateMessageInput struct {
 	Content     string
 	ThreadID    pulid.ID
 	BookmarkIDs []pulid.ID
-	ResponseID  *pulid.ID
 }
 
 // Mutate applies the CreateMessageInput on the MessageMutation builder.
@@ -160,9 +131,6 @@ func (i *CreateMessageInput) Mutate(m *MessageMutation) {
 	m.SetThreadID(i.ThreadID)
 	if v := i.BookmarkIDs; len(v) > 0 {
 		m.AddBookmarkIDs(v...)
-	}
-	if v := i.ResponseID; v != nil {
-		m.SetResponseID(*v)
 	}
 }
 
@@ -179,8 +147,6 @@ type UpdateMessageInput struct {
 	ClearBookmarks    bool
 	AddBookmarkIDs    []pulid.ID
 	RemoveBookmarkIDs []pulid.ID
-	ClearResponse     bool
-	ResponseID        *pulid.ID
 }
 
 // Mutate applies the UpdateMessageInput on the MessageMutation builder.
@@ -200,12 +166,6 @@ func (i *UpdateMessageInput) Mutate(m *MessageMutation) {
 	if v := i.RemoveBookmarkIDs; len(v) > 0 {
 		m.RemoveBookmarkIDs(v...)
 	}
-	if i.ClearResponse {
-		m.ClearResponse()
-	}
-	if v := i.ResponseID; v != nil {
-		m.SetResponseID(*v)
-	}
 }
 
 // SetInput applies the change-set in the UpdateMessageInput on the MessageUpdate builder.
@@ -216,80 +176,6 @@ func (c *MessageUpdate) SetInput(i UpdateMessageInput) *MessageUpdate {
 
 // SetInput applies the change-set in the UpdateMessageInput on the MessageUpdateOne builder.
 func (c *MessageUpdateOne) SetInput(i UpdateMessageInput) *MessageUpdateOne {
-	i.Mutate(c.Mutation())
-	return c
-}
-
-// CreateResponseInput represents a mutation input for creating responses.
-type CreateResponseInput struct {
-	Content     *string
-	SentByID    pulid.ID
-	MessageID   pulid.ID
-	BookmarkIDs []pulid.ID
-}
-
-// Mutate applies the CreateResponseInput on the ResponseMutation builder.
-func (i *CreateResponseInput) Mutate(m *ResponseMutation) {
-	if v := i.Content; v != nil {
-		m.SetContent(*v)
-	}
-	m.SetSentByID(i.SentByID)
-	m.SetMessageID(i.MessageID)
-	if v := i.BookmarkIDs; len(v) > 0 {
-		m.AddBookmarkIDs(v...)
-	}
-}
-
-// SetInput applies the change-set in the CreateResponseInput on the ResponseCreate builder.
-func (c *ResponseCreate) SetInput(i CreateResponseInput) *ResponseCreate {
-	i.Mutate(c.Mutation())
-	return c
-}
-
-// UpdateResponseInput represents a mutation input for updating responses.
-type UpdateResponseInput struct {
-	ClearContent      bool
-	Content           *string
-	SentByID          *pulid.ID
-	MessageID         *pulid.ID
-	ClearBookmarks    bool
-	AddBookmarkIDs    []pulid.ID
-	RemoveBookmarkIDs []pulid.ID
-}
-
-// Mutate applies the UpdateResponseInput on the ResponseMutation builder.
-func (i *UpdateResponseInput) Mutate(m *ResponseMutation) {
-	if i.ClearContent {
-		m.ClearContent()
-	}
-	if v := i.Content; v != nil {
-		m.SetContent(*v)
-	}
-	if v := i.SentByID; v != nil {
-		m.SetSentByID(*v)
-	}
-	if v := i.MessageID; v != nil {
-		m.SetMessageID(*v)
-	}
-	if i.ClearBookmarks {
-		m.ClearBookmarks()
-	}
-	if v := i.AddBookmarkIDs; len(v) > 0 {
-		m.AddBookmarkIDs(v...)
-	}
-	if v := i.RemoveBookmarkIDs; len(v) > 0 {
-		m.RemoveBookmarkIDs(v...)
-	}
-}
-
-// SetInput applies the change-set in the UpdateResponseInput on the ResponseUpdate builder.
-func (c *ResponseUpdate) SetInput(i UpdateResponseInput) *ResponseUpdate {
-	i.Mutate(c.Mutation())
-	return c
-}
-
-// SetInput applies the change-set in the UpdateResponseInput on the ResponseUpdateOne builder.
-func (c *ResponseUpdateOne) SetInput(i UpdateResponseInput) *ResponseUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }

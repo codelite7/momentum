@@ -45,17 +45,6 @@ func ChatMessagesFromMessages(messages []*ent.Message) ([]*ChatMessage, error) {
 			return nil, err
 		}
 		chatMessages = append(chatMessages, humanChatMessage)
-		response, err := message.Response(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		if response != nil && response.Content != "" {
-			aiMessage, err := chatMessageFromResponse(response)
-			if err != nil {
-				return nil, err
-			}
-			chatMessages = append(chatMessages, aiMessage)
-		}
 	}
 	return chatMessages, nil
 }
@@ -71,12 +60,6 @@ type ChatMessageData struct {
 func chatMessageFromMessage(message *ent.Message) (*ChatMessage, error) {
 	chatMessage := &ChatMessage{Data: ChatMessageData{Content: message.Content}}
 	chatMessage.Type = "human"
-
-	return chatMessage, nil
-}
-func chatMessageFromResponse(response *ent.Response) (*ChatMessage, error) {
-	chatMessage := &ChatMessage{Data: ChatMessageData{Content: response.Content}}
-	chatMessage.Type = "ai"
 
 	return chatMessage, nil
 }

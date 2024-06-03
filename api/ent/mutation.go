@@ -15,7 +15,6 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -35,7 +34,6 @@ const (
 	TypeAgent             = "Agent"
 	TypeBookmark          = "Bookmark"
 	TypeMessage           = "Message"
-	TypeResponse          = "Response"
 	TypeTenant            = "Tenant"
 	TypeThread            = "Thread"
 	TypeUser              = "User"
@@ -45,21 +43,18 @@ const (
 // AgentMutation represents an operation that mutates the Agent nodes in the graph.
 type AgentMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *pulid.ID
-	created_at       *time.Time
-	updated_at       *time.Time
-	provider         *string
-	model            *string
-	api_key          *string
-	clearedFields    map[string]struct{}
-	responses        map[pulid.ID]struct{}
-	removedresponses map[pulid.ID]struct{}
-	clearedresponses bool
-	done             bool
-	oldValue         func(context.Context) (*Agent, error)
-	predicates       []predicate.Agent
+	op            Op
+	typ           string
+	id            *pulid.ID
+	created_at    *time.Time
+	updated_at    *time.Time
+	provider      *string
+	model         *string
+	api_key       *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*Agent, error)
+	predicates    []predicate.Agent
 }
 
 var _ ent.Mutation = (*AgentMutation)(nil)
@@ -346,60 +341,6 @@ func (m *AgentMutation) ResetAPIKey() {
 	m.api_key = nil
 }
 
-// AddResponseIDs adds the "responses" edge to the Response entity by ids.
-func (m *AgentMutation) AddResponseIDs(ids ...pulid.ID) {
-	if m.responses == nil {
-		m.responses = make(map[pulid.ID]struct{})
-	}
-	for i := range ids {
-		m.responses[ids[i]] = struct{}{}
-	}
-}
-
-// ClearResponses clears the "responses" edge to the Response entity.
-func (m *AgentMutation) ClearResponses() {
-	m.clearedresponses = true
-}
-
-// ResponsesCleared reports if the "responses" edge to the Response entity was cleared.
-func (m *AgentMutation) ResponsesCleared() bool {
-	return m.clearedresponses
-}
-
-// RemoveResponseIDs removes the "responses" edge to the Response entity by IDs.
-func (m *AgentMutation) RemoveResponseIDs(ids ...pulid.ID) {
-	if m.removedresponses == nil {
-		m.removedresponses = make(map[pulid.ID]struct{})
-	}
-	for i := range ids {
-		delete(m.responses, ids[i])
-		m.removedresponses[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedResponses returns the removed IDs of the "responses" edge to the Response entity.
-func (m *AgentMutation) RemovedResponsesIDs() (ids []pulid.ID) {
-	for id := range m.removedresponses {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResponsesIDs returns the "responses" edge IDs in the mutation.
-func (m *AgentMutation) ResponsesIDs() (ids []pulid.ID) {
-	for id := range m.responses {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetResponses resets all changes to the "responses" edge.
-func (m *AgentMutation) ResetResponses() {
-	m.responses = nil
-	m.clearedresponses = false
-	m.removedresponses = nil
-}
-
 // Where appends a list predicates to the AgentMutation builder.
 func (m *AgentMutation) Where(ps ...predicate.Agent) {
 	m.predicates = append(m.predicates, ps...)
@@ -601,110 +542,72 @@ func (m *AgentMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AgentMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.responses != nil {
-		edges = append(edges, agent.EdgeResponses)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *AgentMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case agent.EdgeResponses:
-		ids := make([]ent.Value, 0, len(m.responses))
-		for id := range m.responses {
-			ids = append(ids, id)
-		}
-		return ids
-	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AgentMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.removedresponses != nil {
-		edges = append(edges, agent.EdgeResponses)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *AgentMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case agent.EdgeResponses:
-		ids := make([]ent.Value, 0, len(m.removedresponses))
-		for id := range m.removedresponses {
-			ids = append(ids, id)
-		}
-		return ids
-	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AgentMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedresponses {
-		edges = append(edges, agent.EdgeResponses)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *AgentMutation) EdgeCleared(name string) bool {
-	switch name {
-	case agent.EdgeResponses:
-		return m.clearedresponses
-	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *AgentMutation) ClearEdge(name string) error {
-	switch name {
-	}
 	return fmt.Errorf("unknown Agent unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *AgentMutation) ResetEdge(name string) error {
-	switch name {
-	case agent.EdgeResponses:
-		m.ResetResponses()
-		return nil
-	}
 	return fmt.Errorf("unknown Agent edge %s", name)
 }
 
 // BookmarkMutation represents an operation that mutates the Bookmark nodes in the graph.
 type BookmarkMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *pulid.ID
-	created_at      *time.Time
-	updated_at      *time.Time
-	clearedFields   map[string]struct{}
-	tenant          *pulid.ID
-	clearedtenant   bool
-	user            *pulid.ID
-	cleareduser     bool
-	thread          *pulid.ID
-	clearedthread   bool
-	message         *pulid.ID
-	clearedmessage  bool
-	response        *pulid.ID
-	clearedresponse bool
-	done            bool
-	oldValue        func(context.Context) (*Bookmark, error)
-	predicates      []predicate.Bookmark
+	op             Op
+	typ            string
+	id             *pulid.ID
+	created_at     *time.Time
+	updated_at     *time.Time
+	clearedFields  map[string]struct{}
+	tenant         *pulid.ID
+	clearedtenant  bool
+	user           *pulid.ID
+	cleareduser    bool
+	thread         *pulid.ID
+	clearedthread  bool
+	message        *pulid.ID
+	clearedmessage bool
+	done           bool
+	oldValue       func(context.Context) (*Bookmark, error)
+	predicates     []predicate.Bookmark
 }
 
 var _ ent.Mutation = (*BookmarkMutation)(nil)
@@ -1063,45 +966,6 @@ func (m *BookmarkMutation) ResetMessage() {
 	m.clearedmessage = false
 }
 
-// SetResponseID sets the "response" edge to the Response entity by id.
-func (m *BookmarkMutation) SetResponseID(id pulid.ID) {
-	m.response = &id
-}
-
-// ClearResponse clears the "response" edge to the Response entity.
-func (m *BookmarkMutation) ClearResponse() {
-	m.clearedresponse = true
-}
-
-// ResponseCleared reports if the "response" edge to the Response entity was cleared.
-func (m *BookmarkMutation) ResponseCleared() bool {
-	return m.clearedresponse
-}
-
-// ResponseID returns the "response" edge ID in the mutation.
-func (m *BookmarkMutation) ResponseID() (id pulid.ID, exists bool) {
-	if m.response != nil {
-		return *m.response, true
-	}
-	return
-}
-
-// ResponseIDs returns the "response" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ResponseID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) ResponseIDs() (ids []pulid.ID) {
-	if id := m.response; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetResponse resets all changes to the "response" edge.
-func (m *BookmarkMutation) ResetResponse() {
-	m.response = nil
-	m.clearedresponse = false
-}
-
 // Where appends a list predicates to the BookmarkMutation builder.
 func (m *BookmarkMutation) Where(ps ...predicate.Bookmark) {
 	m.predicates = append(m.predicates, ps...)
@@ -1269,7 +1133,7 @@ func (m *BookmarkMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BookmarkMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.tenant != nil {
 		edges = append(edges, bookmark.EdgeTenant)
 	}
@@ -1281,9 +1145,6 @@ func (m *BookmarkMutation) AddedEdges() []string {
 	}
 	if m.message != nil {
 		edges = append(edges, bookmark.EdgeMessage)
-	}
-	if m.response != nil {
-		edges = append(edges, bookmark.EdgeResponse)
 	}
 	return edges
 }
@@ -1308,17 +1169,13 @@ func (m *BookmarkMutation) AddedIDs(name string) []ent.Value {
 		if id := m.message; id != nil {
 			return []ent.Value{*id}
 		}
-	case bookmark.EdgeResponse:
-		if id := m.response; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BookmarkMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	return edges
 }
 
@@ -1330,7 +1187,7 @@ func (m *BookmarkMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BookmarkMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.clearedtenant {
 		edges = append(edges, bookmark.EdgeTenant)
 	}
@@ -1342,9 +1199,6 @@ func (m *BookmarkMutation) ClearedEdges() []string {
 	}
 	if m.clearedmessage {
 		edges = append(edges, bookmark.EdgeMessage)
-	}
-	if m.clearedresponse {
-		edges = append(edges, bookmark.EdgeResponse)
 	}
 	return edges
 }
@@ -1361,8 +1215,6 @@ func (m *BookmarkMutation) EdgeCleared(name string) bool {
 		return m.clearedthread
 	case bookmark.EdgeMessage:
 		return m.clearedmessage
-	case bookmark.EdgeResponse:
-		return m.clearedresponse
 	}
 	return false
 }
@@ -1383,9 +1235,6 @@ func (m *BookmarkMutation) ClearEdge(name string) error {
 	case bookmark.EdgeMessage:
 		m.ClearMessage()
 		return nil
-	case bookmark.EdgeResponse:
-		m.ClearResponse()
-		return nil
 	}
 	return fmt.Errorf("unknown Bookmark unique edge %s", name)
 }
@@ -1405,9 +1254,6 @@ func (m *BookmarkMutation) ResetEdge(name string) error {
 		return nil
 	case bookmark.EdgeMessage:
 		m.ResetMessage()
-		return nil
-	case bookmark.EdgeResponse:
-		m.ResetResponse()
 		return nil
 	}
 	return fmt.Errorf("unknown Bookmark edge %s", name)
@@ -1432,8 +1278,6 @@ type MessageMutation struct {
 	bookmarks        map[pulid.ID]struct{}
 	removedbookmarks map[pulid.ID]struct{}
 	clearedbookmarks bool
-	response         *pulid.ID
-	clearedresponse  bool
 	done             bool
 	oldValue         func(context.Context) (*Message, error)
 	predicates       []predicate.Message
@@ -1846,45 +1690,6 @@ func (m *MessageMutation) ResetBookmarks() {
 	m.removedbookmarks = nil
 }
 
-// SetResponseID sets the "response" edge to the Response entity by id.
-func (m *MessageMutation) SetResponseID(id pulid.ID) {
-	m.response = &id
-}
-
-// ClearResponse clears the "response" edge to the Response entity.
-func (m *MessageMutation) ClearResponse() {
-	m.clearedresponse = true
-}
-
-// ResponseCleared reports if the "response" edge to the Response entity was cleared.
-func (m *MessageMutation) ResponseCleared() bool {
-	return m.clearedresponse
-}
-
-// ResponseID returns the "response" edge ID in the mutation.
-func (m *MessageMutation) ResponseID() (id pulid.ID, exists bool) {
-	if m.response != nil {
-		return *m.response, true
-	}
-	return
-}
-
-// ResponseIDs returns the "response" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ResponseID instead. It exists only for internal usage by the builders.
-func (m *MessageMutation) ResponseIDs() (ids []pulid.ID) {
-	if id := m.response; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetResponse resets all changes to the "response" edge.
-func (m *MessageMutation) ResetResponse() {
-	m.response = nil
-	m.clearedresponse = false
-}
-
 // Where appends a list predicates to the MessageMutation builder.
 func (m *MessageMutation) Where(ps ...predicate.Message) {
 	m.predicates = append(m.predicates, ps...)
@@ -2069,7 +1874,7 @@ func (m *MessageMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *MessageMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.tenant != nil {
 		edges = append(edges, message.EdgeTenant)
 	}
@@ -2081,9 +1886,6 @@ func (m *MessageMutation) AddedEdges() []string {
 	}
 	if m.bookmarks != nil {
 		edges = append(edges, message.EdgeBookmarks)
-	}
-	if m.response != nil {
-		edges = append(edges, message.EdgeResponse)
 	}
 	return edges
 }
@@ -2110,17 +1912,13 @@ func (m *MessageMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case message.EdgeResponse:
-		if id := m.response; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *MessageMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.removedbookmarks != nil {
 		edges = append(edges, message.EdgeBookmarks)
 	}
@@ -2143,7 +1941,7 @@ func (m *MessageMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *MessageMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.clearedtenant {
 		edges = append(edges, message.EdgeTenant)
 	}
@@ -2155,9 +1953,6 @@ func (m *MessageMutation) ClearedEdges() []string {
 	}
 	if m.clearedbookmarks {
 		edges = append(edges, message.EdgeBookmarks)
-	}
-	if m.clearedresponse {
-		edges = append(edges, message.EdgeResponse)
 	}
 	return edges
 }
@@ -2174,8 +1969,6 @@ func (m *MessageMutation) EdgeCleared(name string) bool {
 		return m.clearedthread
 	case message.EdgeBookmarks:
 		return m.clearedbookmarks
-	case message.EdgeResponse:
-		return m.clearedresponse
 	}
 	return false
 }
@@ -2192,9 +1985,6 @@ func (m *MessageMutation) ClearEdge(name string) error {
 		return nil
 	case message.EdgeThread:
 		m.ClearThread()
-		return nil
-	case message.EdgeResponse:
-		m.ClearResponse()
 		return nil
 	}
 	return fmt.Errorf("unknown Message unique edge %s", name)
@@ -2216,784 +2006,8 @@ func (m *MessageMutation) ResetEdge(name string) error {
 	case message.EdgeBookmarks:
 		m.ResetBookmarks()
 		return nil
-	case message.EdgeResponse:
-		m.ResetResponse()
-		return nil
 	}
 	return fmt.Errorf("unknown Message edge %s", name)
-}
-
-// ResponseMutation represents an operation that mutates the Response nodes in the graph.
-type ResponseMutation struct {
-	config
-	op               Op
-	typ              string
-	id               *pulid.ID
-	created_at       *time.Time
-	updated_at       *time.Time
-	content          *string
-	clearedFields    map[string]struct{}
-	tenant           *pulid.ID
-	clearedtenant    bool
-	sent_by          *pulid.ID
-	clearedsent_by   bool
-	message          *pulid.ID
-	clearedmessage   bool
-	bookmarks        map[pulid.ID]struct{}
-	removedbookmarks map[pulid.ID]struct{}
-	clearedbookmarks bool
-	done             bool
-	oldValue         func(context.Context) (*Response, error)
-	predicates       []predicate.Response
-}
-
-var _ ent.Mutation = (*ResponseMutation)(nil)
-
-// responseOption allows management of the mutation configuration using functional options.
-type responseOption func(*ResponseMutation)
-
-// newResponseMutation creates new mutation for the Response entity.
-func newResponseMutation(c config, op Op, opts ...responseOption) *ResponseMutation {
-	m := &ResponseMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeResponse,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withResponseID sets the ID field of the mutation.
-func withResponseID(id pulid.ID) responseOption {
-	return func(m *ResponseMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Response
-		)
-		m.oldValue = func(ctx context.Context) (*Response, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Response.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withResponse sets the old Response of the mutation.
-func withResponse(node *Response) responseOption {
-	return func(m *ResponseMutation) {
-		m.oldValue = func(context.Context) (*Response, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ResponseMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m ResponseMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of Response entities.
-func (m *ResponseMutation) SetID(id pulid.ID) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *ResponseMutation) ID() (id pulid.ID, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *ResponseMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []pulid.ID{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Response.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *ResponseMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *ResponseMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the Response entity.
-// If the Response object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ResponseMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *ResponseMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (m *ResponseMutation) SetUpdatedAt(t time.Time) {
-	m.updated_at = &t
-}
-
-// UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *ResponseMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old "updated_at" field's value of the Response entity.
-// If the Response object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ResponseMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *ResponseMutation) ResetUpdatedAt() {
-	m.updated_at = nil
-}
-
-// SetTenantID sets the "tenant_id" field.
-func (m *ResponseMutation) SetTenantID(pu pulid.ID) {
-	m.tenant = &pu
-}
-
-// TenantID returns the value of the "tenant_id" field in the mutation.
-func (m *ResponseMutation) TenantID() (r pulid.ID, exists bool) {
-	v := m.tenant
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTenantID returns the old "tenant_id" field's value of the Response entity.
-// If the Response object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ResponseMutation) OldTenantID(ctx context.Context) (v pulid.ID, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTenantID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
-	}
-	return oldValue.TenantID, nil
-}
-
-// ResetTenantID resets all changes to the "tenant_id" field.
-func (m *ResponseMutation) ResetTenantID() {
-	m.tenant = nil
-}
-
-// SetContent sets the "content" field.
-func (m *ResponseMutation) SetContent(s string) {
-	m.content = &s
-}
-
-// Content returns the value of the "content" field in the mutation.
-func (m *ResponseMutation) Content() (r string, exists bool) {
-	v := m.content
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldContent returns the old "content" field's value of the Response entity.
-// If the Response object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ResponseMutation) OldContent(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldContent is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldContent requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldContent: %w", err)
-	}
-	return oldValue.Content, nil
-}
-
-// ClearContent clears the value of the "content" field.
-func (m *ResponseMutation) ClearContent() {
-	m.content = nil
-	m.clearedFields[response.FieldContent] = struct{}{}
-}
-
-// ContentCleared returns if the "content" field was cleared in this mutation.
-func (m *ResponseMutation) ContentCleared() bool {
-	_, ok := m.clearedFields[response.FieldContent]
-	return ok
-}
-
-// ResetContent resets all changes to the "content" field.
-func (m *ResponseMutation) ResetContent() {
-	m.content = nil
-	delete(m.clearedFields, response.FieldContent)
-}
-
-// ClearTenant clears the "tenant" edge to the Tenant entity.
-func (m *ResponseMutation) ClearTenant() {
-	m.clearedtenant = true
-	m.clearedFields[response.FieldTenantID] = struct{}{}
-}
-
-// TenantCleared reports if the "tenant" edge to the Tenant entity was cleared.
-func (m *ResponseMutation) TenantCleared() bool {
-	return m.clearedtenant
-}
-
-// TenantIDs returns the "tenant" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TenantID instead. It exists only for internal usage by the builders.
-func (m *ResponseMutation) TenantIDs() (ids []pulid.ID) {
-	if id := m.tenant; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetTenant resets all changes to the "tenant" edge.
-func (m *ResponseMutation) ResetTenant() {
-	m.tenant = nil
-	m.clearedtenant = false
-}
-
-// SetSentByID sets the "sent_by" edge to the Agent entity by id.
-func (m *ResponseMutation) SetSentByID(id pulid.ID) {
-	m.sent_by = &id
-}
-
-// ClearSentBy clears the "sent_by" edge to the Agent entity.
-func (m *ResponseMutation) ClearSentBy() {
-	m.clearedsent_by = true
-}
-
-// SentByCleared reports if the "sent_by" edge to the Agent entity was cleared.
-func (m *ResponseMutation) SentByCleared() bool {
-	return m.clearedsent_by
-}
-
-// SentByID returns the "sent_by" edge ID in the mutation.
-func (m *ResponseMutation) SentByID() (id pulid.ID, exists bool) {
-	if m.sent_by != nil {
-		return *m.sent_by, true
-	}
-	return
-}
-
-// SentByIDs returns the "sent_by" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// SentByID instead. It exists only for internal usage by the builders.
-func (m *ResponseMutation) SentByIDs() (ids []pulid.ID) {
-	if id := m.sent_by; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetSentBy resets all changes to the "sent_by" edge.
-func (m *ResponseMutation) ResetSentBy() {
-	m.sent_by = nil
-	m.clearedsent_by = false
-}
-
-// SetMessageID sets the "message" edge to the Message entity by id.
-func (m *ResponseMutation) SetMessageID(id pulid.ID) {
-	m.message = &id
-}
-
-// ClearMessage clears the "message" edge to the Message entity.
-func (m *ResponseMutation) ClearMessage() {
-	m.clearedmessage = true
-}
-
-// MessageCleared reports if the "message" edge to the Message entity was cleared.
-func (m *ResponseMutation) MessageCleared() bool {
-	return m.clearedmessage
-}
-
-// MessageID returns the "message" edge ID in the mutation.
-func (m *ResponseMutation) MessageID() (id pulid.ID, exists bool) {
-	if m.message != nil {
-		return *m.message, true
-	}
-	return
-}
-
-// MessageIDs returns the "message" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// MessageID instead. It exists only for internal usage by the builders.
-func (m *ResponseMutation) MessageIDs() (ids []pulid.ID) {
-	if id := m.message; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetMessage resets all changes to the "message" edge.
-func (m *ResponseMutation) ResetMessage() {
-	m.message = nil
-	m.clearedmessage = false
-}
-
-// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *ResponseMutation) AddBookmarkIDs(ids ...pulid.ID) {
-	if m.bookmarks == nil {
-		m.bookmarks = make(map[pulid.ID]struct{})
-	}
-	for i := range ids {
-		m.bookmarks[ids[i]] = struct{}{}
-	}
-}
-
-// ClearBookmarks clears the "bookmarks" edge to the Bookmark entity.
-func (m *ResponseMutation) ClearBookmarks() {
-	m.clearedbookmarks = true
-}
-
-// BookmarksCleared reports if the "bookmarks" edge to the Bookmark entity was cleared.
-func (m *ResponseMutation) BookmarksCleared() bool {
-	return m.clearedbookmarks
-}
-
-// RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *ResponseMutation) RemoveBookmarkIDs(ids ...pulid.ID) {
-	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[pulid.ID]struct{})
-	}
-	for i := range ids {
-		delete(m.bookmarks, ids[i])
-		m.removedbookmarks[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *ResponseMutation) RemovedBookmarksIDs() (ids []pulid.ID) {
-	for id := range m.removedbookmarks {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *ResponseMutation) BookmarksIDs() (ids []pulid.ID) {
-	for id := range m.bookmarks {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetBookmarks resets all changes to the "bookmarks" edge.
-func (m *ResponseMutation) ResetBookmarks() {
-	m.bookmarks = nil
-	m.clearedbookmarks = false
-	m.removedbookmarks = nil
-}
-
-// Where appends a list predicates to the ResponseMutation builder.
-func (m *ResponseMutation) Where(ps ...predicate.Response) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// WhereP appends storage-level predicates to the ResponseMutation builder. Using this method,
-// users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *ResponseMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.Response, len(ps))
-	for i := range ps {
-		p[i] = ps[i]
-	}
-	m.Where(p...)
-}
-
-// Op returns the operation name.
-func (m *ResponseMutation) Op() Op {
-	return m.op
-}
-
-// SetOp allows setting the mutation operation.
-func (m *ResponseMutation) SetOp(op Op) {
-	m.op = op
-}
-
-// Type returns the node type of this mutation (Response).
-func (m *ResponseMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *ResponseMutation) Fields() []string {
-	fields := make([]string, 0, 4)
-	if m.created_at != nil {
-		fields = append(fields, response.FieldCreatedAt)
-	}
-	if m.updated_at != nil {
-		fields = append(fields, response.FieldUpdatedAt)
-	}
-	if m.tenant != nil {
-		fields = append(fields, response.FieldTenantID)
-	}
-	if m.content != nil {
-		fields = append(fields, response.FieldContent)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *ResponseMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case response.FieldCreatedAt:
-		return m.CreatedAt()
-	case response.FieldUpdatedAt:
-		return m.UpdatedAt()
-	case response.FieldTenantID:
-		return m.TenantID()
-	case response.FieldContent:
-		return m.Content()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *ResponseMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case response.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case response.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	case response.FieldTenantID:
-		return m.OldTenantID(ctx)
-	case response.FieldContent:
-		return m.OldContent(ctx)
-	}
-	return nil, fmt.Errorf("unknown Response field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *ResponseMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case response.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case response.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	case response.FieldTenantID:
-		v, ok := value.(pulid.ID)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTenantID(v)
-		return nil
-	case response.FieldContent:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetContent(v)
-		return nil
-	}
-	return fmt.Errorf("unknown Response field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *ResponseMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *ResponseMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *ResponseMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Response numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *ResponseMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(response.FieldContent) {
-		fields = append(fields, response.FieldContent)
-	}
-	return fields
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *ResponseMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *ResponseMutation) ClearField(name string) error {
-	switch name {
-	case response.FieldContent:
-		m.ClearContent()
-		return nil
-	}
-	return fmt.Errorf("unknown Response nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *ResponseMutation) ResetField(name string) error {
-	switch name {
-	case response.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case response.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	case response.FieldTenantID:
-		m.ResetTenantID()
-		return nil
-	case response.FieldContent:
-		m.ResetContent()
-		return nil
-	}
-	return fmt.Errorf("unknown Response field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *ResponseMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.tenant != nil {
-		edges = append(edges, response.EdgeTenant)
-	}
-	if m.sent_by != nil {
-		edges = append(edges, response.EdgeSentBy)
-	}
-	if m.message != nil {
-		edges = append(edges, response.EdgeMessage)
-	}
-	if m.bookmarks != nil {
-		edges = append(edges, response.EdgeBookmarks)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *ResponseMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case response.EdgeTenant:
-		if id := m.tenant; id != nil {
-			return []ent.Value{*id}
-		}
-	case response.EdgeSentBy:
-		if id := m.sent_by; id != nil {
-			return []ent.Value{*id}
-		}
-	case response.EdgeMessage:
-		if id := m.message; id != nil {
-			return []ent.Value{*id}
-		}
-	case response.EdgeBookmarks:
-		ids := make([]ent.Value, 0, len(m.bookmarks))
-		for id := range m.bookmarks {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *ResponseMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.removedbookmarks != nil {
-		edges = append(edges, response.EdgeBookmarks)
-	}
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *ResponseMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case response.EdgeBookmarks:
-		ids := make([]ent.Value, 0, len(m.removedbookmarks))
-		for id := range m.removedbookmarks {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *ResponseMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.clearedtenant {
-		edges = append(edges, response.EdgeTenant)
-	}
-	if m.clearedsent_by {
-		edges = append(edges, response.EdgeSentBy)
-	}
-	if m.clearedmessage {
-		edges = append(edges, response.EdgeMessage)
-	}
-	if m.clearedbookmarks {
-		edges = append(edges, response.EdgeBookmarks)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *ResponseMutation) EdgeCleared(name string) bool {
-	switch name {
-	case response.EdgeTenant:
-		return m.clearedtenant
-	case response.EdgeSentBy:
-		return m.clearedsent_by
-	case response.EdgeMessage:
-		return m.clearedmessage
-	case response.EdgeBookmarks:
-		return m.clearedbookmarks
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *ResponseMutation) ClearEdge(name string) error {
-	switch name {
-	case response.EdgeTenant:
-		m.ClearTenant()
-		return nil
-	case response.EdgeSentBy:
-		m.ClearSentBy()
-		return nil
-	case response.EdgeMessage:
-		m.ClearMessage()
-		return nil
-	}
-	return fmt.Errorf("unknown Response unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *ResponseMutation) ResetEdge(name string) error {
-	switch name {
-	case response.EdgeTenant:
-		m.ResetTenant()
-		return nil
-	case response.EdgeSentBy:
-		m.ResetSentBy()
-		return nil
-	case response.EdgeMessage:
-		m.ResetMessage()
-		return nil
-	case response.EdgeBookmarks:
-		m.ResetBookmarks()
-		return nil
-	}
-	return fmt.Errorf("unknown Response edge %s", name)
 }
 
 // TenantMutation represents an operation that mutates the Tenant nodes in the graph.

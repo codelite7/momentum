@@ -48,7 +48,6 @@ type ComplexityRoot struct {
 		ID        func(childComplexity int) int
 		Model     func(childComplexity int) int
 		Provider  func(childComplexity int) int
-		Responses func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.ResponseOrder, where *ent.ResponseWhereInput) int
 		UpdatedAt func(childComplexity int) int
 	}
 
@@ -67,7 +66,6 @@ type ComplexityRoot struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Message   func(childComplexity int) int
-		Response  func(childComplexity int) int
 		Thread    func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		User      func(childComplexity int) int
@@ -89,7 +87,6 @@ type ComplexityRoot struct {
 		Content   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
-		Response  func(childComplexity int) int
 		SentBy    func(childComplexity int) int
 		Thread    func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
@@ -130,32 +127,10 @@ type ComplexityRoot struct {
 		Messages  func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.MessageOrder, where *ent.MessageWhereInput) int
 		Node      func(childComplexity int, id pulid.ID) int
 		Nodes     func(childComplexity int, ids []pulid.ID) int
-		Responses func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.ResponseOrder, where *ent.ResponseWhereInput) int
 		Thread    func(childComplexity int, id pulid.ID) int
 		Threads   func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) int
 		User      func(childComplexity int) int
 		Users     func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
-	}
-
-	Response struct {
-		Bookmarks func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) int
-		Content   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Message   func(childComplexity int) int
-		SentBy    func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-	}
-
-	ResponseConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
-	}
-
-	ResponseEdge struct {
-		Cursor func(childComplexity int) int
-		Node   func(childComplexity int) int
 	}
 
 	Thread struct {
@@ -251,18 +226,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Agent.Provider(childComplexity), true
 
-	case "Agent.responses":
-		if e.complexity.Agent.Responses == nil {
-			break
-		}
-
-		args, err := ec.field_Agent_responses_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Agent.Responses(childComplexity, args["after"].(*entgql.Cursor[pulid.ID]), args["first"].(*int), args["before"].(*entgql.Cursor[pulid.ID]), args["last"].(*int), args["orderBy"].([]*ent.ResponseOrder), args["where"].(*ent.ResponseWhereInput)), true
-
 	case "Agent.updatedAt":
 		if e.complexity.Agent.UpdatedAt == nil {
 			break
@@ -325,13 +288,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Bookmark.Message(childComplexity), true
-
-	case "Bookmark.response":
-		if e.complexity.Bookmark.Response == nil {
-			break
-		}
-
-		return e.complexity.Bookmark.Response(childComplexity), true
 
 	case "Bookmark.thread":
 		if e.complexity.Bookmark.Thread == nil {
@@ -421,13 +377,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Message.ID(childComplexity), true
-
-	case "Message.response":
-		if e.complexity.Message.Response == nil {
-			break
-		}
-
-		return e.complexity.Message.Response(childComplexity), true
 
 	case "Message.sentBy":
 		if e.complexity.Message.SentBy == nil {
@@ -669,18 +618,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]pulid.ID)), true
 
-	case "Query.responses":
-		if e.complexity.Query.Responses == nil {
-			break
-		}
-
-		args, err := ec.field_Query_responses_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Responses(childComplexity, args["after"].(*entgql.Cursor[pulid.ID]), args["first"].(*int), args["before"].(*entgql.Cursor[pulid.ID]), args["last"].(*int), args["orderBy"].([]*ent.ResponseOrder), args["where"].(*ent.ResponseWhereInput)), true
-
 	case "Query.thread":
 		if e.complexity.Query.Thread == nil {
 			break
@@ -723,95 +660,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Users(childComplexity, args["after"].(*entgql.Cursor[pulid.ID]), args["first"].(*int), args["before"].(*entgql.Cursor[pulid.ID]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
-
-	case "Response.bookmarks":
-		if e.complexity.Response.Bookmarks == nil {
-			break
-		}
-
-		args, err := ec.field_Response_bookmarks_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Response.Bookmarks(childComplexity, args["after"].(*entgql.Cursor[pulid.ID]), args["first"].(*int), args["before"].(*entgql.Cursor[pulid.ID]), args["last"].(*int), args["orderBy"].([]*ent.BookmarkOrder), args["where"].(*ent.BookmarkWhereInput)), true
-
-	case "Response.content":
-		if e.complexity.Response.Content == nil {
-			break
-		}
-
-		return e.complexity.Response.Content(childComplexity), true
-
-	case "Response.createdAt":
-		if e.complexity.Response.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.Response.CreatedAt(childComplexity), true
-
-	case "Response.id":
-		if e.complexity.Response.ID == nil {
-			break
-		}
-
-		return e.complexity.Response.ID(childComplexity), true
-
-	case "Response.message":
-		if e.complexity.Response.Message == nil {
-			break
-		}
-
-		return e.complexity.Response.Message(childComplexity), true
-
-	case "Response.sentBy":
-		if e.complexity.Response.SentBy == nil {
-			break
-		}
-
-		return e.complexity.Response.SentBy(childComplexity), true
-
-	case "Response.updatedAt":
-		if e.complexity.Response.UpdatedAt == nil {
-			break
-		}
-
-		return e.complexity.Response.UpdatedAt(childComplexity), true
-
-	case "ResponseConnection.edges":
-		if e.complexity.ResponseConnection.Edges == nil {
-			break
-		}
-
-		return e.complexity.ResponseConnection.Edges(childComplexity), true
-
-	case "ResponseConnection.pageInfo":
-		if e.complexity.ResponseConnection.PageInfo == nil {
-			break
-		}
-
-		return e.complexity.ResponseConnection.PageInfo(childComplexity), true
-
-	case "ResponseConnection.totalCount":
-		if e.complexity.ResponseConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.ResponseConnection.TotalCount(childComplexity), true
-
-	case "ResponseEdge.cursor":
-		if e.complexity.ResponseEdge.Cursor == nil {
-			break
-		}
-
-		return e.complexity.ResponseEdge.Cursor(childComplexity), true
-
-	case "ResponseEdge.node":
-		if e.complexity.ResponseEdge.Node == nil {
-			break
-		}
-
-		return e.complexity.ResponseEdge.Node(childComplexity), true
 
 	case "Thread.bookmarks":
 		if e.complexity.Thread.Bookmarks == nil {
@@ -1047,19 +895,15 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateAgentInput,
 		ec.unmarshalInputCreateBookmarkInput,
 		ec.unmarshalInputCreateMessageInput,
-		ec.unmarshalInputCreateResponseInput,
 		ec.unmarshalInputCreateThreadInput,
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputMessageOrder,
 		ec.unmarshalInputMessageWhereInput,
-		ec.unmarshalInputResponseOrder,
-		ec.unmarshalInputResponseWhereInput,
 		ec.unmarshalInputThreadOrder,
 		ec.unmarshalInputThreadWhereInput,
 		ec.unmarshalInputUpdateAgentInput,
 		ec.unmarshalInputUpdateBookmarkInput,
 		ec.unmarshalInputUpdateMessageInput,
-		ec.unmarshalInputUpdateResponseInput,
 		ec.unmarshalInputUpdateThreadInput,
 		ec.unmarshalInputUpdateUserInput,
 		ec.unmarshalInputUserOrder,
@@ -1176,37 +1020,6 @@ type Agent implements Node {
   updatedAt: Time!
   provider: String!
   model: String!
-  responses(
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for Responses returned from the connection.
-    """
-    orderBy: [ResponseOrder!]
-
-    """
-    Filtering options for Responses returned from the connection.
-    """
-    where: ResponseWhereInput
-  ): ResponseConnection!
 }
 """
 A connection to a list of items.
@@ -1333,11 +1146,6 @@ input AgentWhereInput {
   modelHasSuffix: String
   modelEqualFold: String
   modelContainsFold: String
-  """
-  responses edge predicates
-  """
-  hasResponses: Boolean
-  hasResponsesWith: [ResponseWhereInput!]
 }
 type Bookmark implements Node {
   id: ID!
@@ -1346,7 +1154,6 @@ type Bookmark implements Node {
   user: User!
   thread: Thread
   message: Message
-  response: Response
 }
 """
 A connection to a list of items.
@@ -1454,11 +1261,6 @@ input BookmarkWhereInput {
   """
   hasMessage: Boolean
   hasMessageWith: [MessageWhereInput!]
-  """
-  response edge predicates
-  """
-  hasResponse: Boolean
-  hasResponseWith: [ResponseWhereInput!]
 }
 """
 CreateAgentInput is used for create Agent object.
@@ -1467,7 +1269,6 @@ Input was generated by ent.
 input CreateAgentInput {
   provider: String!
   model: String!
-  responseIDs: [ID!]
 }
 """
 CreateBookmarkInput is used for create Bookmark object.
@@ -1477,7 +1278,6 @@ input CreateBookmarkInput {
   userID: ID!
   threadID: ID
   messageID: ID
-  responseID: ID
 }
 """
 CreateMessageInput is used for create Message object.
@@ -1486,17 +1286,6 @@ Input was generated by ent.
 input CreateMessageInput {
   content: String!
   threadID: ID!
-  bookmarkIDs: [ID!]
-  responseID: ID
-}
-"""
-CreateResponseInput is used for create Response object.
-Input was generated by ent.
-"""
-input CreateResponseInput {
-  content: String
-  sentByID: ID!
-  messageID: ID!
   bookmarkIDs: [ID!]
 }
 """
@@ -1564,7 +1353,6 @@ type Message implements Node {
     """
     where: BookmarkWhereInput
   ): BookmarkConnection!
-  response: Response
 }
 """
 A connection to a list of items.
@@ -1688,11 +1476,6 @@ input MessageWhereInput {
   """
   hasBookmarks: Boolean
   hasBookmarksWith: [BookmarkWhereInput!]
-  """
-  response edge predicates
-  """
-  hasResponse: Boolean
-  hasResponseWith: [ResponseWhereInput!]
 }
 """
 An object with an ID.
@@ -1851,37 +1634,6 @@ type Query {
     """
     where: MessageWhereInput
   ): MessageConnection!
-  responses(
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for Responses returned from the connection.
-    """
-    orderBy: [ResponseOrder!]
-
-    """
-    Filtering options for Responses returned from the connection.
-    """
-    where: ResponseWhereInput
-  ): ResponseConnection!
   threads(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -1944,170 +1696,6 @@ type Query {
     """
     where: UserWhereInput
   ): UserConnection!
-}
-type Response implements Node {
-  id: ID!
-  createdAt: Time!
-  updatedAt: Time!
-  content: String
-  sentBy: Agent!
-  message: Message!
-  bookmarks(
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for Bookmarks returned from the connection.
-    """
-    orderBy: [BookmarkOrder!]
-
-    """
-    Filtering options for Bookmarks returned from the connection.
-    """
-    where: BookmarkWhereInput
-  ): BookmarkConnection!
-}
-"""
-A connection to a list of items.
-"""
-type ResponseConnection {
-  """
-  A list of edges.
-  """
-  edges: [ResponseEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  Identifies the total count of items in the connection.
-  """
-  totalCount: Int!
-}
-"""
-An edge in a connection.
-"""
-type ResponseEdge {
-  """
-  The item at the end of the edge.
-  """
-  node: Response
-  """
-  A cursor for use in pagination.
-  """
-  cursor: Cursor!
-}
-"""
-Ordering options for Response connections
-"""
-input ResponseOrder {
-  """
-  The ordering direction.
-  """
-  direction: OrderDirection! = ASC
-  """
-  The field by which to order Responses.
-  """
-  field: ResponseOrderField!
-}
-"""
-Properties by which Response connections can be ordered.
-"""
-enum ResponseOrderField {
-  CREATED_AT
-  UPDATED_AT
-}
-"""
-ResponseWhereInput is used for filtering Response objects.
-Input was generated by ent.
-"""
-input ResponseWhereInput {
-  not: ResponseWhereInput
-  and: [ResponseWhereInput!]
-  or: [ResponseWhereInput!]
-  """
-  id field predicates
-  """
-  id: ID
-  idNEQ: ID
-  idIn: [ID!]
-  idNotIn: [ID!]
-  idGT: ID
-  idGTE: ID
-  idLT: ID
-  idLTE: ID
-  """
-  created_at field predicates
-  """
-  createdAt: Time
-  createdAtNEQ: Time
-  createdAtIn: [Time!]
-  createdAtNotIn: [Time!]
-  createdAtGT: Time
-  createdAtGTE: Time
-  createdAtLT: Time
-  createdAtLTE: Time
-  """
-  updated_at field predicates
-  """
-  updatedAt: Time
-  updatedAtNEQ: Time
-  updatedAtIn: [Time!]
-  updatedAtNotIn: [Time!]
-  updatedAtGT: Time
-  updatedAtGTE: Time
-  updatedAtLT: Time
-  updatedAtLTE: Time
-  """
-  content field predicates
-  """
-  content: String
-  contentNEQ: String
-  contentIn: [String!]
-  contentNotIn: [String!]
-  contentGT: String
-  contentGTE: String
-  contentLT: String
-  contentLTE: String
-  contentContains: String
-  contentHasPrefix: String
-  contentHasSuffix: String
-  contentIsNil: Boolean
-  contentNotNil: Boolean
-  contentEqualFold: String
-  contentContainsFold: String
-  """
-  sent_by edge predicates
-  """
-  hasSentBy: Boolean
-  hasSentByWith: [AgentWhereInput!]
-  """
-  message edge predicates
-  """
-  hasMessage: Boolean
-  hasMessageWith: [MessageWhereInput!]
-  """
-  bookmarks edge predicates
-  """
-  hasBookmarks: Boolean
-  hasBookmarksWith: [BookmarkWhereInput!]
 }
 type Thread implements Node {
   id: ID!
@@ -2368,9 +1956,6 @@ Input was generated by ent.
 input UpdateAgentInput {
   provider: String
   model: String
-  addResponseIDs: [ID!]
-  removeResponseIDs: [ID!]
-  clearResponses: Boolean
 }
 """
 UpdateBookmarkInput is used for update Bookmark object.
@@ -2382,8 +1967,6 @@ input UpdateBookmarkInput {
   clearThread: Boolean
   messageID: ID
   clearMessage: Boolean
-  responseID: ID
-  clearResponse: Boolean
 }
 """
 UpdateMessageInput is used for update Message object.
@@ -2392,21 +1975,6 @@ Input was generated by ent.
 input UpdateMessageInput {
   content: String
   threadID: ID
-  addBookmarkIDs: [ID!]
-  removeBookmarkIDs: [ID!]
-  clearBookmarks: Boolean
-  responseID: ID
-  clearResponse: Boolean
-}
-"""
-UpdateResponseInput is used for update Response object.
-Input was generated by ent.
-"""
-input UpdateResponseInput {
-  content: String
-  clearContent: Boolean
-  sentByID: ID
-  messageID: ID
   addBookmarkIDs: [ID!]
   removeBookmarkIDs: [ID!]
   clearBookmarks: Boolean

@@ -183,30 +183,6 @@ func (f MessageMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutatio
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.MessageMutation", m)
 }
 
-// The ResponseQueryRuleFunc type is an adapter to allow the use of ordinary
-// functions as a query rule.
-type ResponseQueryRuleFunc func(context.Context, *ent.ResponseQuery) error
-
-// EvalQuery return f(ctx, q).
-func (f ResponseQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
-	if q, ok := q.(*ent.ResponseQuery); ok {
-		return f(ctx, q)
-	}
-	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ResponseQuery", q)
-}
-
-// The ResponseMutationRuleFunc type is an adapter to allow the use of ordinary
-// functions as a mutation rule.
-type ResponseMutationRuleFunc func(context.Context, *ent.ResponseMutation) error
-
-// EvalMutation calls f(ctx, m).
-func (f ResponseMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
-	if m, ok := m.(*ent.ResponseMutation); ok {
-		return f(ctx, m)
-	}
-	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ResponseMutation", m)
-}
-
 // The TenantQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type TenantQueryRuleFunc func(context.Context, *ent.TenantQuery) error
@@ -344,8 +320,6 @@ func queryFilter(q ent.Query) (Filter, error) {
 		return q.Filter(), nil
 	case *ent.MessageQuery:
 		return q.Filter(), nil
-	case *ent.ResponseQuery:
-		return q.Filter(), nil
 	case *ent.TenantQuery:
 		return q.Filter(), nil
 	case *ent.ThreadQuery:
@@ -366,8 +340,6 @@ func mutationFilter(m ent.Mutation) (Filter, error) {
 	case *ent.BookmarkMutation:
 		return m.Filter(), nil
 	case *ent.MessageMutation:
-		return m.Filter(), nil
-	case *ent.ResponseMutation:
 		return m.Filter(), nil
 	case *ent.TenantMutation:
 		return m.Filter(), nil

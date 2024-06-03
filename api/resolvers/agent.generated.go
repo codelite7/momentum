@@ -224,8 +224,6 @@ func (ec *executionContext) fieldContext_Mutation_createAgent(ctx context.Contex
 				return ec.fieldContext_Agent_provider(ctx, field)
 			case "model":
 				return ec.fieldContext_Agent_model(ctx, field)
-			case "responses":
-				return ec.fieldContext_Agent_responses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Agent", field.Name)
 		},
@@ -409,8 +407,6 @@ func (ec *executionContext) fieldContext_Mutation_createMessage(ctx context.Cont
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_Message_bookmarks(ctx, field)
-			case "response":
-				return ec.fieldContext_Message_response(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},

@@ -31,8 +31,6 @@ const (
 	EdgeThread = "thread"
 	// EdgeBookmarks holds the string denoting the bookmarks edge name in mutations.
 	EdgeBookmarks = "bookmarks"
-	// EdgeResponse holds the string denoting the response edge name in mutations.
-	EdgeResponse = "response"
 	// Table holds the table name of the message in the database.
 	Table = "messages"
 	// TenantTable is the table that holds the tenant relation/edge.
@@ -63,13 +61,6 @@ const (
 	BookmarksInverseTable = "bookmarks"
 	// BookmarksColumn is the table column denoting the bookmarks relation/edge.
 	BookmarksColumn = "message_bookmarks"
-	// ResponseTable is the table that holds the response relation/edge.
-	ResponseTable = "responses"
-	// ResponseInverseTable is the table name for the Response entity.
-	// It exists in this package in order to avoid circular dependency with the "response" package.
-	ResponseInverseTable = "responses"
-	// ResponseColumn is the table column denoting the response relation/edge.
-	ResponseColumn = "message_response"
 )
 
 // Columns holds all SQL columns for message fields.
@@ -174,13 +165,6 @@ func ByBookmarks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newBookmarksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-
-// ByResponseField orders the results by response field.
-func ByResponseField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newResponseStep(), sql.OrderByField(field, opts...))
-	}
-}
 func newTenantStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -207,12 +191,5 @@ func newBookmarksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(BookmarksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, BookmarksTable, BookmarksColumn),
-	)
-}
-func newResponseStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ResponseInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, false, ResponseTable, ResponseColumn),
 	)
 }

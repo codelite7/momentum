@@ -14,7 +14,6 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -32,7 +31,6 @@ type MessageQuery struct {
 	withSentBy         *UserQuery
 	withThread         *ThreadQuery
 	withBookmarks      *BookmarkQuery
-	withResponse       *ResponseQuery
 	withFKs            bool
 	modifiers          []func(*sql.Selector)
 	loadTotal          []func(context.Context, []*Message) error
@@ -154,28 +152,6 @@ func (mq *MessageQuery) QueryBookmarks() *BookmarkQuery {
 			sqlgraph.From(message.Table, message.FieldID, selector),
 			sqlgraph.To(bookmark.Table, bookmark.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, message.BookmarksTable, message.BookmarksColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryResponse chains the current query on the "response" edge.
-func (mq *MessageQuery) QueryResponse() *ResponseQuery {
-	query := (&ResponseClient{config: mq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := mq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := mq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(message.Table, message.FieldID, selector),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, message.ResponseTable, message.ResponseColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -379,7 +355,6 @@ func (mq *MessageQuery) Clone() *MessageQuery {
 		withSentBy:    mq.withSentBy.Clone(),
 		withThread:    mq.withThread.Clone(),
 		withBookmarks: mq.withBookmarks.Clone(),
-		withResponse:  mq.withResponse.Clone(),
 		// clone intermediate query.
 		sql:  mq.sql.Clone(),
 		path: mq.path,
@@ -427,17 +402,6 @@ func (mq *MessageQuery) WithBookmarks(opts ...func(*BookmarkQuery)) *MessageQuer
 		opt(query)
 	}
 	mq.withBookmarks = query
-	return mq
-}
-
-// WithResponse tells the query-builder to eager-load the nodes that are connected to
-// the "response" edge. The optional arguments are used to configure the query builder of the edge.
-func (mq *MessageQuery) WithResponse(opts ...func(*ResponseQuery)) *MessageQuery {
-	query := (&ResponseClient{config: mq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	mq.withResponse = query
 	return mq
 }
 
@@ -520,12 +484,11 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 		nodes       = []*Message{}
 		withFKs     = mq.withFKs
 		_spec       = mq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [4]bool{
 			mq.withTenant != nil,
 			mq.withSentBy != nil,
 			mq.withThread != nil,
 			mq.withBookmarks != nil,
-			mq.withResponse != nil,
 		}
 	)
 	if mq.withSentBy != nil || mq.withThread != nil {
@@ -577,12 +540,6 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 		if err := mq.loadBookmarks(ctx, query, nodes,
 			func(n *Message) { n.Edges.Bookmarks = []*Bookmark{} },
 			func(n *Message, e *Bookmark) { n.Edges.Bookmarks = append(n.Edges.Bookmarks, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := mq.withResponse; query != nil {
-		if err := mq.loadResponse(ctx, query, nodes, nil,
-			func(n *Message, e *Response) { n.Edges.Response = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -720,34 +677,6 @@ func (mq *MessageQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery,
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "message_bookmarks" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (mq *MessageQuery) loadResponse(ctx context.Context, query *ResponseQuery, nodes []*Message, init func(*Message), assign func(*Message, *Response)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[pulid.ID]*Message)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-	}
-	query.withFKs = true
-	query.Where(predicate.Response(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(message.ResponseColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.message_response
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "message_response" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "message_response" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

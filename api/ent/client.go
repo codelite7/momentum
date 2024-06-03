@@ -19,7 +19,6 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
@@ -37,8 +36,6 @@ type Client struct {
 	Bookmark *BookmarkClient
 	// Message is the client for interacting with the Message builders.
 	Message *MessageClient
-	// Response is the client for interacting with the Response builders.
-	Response *ResponseClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// Thread is the client for interacting with the Thread builders.
@@ -61,7 +58,6 @@ func (c *Client) init() {
 	c.Agent = NewAgentClient(c.config)
 	c.Bookmark = NewBookmarkClient(c.config)
 	c.Message = NewMessageClient(c.config)
-	c.Response = NewResponseClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
 	c.Thread = NewThreadClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -161,7 +157,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Agent:             NewAgentClient(cfg),
 		Bookmark:          NewBookmarkClient(cfg),
 		Message:           NewMessageClient(cfg),
-		Response:          NewResponseClient(cfg),
 		Tenant:            NewTenantClient(cfg),
 		Thread:            NewThreadClient(cfg),
 		User:              NewUserClient(cfg),
@@ -188,7 +183,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Agent:             NewAgentClient(cfg),
 		Bookmark:          NewBookmarkClient(cfg),
 		Message:           NewMessageClient(cfg),
-		Response:          NewResponseClient(cfg),
 		Tenant:            NewTenantClient(cfg),
 		Thread:            NewThreadClient(cfg),
 		User:              NewUserClient(cfg),
@@ -222,8 +216,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Agent, c.Bookmark, c.Message, c.Response, c.Tenant, c.Thread, c.User,
-		c.WorkosEventCursor,
+		c.Agent, c.Bookmark, c.Message, c.Tenant, c.Thread, c.User, c.WorkosEventCursor,
 	} {
 		n.Use(hooks...)
 	}
@@ -233,8 +226,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Agent, c.Bookmark, c.Message, c.Response, c.Tenant, c.Thread, c.User,
-		c.WorkosEventCursor,
+		c.Agent, c.Bookmark, c.Message, c.Tenant, c.Thread, c.User, c.WorkosEventCursor,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -249,8 +241,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Bookmark.mutate(ctx, m)
 	case *MessageMutation:
 		return c.Message.mutate(ctx, m)
-	case *ResponseMutation:
-		return c.Response.mutate(ctx, m)
 	case *TenantMutation:
 		return c.Tenant.mutate(ctx, m)
 	case *ThreadMutation:
@@ -370,22 +360,6 @@ func (c *AgentClient) GetX(ctx context.Context, id pulid.ID) *Agent {
 		panic(err)
 	}
 	return obj
-}
-
-// QueryResponses queries the responses edge of a Agent.
-func (c *AgentClient) QueryResponses(a *Agent) *ResponseQuery {
-	query := (&ResponseClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(agent.Table, agent.FieldID, id),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, agent.ResponsesTable, agent.ResponsesColumn),
-		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
 }
 
 // Hooks returns the client hooks.
@@ -578,22 +552,6 @@ func (c *BookmarkClient) QueryMessage(b *Bookmark) *MessageQuery {
 			sqlgraph.From(bookmark.Table, bookmark.FieldID, id),
 			sqlgraph.To(message.Table, message.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.MessageTable, bookmark.MessageColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryResponse queries the response edge of a Bookmark.
-func (c *BookmarkClient) QueryResponse(b *Bookmark) *ResponseQuery {
-	query := (&ResponseClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(bookmark.Table, bookmark.FieldID, id),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.ResponseTable, bookmark.ResponseColumn),
 		)
 		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
 		return fromV, nil
@@ -798,22 +756,6 @@ func (c *MessageClient) QueryBookmarks(m *Message) *BookmarkQuery {
 	return query
 }
 
-// QueryResponse queries the response edge of a Message.
-func (c *MessageClient) QueryResponse(m *Message) *ResponseQuery {
-	query := (&ResponseClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(message.Table, message.FieldID, id),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, message.ResponseTable, message.ResponseColumn),
-		)
-		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *MessageClient) Hooks() []Hook {
 	return c.hooks.Message
@@ -836,203 +778,6 @@ func (c *MessageClient) mutate(ctx context.Context, m *MessageMutation) (Value, 
 		return (&MessageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Message mutation op: %q", m.Op())
-	}
-}
-
-// ResponseClient is a client for the Response schema.
-type ResponseClient struct {
-	config
-}
-
-// NewResponseClient returns a client for the Response from the given config.
-func NewResponseClient(c config) *ResponseClient {
-	return &ResponseClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `response.Hooks(f(g(h())))`.
-func (c *ResponseClient) Use(hooks ...Hook) {
-	c.hooks.Response = append(c.hooks.Response, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `response.Intercept(f(g(h())))`.
-func (c *ResponseClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Response = append(c.inters.Response, interceptors...)
-}
-
-// Create returns a builder for creating a Response entity.
-func (c *ResponseClient) Create() *ResponseCreate {
-	mutation := newResponseMutation(c.config, OpCreate)
-	return &ResponseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Response entities.
-func (c *ResponseClient) CreateBulk(builders ...*ResponseCreate) *ResponseCreateBulk {
-	return &ResponseCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *ResponseClient) MapCreateBulk(slice any, setFunc func(*ResponseCreate, int)) *ResponseCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &ResponseCreateBulk{err: fmt.Errorf("calling to ResponseClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*ResponseCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &ResponseCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Response.
-func (c *ResponseClient) Update() *ResponseUpdate {
-	mutation := newResponseMutation(c.config, OpUpdate)
-	return &ResponseUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ResponseClient) UpdateOne(r *Response) *ResponseUpdateOne {
-	mutation := newResponseMutation(c.config, OpUpdateOne, withResponse(r))
-	return &ResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ResponseClient) UpdateOneID(id pulid.ID) *ResponseUpdateOne {
-	mutation := newResponseMutation(c.config, OpUpdateOne, withResponseID(id))
-	return &ResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Response.
-func (c *ResponseClient) Delete() *ResponseDelete {
-	mutation := newResponseMutation(c.config, OpDelete)
-	return &ResponseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ResponseClient) DeleteOne(r *Response) *ResponseDeleteOne {
-	return c.DeleteOneID(r.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ResponseClient) DeleteOneID(id pulid.ID) *ResponseDeleteOne {
-	builder := c.Delete().Where(response.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ResponseDeleteOne{builder}
-}
-
-// Query returns a query builder for Response.
-func (c *ResponseClient) Query() *ResponseQuery {
-	return &ResponseQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeResponse},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Response entity by its id.
-func (c *ResponseClient) Get(ctx context.Context, id pulid.ID) (*Response, error) {
-	return c.Query().Where(response.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ResponseClient) GetX(ctx context.Context, id pulid.ID) *Response {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTenant queries the tenant edge of a Response.
-func (c *ResponseClient) QueryTenant(r *Response) *TenantQuery {
-	query := (&TenantClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := r.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(response.Table, response.FieldID, id),
-			sqlgraph.To(tenant.Table, tenant.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, response.TenantTable, response.TenantColumn),
-		)
-		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QuerySentBy queries the sent_by edge of a Response.
-func (c *ResponseClient) QuerySentBy(r *Response) *AgentQuery {
-	query := (&AgentClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := r.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(response.Table, response.FieldID, id),
-			sqlgraph.To(agent.Table, agent.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, response.SentByTable, response.SentByColumn),
-		)
-		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryMessage queries the message edge of a Response.
-func (c *ResponseClient) QueryMessage(r *Response) *MessageQuery {
-	query := (&MessageClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := r.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(response.Table, response.FieldID, id),
-			sqlgraph.To(message.Table, message.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, response.MessageTable, response.MessageColumn),
-		)
-		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryBookmarks queries the bookmarks edge of a Response.
-func (c *ResponseClient) QueryBookmarks(r *Response) *BookmarkQuery {
-	query := (&BookmarkClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := r.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(response.Table, response.FieldID, id),
-			sqlgraph.To(bookmark.Table, bookmark.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, response.BookmarksTable, response.BookmarksColumn),
-		)
-		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *ResponseClient) Hooks() []Hook {
-	return c.hooks.Response
-}
-
-// Interceptors returns the client interceptors.
-func (c *ResponseClient) Interceptors() []Interceptor {
-	return c.inters.Response
-}
-
-func (c *ResponseClient) mutate(ctx context.Context, m *ResponseMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ResponseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ResponseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ResponseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Response mutation op: %q", m.Op())
 	}
 }
 
@@ -1763,11 +1508,10 @@ func (c *WorkosEventCursorClient) mutate(ctx context.Context, m *WorkosEventCurs
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Agent, Bookmark, Message, Response, Tenant, Thread, User,
-		WorkosEventCursor []ent.Hook
+		Agent, Bookmark, Message, Tenant, Thread, User, WorkosEventCursor []ent.Hook
 	}
 	inters struct {
-		Agent, Bookmark, Message, Response, Tenant, Thread, User,
+		Agent, Bookmark, Message, Tenant, Thread, User,
 		WorkosEventCursor []ent.Interceptor
 	}
 )

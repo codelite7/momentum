@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,21 +12,18 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // AgentQuery is the builder for querying Agent entities.
 type AgentQuery struct {
 	config
-	ctx                *QueryContext
-	order              []agent.OrderOption
-	inters             []Interceptor
-	predicates         []predicate.Agent
-	withResponses      *ResponseQuery
-	modifiers          []func(*sql.Selector)
-	loadTotal          []func(context.Context, []*Agent) error
-	withNamedResponses map[string]*ResponseQuery
+	ctx        *QueryContext
+	order      []agent.OrderOption
+	inters     []Interceptor
+	predicates []predicate.Agent
+	modifiers  []func(*sql.Selector)
+	loadTotal  []func(context.Context, []*Agent) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -62,28 +58,6 @@ func (aq *AgentQuery) Unique(unique bool) *AgentQuery {
 func (aq *AgentQuery) Order(o ...agent.OrderOption) *AgentQuery {
 	aq.order = append(aq.order, o...)
 	return aq
-}
-
-// QueryResponses chains the current query on the "responses" edge.
-func (aq *AgentQuery) QueryResponses() *ResponseQuery {
-	query := (&ResponseClient{config: aq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := aq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := aq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(agent.Table, agent.FieldID, selector),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, agent.ResponsesTable, agent.ResponsesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
 }
 
 // First returns the first Agent entity from the query.
@@ -273,27 +247,15 @@ func (aq *AgentQuery) Clone() *AgentQuery {
 		return nil
 	}
 	return &AgentQuery{
-		config:        aq.config,
-		ctx:           aq.ctx.Clone(),
-		order:         append([]agent.OrderOption{}, aq.order...),
-		inters:        append([]Interceptor{}, aq.inters...),
-		predicates:    append([]predicate.Agent{}, aq.predicates...),
-		withResponses: aq.withResponses.Clone(),
+		config:     aq.config,
+		ctx:        aq.ctx.Clone(),
+		order:      append([]agent.OrderOption{}, aq.order...),
+		inters:     append([]Interceptor{}, aq.inters...),
+		predicates: append([]predicate.Agent{}, aq.predicates...),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
 	}
-}
-
-// WithResponses tells the query-builder to eager-load the nodes that are connected to
-// the "responses" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *AgentQuery) WithResponses(opts ...func(*ResponseQuery)) *AgentQuery {
-	query := (&ResponseClient{config: aq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	aq.withResponses = query
-	return aq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -372,11 +334,8 @@ func (aq *AgentQuery) prepareQuery(ctx context.Context) error {
 
 func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent, error) {
 	var (
-		nodes       = []*Agent{}
-		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
-			aq.withResponses != nil,
-		}
+		nodes = []*Agent{}
+		_spec = aq.querySpec()
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Agent).scanValues(nil, columns)
@@ -384,7 +343,6 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Agent{config: aq.config}
 		nodes = append(nodes, node)
-		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(aq.modifiers) > 0 {
@@ -399,58 +357,12 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := aq.withResponses; query != nil {
-		if err := aq.loadResponses(ctx, query, nodes,
-			func(n *Agent) { n.Edges.Responses = []*Response{} },
-			func(n *Agent, e *Response) { n.Edges.Responses = append(n.Edges.Responses, e) }); err != nil {
-			return nil, err
-		}
-	}
-	for name, query := range aq.withNamedResponses {
-		if err := aq.loadResponses(ctx, query, nodes,
-			func(n *Agent) { n.appendNamedResponses(name) },
-			func(n *Agent, e *Response) { n.appendNamedResponses(name, e) }); err != nil {
-			return nil, err
-		}
-	}
 	for i := range aq.loadTotal {
 		if err := aq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
-}
-
-func (aq *AgentQuery) loadResponses(ctx context.Context, query *ResponseQuery, nodes []*Agent, init func(*Agent), assign func(*Agent, *Response)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[pulid.ID]*Agent)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.Response(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(agent.ResponsesColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.agent_responses
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "agent_responses" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "agent_responses" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
 }
 
 func (aq *AgentQuery) sqlCount(ctx context.Context) (int, error) {
@@ -535,20 +447,6 @@ func (aq *AgentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
-}
-
-// WithNamedResponses tells the query-builder to eager-load the nodes that are connected to the "responses"
-// edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (aq *AgentQuery) WithNamedResponses(name string, opts ...func(*ResponseQuery)) *AgentQuery {
-	query := (&ResponseClient{config: aq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	if aq.withNamedResponses == nil {
-		aq.withNamedResponses = make(map[string]*ResponseQuery)
-	}
-	aq.withNamedResponses[name] = query
-	return aq
 }
 
 // AgentGroupBy is the group-by builder for Agent entities.

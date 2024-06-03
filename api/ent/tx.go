@@ -18,8 +18,6 @@ type Tx struct {
 	Bookmark *BookmarkClient
 	// Message is the client for interacting with the Message builders.
 	Message *MessageClient
-	// Response is the client for interacting with the Response builders.
-	Response *ResponseClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// Thread is the client for interacting with the Thread builders.
@@ -162,7 +160,6 @@ func (tx *Tx) init() {
 	tx.Agent = NewAgentClient(tx.config)
 	tx.Bookmark = NewBookmarkClient(tx.config)
 	tx.Message = NewMessageClient(tx.config)
-	tx.Response = NewResponseClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.Thread = NewThreadClient(tx.config)
 	tx.User = NewUserClient(tx.config)

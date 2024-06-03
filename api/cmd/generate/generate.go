@@ -80,7 +80,7 @@ func generate() error {
 	if err != nil {
 		return err
 	}
-	agent, err := createAgent()
+	_, err = createAgent()
 	if err != nil {
 		return err
 	}
@@ -92,11 +92,7 @@ func generate() error {
 	if err != nil {
 		return err
 	}
-	responses, err := createResponses(agent, messages)
-	if err != nil {
-		return err
-	}
-	_, err = createBookmarks(user, messages, responses)
+	_, err = createBookmarks(user, messages)
 	if err != nil {
 		return err
 	}
@@ -163,47 +159,20 @@ func generateFakeContent() string {
 	return gofakeit.Paragraph(numParagraphs, numSentences, numWords, "\n")
 }
 
-func createResponses(agent *ent.Agent, messages []*ent.Message) ([]*ent.Response, error) {
-	creates := []*ent.ResponseCreate{}
-	for _, message := range messages {
-		response := generateFakeResponse()
-		create := common.EntClient.Response.Create().SetMessage(message).SetSentBy(agent).SetContent(response.Content)
-		creates = append(creates, create)
-	}
-	return common.EntClient.Response.CreateBulk(creates...).Save(context.Background())
-}
-
-func generateFakeResponse() *ent.Response {
-	return &ent.Response{Content: generateFakeContent()}
-}
-
-func createBookmarks(user *ent.User, messages []*ent.Message, responses []*ent.Response) ([]*ent.Bookmark, error) {
+func createBookmarks(user *ent.User, messages []*ent.Message) ([]*ent.Bookmark, error) {
 	messagesByThread := map[string]*ent.Message{}
-	responsesByThread := map[string]*ent.Response{}
 	for _, message := range messages {
 		thread, err := message.Thread(context.Background())
 		if err != nil {
 			return nil, err
 		}
 		messagesByThread[string(thread.ID)] = message
-		response, err := message.Response(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		responsesByThread[string(thread.ID)] = response
 	}
 	creates := []*ent.BookmarkCreate{}
 	for _, threadMessages := range messagesByThread {
 		numBookmarks := gofakeit.Number(minBookmarksPerThread, maxBookmarksPerThread)
 		for i := 0; i < numBookmarks; i++ {
 			create := common.EntClient.Bookmark.Create().SetMessage(threadMessages).SetUser(user)
-			creates = append(creates, create)
-		}
-	}
-	for _, threadResponses := range responsesByThread {
-		numBookmarks := gofakeit.Number(minBookmarksPerThread, maxBookmarksPerThread)
-		for i := 0; i < numBookmarks; i++ {
-			create := common.EntClient.Bookmark.Create().SetResponse(threadResponses).SetUser(user)
 			creates = append(creates, create)
 		}
 	}

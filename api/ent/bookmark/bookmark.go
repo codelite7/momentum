@@ -29,8 +29,6 @@ const (
 	EdgeThread = "thread"
 	// EdgeMessage holds the string denoting the message edge name in mutations.
 	EdgeMessage = "message"
-	// EdgeResponse holds the string denoting the response edge name in mutations.
-	EdgeResponse = "response"
 	// Table holds the table name of the bookmark in the database.
 	Table = "bookmarks"
 	// TenantTable is the table that holds the tenant relation/edge.
@@ -61,13 +59,6 @@ const (
 	MessageInverseTable = "messages"
 	// MessageColumn is the table column denoting the message relation/edge.
 	MessageColumn = "message_bookmarks"
-	// ResponseTable is the table that holds the response relation/edge.
-	ResponseTable = "bookmarks"
-	// ResponseInverseTable is the table name for the Response entity.
-	// It exists in this package in order to avoid circular dependency with the "response" package.
-	ResponseInverseTable = "responses"
-	// ResponseColumn is the table column denoting the response relation/edge.
-	ResponseColumn = "response_bookmarks"
 )
 
 // Columns holds all SQL columns for bookmark fields.
@@ -82,7 +73,6 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"message_bookmarks",
-	"response_bookmarks",
 	"thread_bookmarks",
 	"user_bookmarks",
 }
@@ -161,13 +151,6 @@ func ByMessageField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMessageStep(), sql.OrderByField(field, opts...))
 	}
 }
-
-// ByResponseField orders the results by response field.
-func ByResponseField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newResponseStep(), sql.OrderByField(field, opts...))
-	}
-}
 func newTenantStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -194,12 +177,5 @@ func newMessageStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MessageInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, MessageTable, MessageColumn),
-	)
-}
-func newResponseStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ResponseInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, ResponseTable, ResponseColumn),
 	)
 }

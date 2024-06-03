@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/codelite7/momentum/api/ent/predicate"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
@@ -354,29 +353,6 @@ func APIKeyEqualFold(v string) predicate.Agent {
 // APIKeyContainsFold applies the ContainsFold predicate on the "api_key" field.
 func APIKeyContainsFold(v string) predicate.Agent {
 	return predicate.Agent(sql.FieldContainsFold(FieldAPIKey, v))
-}
-
-// HasResponses applies the HasEdge predicate on the "responses" edge.
-func HasResponses() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ResponsesTable, ResponsesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasResponsesWith applies the HasEdge predicate on the "responses" edge with a given conditions (other predicates).
-func HasResponsesWith(preds ...predicate.Response) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		step := newResponsesStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
 }
 
 // And groups predicates with the AND operator between them.

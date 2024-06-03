@@ -13,7 +13,6 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -23,18 +22,17 @@ import (
 // BookmarkQuery is the builder for querying Bookmark entities.
 type BookmarkQuery struct {
 	config
-	ctx          *QueryContext
-	order        []bookmark.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.Bookmark
-	withTenant   *TenantQuery
-	withUser     *UserQuery
-	withThread   *ThreadQuery
-	withMessage  *MessageQuery
-	withResponse *ResponseQuery
-	withFKs      bool
-	modifiers    []func(*sql.Selector)
-	loadTotal    []func(context.Context, []*Bookmark) error
+	ctx         *QueryContext
+	order       []bookmark.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.Bookmark
+	withTenant  *TenantQuery
+	withUser    *UserQuery
+	withThread  *ThreadQuery
+	withMessage *MessageQuery
+	withFKs     bool
+	modifiers   []func(*sql.Selector)
+	loadTotal   []func(context.Context, []*Bookmark) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -152,28 +150,6 @@ func (bq *BookmarkQuery) QueryMessage() *MessageQuery {
 			sqlgraph.From(bookmark.Table, bookmark.FieldID, selector),
 			sqlgraph.To(message.Table, message.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.MessageTable, bookmark.MessageColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryResponse chains the current query on the "response" edge.
-func (bq *BookmarkQuery) QueryResponse() *ResponseQuery {
-	query := (&ResponseClient{config: bq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := bq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := bq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(bookmark.Table, bookmark.FieldID, selector),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.ResponseTable, bookmark.ResponseColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
 		return fromU, nil
@@ -368,16 +344,15 @@ func (bq *BookmarkQuery) Clone() *BookmarkQuery {
 		return nil
 	}
 	return &BookmarkQuery{
-		config:       bq.config,
-		ctx:          bq.ctx.Clone(),
-		order:        append([]bookmark.OrderOption{}, bq.order...),
-		inters:       append([]Interceptor{}, bq.inters...),
-		predicates:   append([]predicate.Bookmark{}, bq.predicates...),
-		withTenant:   bq.withTenant.Clone(),
-		withUser:     bq.withUser.Clone(),
-		withThread:   bq.withThread.Clone(),
-		withMessage:  bq.withMessage.Clone(),
-		withResponse: bq.withResponse.Clone(),
+		config:      bq.config,
+		ctx:         bq.ctx.Clone(),
+		order:       append([]bookmark.OrderOption{}, bq.order...),
+		inters:      append([]Interceptor{}, bq.inters...),
+		predicates:  append([]predicate.Bookmark{}, bq.predicates...),
+		withTenant:  bq.withTenant.Clone(),
+		withUser:    bq.withUser.Clone(),
+		withThread:  bq.withThread.Clone(),
+		withMessage: bq.withMessage.Clone(),
 		// clone intermediate query.
 		sql:  bq.sql.Clone(),
 		path: bq.path,
@@ -425,17 +400,6 @@ func (bq *BookmarkQuery) WithMessage(opts ...func(*MessageQuery)) *BookmarkQuery
 		opt(query)
 	}
 	bq.withMessage = query
-	return bq
-}
-
-// WithResponse tells the query-builder to eager-load the nodes that are connected to
-// the "response" edge. The optional arguments are used to configure the query builder of the edge.
-func (bq *BookmarkQuery) WithResponse(opts ...func(*ResponseQuery)) *BookmarkQuery {
-	query := (&ResponseClient{config: bq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	bq.withResponse = query
 	return bq
 }
 
@@ -518,15 +482,14 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 		nodes       = []*Bookmark{}
 		withFKs     = bq.withFKs
 		_spec       = bq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [4]bool{
 			bq.withTenant != nil,
 			bq.withUser != nil,
 			bq.withThread != nil,
 			bq.withMessage != nil,
-			bq.withResponse != nil,
 		}
 	)
-	if bq.withUser != nil || bq.withThread != nil || bq.withMessage != nil || bq.withResponse != nil {
+	if bq.withUser != nil || bq.withThread != nil || bq.withMessage != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -574,12 +537,6 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 	if query := bq.withMessage; query != nil {
 		if err := bq.loadMessage(ctx, query, nodes, nil,
 			func(n *Bookmark, e *Message) { n.Edges.Message = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := bq.withResponse; query != nil {
-		if err := bq.loadResponse(ctx, query, nodes, nil,
-			func(n *Bookmark, e *Response) { n.Edges.Response = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -709,38 +666,6 @@ func (bq *BookmarkQuery) loadMessage(ctx context.Context, query *MessageQuery, n
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "message_bookmarks" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
-func (bq *BookmarkQuery) loadResponse(ctx context.Context, query *ResponseQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Response)) error {
-	ids := make([]pulid.ID, 0, len(nodes))
-	nodeids := make(map[pulid.ID][]*Bookmark)
-	for i := range nodes {
-		if nodes[i].response_bookmarks == nil {
-			continue
-		}
-		fk := *nodes[i].response_bookmarks
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(response.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "response_bookmarks" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

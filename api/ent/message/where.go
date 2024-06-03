@@ -383,29 +383,6 @@ func HasBookmarksWith(preds ...predicate.Bookmark) predicate.Message {
 	})
 }
 
-// HasResponse applies the HasEdge predicate on the "response" edge.
-func HasResponse() predicate.Message {
-	return predicate.Message(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, ResponseTable, ResponseColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasResponseWith applies the HasEdge predicate on the "response" edge with a given conditions (other predicates).
-func HasResponseWith(preds ...predicate.Response) predicate.Message {
-	return predicate.Message(func(s *sql.Selector) {
-		step := newResponseStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Message) predicate.Message {
 	return predicate.Message(sql.AndPredicates(predicates...))

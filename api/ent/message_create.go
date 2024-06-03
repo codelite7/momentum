@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -120,25 +119,6 @@ func (mc *MessageCreate) AddBookmarks(b ...*Bookmark) *MessageCreate {
 		ids[i] = b[i].ID
 	}
 	return mc.AddBookmarkIDs(ids...)
-}
-
-// SetResponseID sets the "response" edge to the Response entity by ID.
-func (mc *MessageCreate) SetResponseID(id pulid.ID) *MessageCreate {
-	mc.mutation.SetResponseID(id)
-	return mc
-}
-
-// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
-func (mc *MessageCreate) SetNillableResponseID(id *pulid.ID) *MessageCreate {
-	if id != nil {
-		mc = mc.SetResponseID(*id)
-	}
-	return mc
-}
-
-// SetResponse sets the "response" edge to the Response entity.
-func (mc *MessageCreate) SetResponse(r *Response) *MessageCreate {
-	return mc.SetResponseID(r.ID)
 }
 
 // Mutation returns the MessageMutation object of the builder.
@@ -320,22 +300,6 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := mc.mutation.ResponseIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   message.ResponseTable,
-			Columns: []string{message.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

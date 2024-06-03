@@ -14,7 +14,6 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 )
@@ -86,25 +85,6 @@ func (mu *MessageUpdate) AddBookmarks(b ...*Bookmark) *MessageUpdate {
 	return mu.AddBookmarkIDs(ids...)
 }
 
-// SetResponseID sets the "response" edge to the Response entity by ID.
-func (mu *MessageUpdate) SetResponseID(id pulid.ID) *MessageUpdate {
-	mu.mutation.SetResponseID(id)
-	return mu
-}
-
-// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
-func (mu *MessageUpdate) SetNillableResponseID(id *pulid.ID) *MessageUpdate {
-	if id != nil {
-		mu = mu.SetResponseID(*id)
-	}
-	return mu
-}
-
-// SetResponse sets the "response" edge to the Response entity.
-func (mu *MessageUpdate) SetResponse(r *Response) *MessageUpdate {
-	return mu.SetResponseID(r.ID)
-}
-
 // Mutation returns the MessageMutation object of the builder.
 func (mu *MessageUpdate) Mutation() *MessageMutation {
 	return mu.mutation
@@ -135,12 +115,6 @@ func (mu *MessageUpdate) RemoveBookmarks(b ...*Bookmark) *MessageUpdate {
 		ids[i] = b[i].ID
 	}
 	return mu.RemoveBookmarkIDs(ids...)
-}
-
-// ClearResponse clears the "response" edge to the Response entity.
-func (mu *MessageUpdate) ClearResponse() *MessageUpdate {
-	mu.mutation.ClearResponse()
-	return mu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -276,35 +250,6 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if mu.mutation.ResponseCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   message.ResponseTable,
-			Columns: []string{message.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := mu.mutation.ResponseIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   message.ResponseTable,
-			Columns: []string{message.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if n, err = sqlgraph.UpdateNodes(ctx, mu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{message.Label}
@@ -379,25 +324,6 @@ func (muo *MessageUpdateOne) AddBookmarks(b ...*Bookmark) *MessageUpdateOne {
 	return muo.AddBookmarkIDs(ids...)
 }
 
-// SetResponseID sets the "response" edge to the Response entity by ID.
-func (muo *MessageUpdateOne) SetResponseID(id pulid.ID) *MessageUpdateOne {
-	muo.mutation.SetResponseID(id)
-	return muo
-}
-
-// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
-func (muo *MessageUpdateOne) SetNillableResponseID(id *pulid.ID) *MessageUpdateOne {
-	if id != nil {
-		muo = muo.SetResponseID(*id)
-	}
-	return muo
-}
-
-// SetResponse sets the "response" edge to the Response entity.
-func (muo *MessageUpdateOne) SetResponse(r *Response) *MessageUpdateOne {
-	return muo.SetResponseID(r.ID)
-}
-
 // Mutation returns the MessageMutation object of the builder.
 func (muo *MessageUpdateOne) Mutation() *MessageMutation {
 	return muo.mutation
@@ -428,12 +354,6 @@ func (muo *MessageUpdateOne) RemoveBookmarks(b ...*Bookmark) *MessageUpdateOne {
 		ids[i] = b[i].ID
 	}
 	return muo.RemoveBookmarkIDs(ids...)
-}
-
-// ClearResponse clears the "response" edge to the Response entity.
-func (muo *MessageUpdateOne) ClearResponse() *MessageUpdateOne {
-	muo.mutation.ClearResponse()
-	return muo
 }
 
 // Where appends a list predicates to the MessageUpdate builder.
@@ -592,35 +512,6 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if muo.mutation.ResponseCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   message.ResponseTable,
-			Columns: []string{message.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := muo.mutation.ResponseIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   message.ResponseTable,
-			Columns: []string{message.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

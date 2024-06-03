@@ -35,7 +35,5 @@ func (Message) Edges() []ent.Edge {
 		edge.From("thread", Thread.Type).Ref("messages").Unique().Required(),
 		// a message may have many bookmarks
 		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)),
-		// a message has a response from an agent
-		edge.To("response", Response.Type).Annotations(entsql.OnDelete(entsql.Cascade)).Unique(),
 	}
 }

@@ -15,9 +15,6 @@ type Bookmark func(*sql.Selector)
 // Message is the predicate function for message builders.
 type Message func(*sql.Selector)
 
-// Response is the predicate function for response builders.
-type Response func(*sql.Selector)
-
 // Tenant is the predicate function for tenant builders.
 type Tenant func(*sql.Selector)
 

@@ -10,7 +10,6 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -48,13 +47,11 @@ type MessageEdges struct {
 	Thread *Thread `json:"thread,omitempty"`
 	// Bookmarks holds the value of the bookmarks edge.
 	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
-	// Response holds the value of the response edge.
-	Response *Response `json:"response,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [3]map[string]int
 
 	namedBookmarks map[string][]*Bookmark
 }
@@ -99,17 +96,6 @@ func (e MessageEdges) BookmarksOrErr() ([]*Bookmark, error) {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
-}
-
-// ResponseOrErr returns the Response value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e MessageEdges) ResponseOrErr() (*Response, error) {
-	if e.Response != nil {
-		return e.Response, nil
-	} else if e.loadedTypes[4] {
-		return nil, &NotFoundError{label: response.Label}
-	}
-	return nil, &NotLoadedError{edge: "response"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -217,11 +203,6 @@ func (m *Message) QueryThread() *ThreadQuery {
 // QueryBookmarks queries the "bookmarks" edge of the Message entity.
 func (m *Message) QueryBookmarks() *BookmarkQuery {
 	return NewMessageClient(m.config).QueryBookmarks(m)
-}
-
-// QueryResponse queries the "response" edge of the Message entity.
-func (m *Message) QueryResponse() *ResponseQuery {
-	return NewMessageClient(m.config).QueryResponse(m)
 }
 
 // Update returns a builder for updating this Message.

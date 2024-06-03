@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
@@ -31,12 +30,11 @@ type Bookmark struct {
 	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BookmarkQuery when eager-loading is set.
-	Edges              BookmarkEdges `json:"edges"`
-	message_bookmarks  *pulid.ID
-	response_bookmarks *pulid.ID
-	thread_bookmarks   *pulid.ID
-	user_bookmarks     *pulid.ID
-	selectValues       sql.SelectValues
+	Edges             BookmarkEdges `json:"edges"`
+	message_bookmarks *pulid.ID
+	thread_bookmarks  *pulid.ID
+	user_bookmarks    *pulid.ID
+	selectValues      sql.SelectValues
 }
 
 // BookmarkEdges holds the relations/edges for other nodes in the graph.
@@ -49,13 +47,11 @@ type BookmarkEdges struct {
 	Thread *Thread `json:"thread,omitempty"`
 	// Message holds the value of the message edge.
 	Message *Message `json:"message,omitempty"`
-	// Response holds the value of the response edge.
-	Response *Response `json:"response,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [3]map[string]int
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -102,17 +98,6 @@ func (e BookmarkEdges) MessageOrErr() (*Message, error) {
 	return nil, &NotLoadedError{edge: "message"}
 }
 
-// ResponseOrErr returns the Response value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e BookmarkEdges) ResponseOrErr() (*Response, error) {
-	if e.Response != nil {
-		return e.Response, nil
-	} else if e.loadedTypes[4] {
-		return nil, &NotFoundError{label: response.Label}
-	}
-	return nil, &NotLoadedError{edge: "response"}
-}
-
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Bookmark) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -124,11 +109,9 @@ func (*Bookmark) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case bookmark.ForeignKeys[0]: // message_bookmarks
 			values[i] = &sql.NullScanner{S: new(pulid.ID)}
-		case bookmark.ForeignKeys[1]: // response_bookmarks
+		case bookmark.ForeignKeys[1]: // thread_bookmarks
 			values[i] = &sql.NullScanner{S: new(pulid.ID)}
-		case bookmark.ForeignKeys[2]: // thread_bookmarks
-			values[i] = &sql.NullScanner{S: new(pulid.ID)}
-		case bookmark.ForeignKeys[3]: // user_bookmarks
+		case bookmark.ForeignKeys[2]: // user_bookmarks
 			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		default:
 			values[i] = new(sql.UnknownType)
@@ -178,19 +161,12 @@ func (b *Bookmark) assignValues(columns []string, values []any) error {
 			}
 		case bookmark.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field response_bookmarks", values[i])
-			} else if value.Valid {
-				b.response_bookmarks = new(pulid.ID)
-				*b.response_bookmarks = *value.S.(*pulid.ID)
-			}
-		case bookmark.ForeignKeys[2]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field thread_bookmarks", values[i])
 			} else if value.Valid {
 				b.thread_bookmarks = new(pulid.ID)
 				*b.thread_bookmarks = *value.S.(*pulid.ID)
 			}
-		case bookmark.ForeignKeys[3]:
+		case bookmark.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_bookmarks", values[i])
 			} else if value.Valid {
@@ -228,11 +204,6 @@ func (b *Bookmark) QueryThread() *ThreadQuery {
 // QueryMessage queries the "message" edge of the Bookmark entity.
 func (b *Bookmark) QueryMessage() *MessageQuery {
 	return NewBookmarkClient(b.config).QueryMessage(b)
-}
-
-// QueryResponse queries the "response" edge of the Bookmark entity.
-func (b *Bookmark) QueryResponse() *ResponseQuery {
-	return NewBookmarkClient(b.config).QueryResponse(b)
 }
 
 // Update returns a builder for updating this Bookmark.

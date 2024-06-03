@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
@@ -80,21 +79,6 @@ func (ac *AgentCreate) SetNillableID(pu *pulid.ID) *AgentCreate {
 		ac.SetID(*pu)
 	}
 	return ac
-}
-
-// AddResponseIDs adds the "responses" edge to the Response entity by IDs.
-func (ac *AgentCreate) AddResponseIDs(ids ...pulid.ID) *AgentCreate {
-	ac.mutation.AddResponseIDs(ids...)
-	return ac
-}
-
-// AddResponses adds the "responses" edges to the Response entity.
-func (ac *AgentCreate) AddResponses(r ...*Response) *AgentCreate {
-	ids := make([]pulid.ID, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
-	}
-	return ac.AddResponseIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -217,22 +201,6 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 	if value, ok := ac.mutation.APIKey(); ok {
 		_spec.SetField(agent.FieldAPIKey, field.TypeString, value)
 		_node.APIKey = value
-	}
-	if nodes := ac.mutation.ResponsesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

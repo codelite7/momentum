@@ -22,7 +22,6 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
@@ -33,7 +32,6 @@ var prefixMap = map[pulid.ID]string{
 	"ag": agent.Table,
 	"bo": bookmark.Table,
 	"me": message.Table,
-	"re": response.Table,
 	"tr": thread.Table,
 	"us": user.Table,
 }

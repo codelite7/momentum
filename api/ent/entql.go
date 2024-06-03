@@ -7,7 +7,6 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
 	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
@@ -21,7 +20,7 @@ import (
 
 // schemaGraph holds a representation of ent/schema at runtime.
 var schemaGraph = func() *sqlgraph.Schema {
-	graph := &sqlgraph.Schema{Nodes: make([]*sqlgraph.Node, 8)}
+	graph := &sqlgraph.Schema{Nodes: make([]*sqlgraph.Node, 7)}
 	graph.Nodes[0] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   agent.Table,
@@ -75,23 +74,6 @@ var schemaGraph = func() *sqlgraph.Schema {
 	}
 	graph.Nodes[3] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
-			Table:   response.Table,
-			Columns: response.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: response.FieldID,
-			},
-		},
-		Type: "Response",
-		Fields: map[string]*sqlgraph.FieldSpec{
-			response.FieldCreatedAt: {Type: field.TypeTime, Column: response.FieldCreatedAt},
-			response.FieldUpdatedAt: {Type: field.TypeTime, Column: response.FieldUpdatedAt},
-			response.FieldTenantID:  {Type: field.TypeString, Column: response.FieldTenantID},
-			response.FieldContent:   {Type: field.TypeString, Column: response.FieldContent},
-		},
-	}
-	graph.Nodes[4] = &sqlgraph.Node{
-		NodeSpec: sqlgraph.NodeSpec{
 			Table:   tenant.Table,
 			Columns: tenant.Columns,
 			ID: &sqlgraph.FieldSpec{
@@ -106,7 +88,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			tenant.FieldWorkosOrgID: {Type: field.TypeString, Column: tenant.FieldWorkosOrgID},
 		},
 	}
-	graph.Nodes[5] = &sqlgraph.Node{
+	graph.Nodes[4] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   thread.Table,
 			Columns: thread.Columns,
@@ -124,7 +106,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			thread.FieldLastViewedAt: {Type: field.TypeTime, Column: thread.FieldLastViewedAt},
 		},
 	}
-	graph.Nodes[6] = &sqlgraph.Node{
+	graph.Nodes[5] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   user.Table,
 			Columns: user.Columns,
@@ -141,7 +123,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			user.FieldWorkosUserID: {Type: field.TypeString, Column: user.FieldWorkosUserID},
 		},
 	}
-	graph.Nodes[7] = &sqlgraph.Node{
+	graph.Nodes[6] = &sqlgraph.Node{
 		NodeSpec: sqlgraph.NodeSpec{
 			Table:   workoseventcursor.Table,
 			Columns: workoseventcursor.Columns,
@@ -155,18 +137,6 @@ var schemaGraph = func() *sqlgraph.Schema {
 			workoseventcursor.FieldUserCreatedCursor: {Type: field.TypeString, Column: workoseventcursor.FieldUserCreatedCursor},
 		},
 	}
-	graph.MustAddE(
-		"responses",
-		&sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-		},
-		"Agent",
-		"Response",
-	)
 	graph.MustAddE(
 		"tenant",
 		&sqlgraph.EdgeSpec{
@@ -216,18 +186,6 @@ var schemaGraph = func() *sqlgraph.Schema {
 		"Message",
 	)
 	graph.MustAddE(
-		"response",
-		&sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ResponseTable,
-			Columns: []string{bookmark.ResponseColumn},
-			Bidi:    false,
-		},
-		"Bookmark",
-		"Response",
-	)
-	graph.MustAddE(
 		"tenant",
 		&sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -273,66 +231,6 @@ var schemaGraph = func() *sqlgraph.Schema {
 			Bidi:    false,
 		},
 		"Message",
-		"Bookmark",
-	)
-	graph.MustAddE(
-		"response",
-		&sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   message.ResponseTable,
-			Columns: []string{message.ResponseColumn},
-			Bidi:    false,
-		},
-		"Message",
-		"Response",
-	)
-	graph.MustAddE(
-		"tenant",
-		&sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   response.TenantTable,
-			Columns: []string{response.TenantColumn},
-			Bidi:    false,
-		},
-		"Response",
-		"Tenant",
-	)
-	graph.MustAddE(
-		"sent_by",
-		&sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   response.SentByTable,
-			Columns: []string{response.SentByColumn},
-			Bidi:    false,
-		},
-		"Response",
-		"Agent",
-	)
-	graph.MustAddE(
-		"message",
-		&sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   response.MessageTable,
-			Columns: []string{response.MessageColumn},
-			Bidi:    false,
-		},
-		"Response",
-		"Message",
-	)
-	graph.MustAddE(
-		"bookmarks",
-		&sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   response.BookmarksTable,
-			Columns: []string{response.BookmarksColumn},
-			Bidi:    false,
-		},
-		"Response",
 		"Bookmark",
 	)
 	graph.MustAddE(
@@ -553,20 +451,6 @@ func (f *AgentFilter) WhereAPIKey(p entql.StringP) {
 	f.Where(p.Field(agent.FieldAPIKey))
 }
 
-// WhereHasResponses applies a predicate to check if query has an edge responses.
-func (f *AgentFilter) WhereHasResponses() {
-	f.Where(entql.HasEdge("responses"))
-}
-
-// WhereHasResponsesWith applies a predicate to check if query has an edge responses with a given conditions (other predicates).
-func (f *AgentFilter) WhereHasResponsesWith(preds ...predicate.Response) {
-	f.Where(entql.HasEdgeWith("responses", sqlgraph.WrapFunc(func(s *sql.Selector) {
-		for _, p := range preds {
-			p(s)
-		}
-	})))
-}
-
 // addPredicate implements the predicateAdder interface.
 func (bq *BookmarkQuery) addPredicate(pred func(s *sql.Selector)) {
 	bq.predicates = append(bq.predicates, pred)
@@ -672,20 +556,6 @@ func (f *BookmarkFilter) WhereHasMessage() {
 // WhereHasMessageWith applies a predicate to check if query has an edge message with a given conditions (other predicates).
 func (f *BookmarkFilter) WhereHasMessageWith(preds ...predicate.Message) {
 	f.Where(entql.HasEdgeWith("message", sqlgraph.WrapFunc(func(s *sql.Selector) {
-		for _, p := range preds {
-			p(s)
-		}
-	})))
-}
-
-// WhereHasResponse applies a predicate to check if query has an edge response.
-func (f *BookmarkFilter) WhereHasResponse() {
-	f.Where(entql.HasEdge("response"))
-}
-
-// WhereHasResponseWith applies a predicate to check if query has an edge response with a given conditions (other predicates).
-func (f *BookmarkFilter) WhereHasResponseWith(preds ...predicate.Response) {
-	f.Where(entql.HasEdgeWith("response", sqlgraph.WrapFunc(func(s *sql.Selector) {
 		for _, p := range preds {
 			p(s)
 		}
@@ -808,136 +678,6 @@ func (f *MessageFilter) WhereHasBookmarksWith(preds ...predicate.Bookmark) {
 	})))
 }
 
-// WhereHasResponse applies a predicate to check if query has an edge response.
-func (f *MessageFilter) WhereHasResponse() {
-	f.Where(entql.HasEdge("response"))
-}
-
-// WhereHasResponseWith applies a predicate to check if query has an edge response with a given conditions (other predicates).
-func (f *MessageFilter) WhereHasResponseWith(preds ...predicate.Response) {
-	f.Where(entql.HasEdgeWith("response", sqlgraph.WrapFunc(func(s *sql.Selector) {
-		for _, p := range preds {
-			p(s)
-		}
-	})))
-}
-
-// addPredicate implements the predicateAdder interface.
-func (rq *ResponseQuery) addPredicate(pred func(s *sql.Selector)) {
-	rq.predicates = append(rq.predicates, pred)
-}
-
-// Filter returns a Filter implementation to apply filters on the ResponseQuery builder.
-func (rq *ResponseQuery) Filter() *ResponseFilter {
-	return &ResponseFilter{config: rq.config, predicateAdder: rq}
-}
-
-// addPredicate implements the predicateAdder interface.
-func (m *ResponseMutation) addPredicate(pred func(s *sql.Selector)) {
-	m.predicates = append(m.predicates, pred)
-}
-
-// Filter returns an entql.Where implementation to apply filters on the ResponseMutation builder.
-func (m *ResponseMutation) Filter() *ResponseFilter {
-	return &ResponseFilter{config: m.config, predicateAdder: m}
-}
-
-// ResponseFilter provides a generic filtering capability at runtime for ResponseQuery.
-type ResponseFilter struct {
-	predicateAdder
-	config
-}
-
-// Where applies the entql predicate on the query filter.
-func (f *ResponseFilter) Where(p entql.P) {
-	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[3].Type, p, s); err != nil {
-			s.AddError(err)
-		}
-	})
-}
-
-// WhereID applies the entql string predicate on the id field.
-func (f *ResponseFilter) WhereID(p entql.StringP) {
-	f.Where(p.Field(response.FieldID))
-}
-
-// WhereCreatedAt applies the entql time.Time predicate on the created_at field.
-func (f *ResponseFilter) WhereCreatedAt(p entql.TimeP) {
-	f.Where(p.Field(response.FieldCreatedAt))
-}
-
-// WhereUpdatedAt applies the entql time.Time predicate on the updated_at field.
-func (f *ResponseFilter) WhereUpdatedAt(p entql.TimeP) {
-	f.Where(p.Field(response.FieldUpdatedAt))
-}
-
-// WhereTenantID applies the entql string predicate on the tenant_id field.
-func (f *ResponseFilter) WhereTenantID(p entql.StringP) {
-	f.Where(p.Field(response.FieldTenantID))
-}
-
-// WhereContent applies the entql string predicate on the content field.
-func (f *ResponseFilter) WhereContent(p entql.StringP) {
-	f.Where(p.Field(response.FieldContent))
-}
-
-// WhereHasTenant applies a predicate to check if query has an edge tenant.
-func (f *ResponseFilter) WhereHasTenant() {
-	f.Where(entql.HasEdge("tenant"))
-}
-
-// WhereHasTenantWith applies a predicate to check if query has an edge tenant with a given conditions (other predicates).
-func (f *ResponseFilter) WhereHasTenantWith(preds ...predicate.Tenant) {
-	f.Where(entql.HasEdgeWith("tenant", sqlgraph.WrapFunc(func(s *sql.Selector) {
-		for _, p := range preds {
-			p(s)
-		}
-	})))
-}
-
-// WhereHasSentBy applies a predicate to check if query has an edge sent_by.
-func (f *ResponseFilter) WhereHasSentBy() {
-	f.Where(entql.HasEdge("sent_by"))
-}
-
-// WhereHasSentByWith applies a predicate to check if query has an edge sent_by with a given conditions (other predicates).
-func (f *ResponseFilter) WhereHasSentByWith(preds ...predicate.Agent) {
-	f.Where(entql.HasEdgeWith("sent_by", sqlgraph.WrapFunc(func(s *sql.Selector) {
-		for _, p := range preds {
-			p(s)
-		}
-	})))
-}
-
-// WhereHasMessage applies a predicate to check if query has an edge message.
-func (f *ResponseFilter) WhereHasMessage() {
-	f.Where(entql.HasEdge("message"))
-}
-
-// WhereHasMessageWith applies a predicate to check if query has an edge message with a given conditions (other predicates).
-func (f *ResponseFilter) WhereHasMessageWith(preds ...predicate.Message) {
-	f.Where(entql.HasEdgeWith("message", sqlgraph.WrapFunc(func(s *sql.Selector) {
-		for _, p := range preds {
-			p(s)
-		}
-	})))
-}
-
-// WhereHasBookmarks applies a predicate to check if query has an edge bookmarks.
-func (f *ResponseFilter) WhereHasBookmarks() {
-	f.Where(entql.HasEdge("bookmarks"))
-}
-
-// WhereHasBookmarksWith applies a predicate to check if query has an edge bookmarks with a given conditions (other predicates).
-func (f *ResponseFilter) WhereHasBookmarksWith(preds ...predicate.Bookmark) {
-	f.Where(entql.HasEdgeWith("bookmarks", sqlgraph.WrapFunc(func(s *sql.Selector) {
-		for _, p := range preds {
-			p(s)
-		}
-	})))
-}
-
 // addPredicate implements the predicateAdder interface.
 func (tq *TenantQuery) addPredicate(pred func(s *sql.Selector)) {
 	tq.predicates = append(tq.predicates, pred)
@@ -967,7 +707,7 @@ type TenantFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *TenantFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[4].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[3].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -1036,7 +776,7 @@ type ThreadFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *ThreadFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[5].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[4].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -1185,7 +925,7 @@ type UserFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *UserFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[6].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[5].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})
@@ -1315,7 +1055,7 @@ type WorkosEventCursorFilter struct {
 // Where applies the entql predicate on the query filter.
 func (f *WorkosEventCursorFilter) Where(p entql.P) {
 	f.addPredicate(func(s *sql.Selector) {
-		if err := schemaGraph.EvalP(schemaGraph.Nodes[7].Type, p, s); err != nil {
+		if err := schemaGraph.EvalP(schemaGraph.Nodes[6].Type, p, s); err != nil {
 			s.AddError(err)
 		}
 	})

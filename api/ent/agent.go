@@ -27,33 +27,8 @@ type Agent struct {
 	// Model holds the value of the "model" field.
 	Model string `json:"model,omitempty"`
 	// APIKey holds the value of the "api_key" field.
-	APIKey string `json:"api_key,omitempty"`
-	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the AgentQuery when eager-loading is set.
-	Edges        AgentEdges `json:"edges"`
+	APIKey       string `json:"api_key,omitempty"`
 	selectValues sql.SelectValues
-}
-
-// AgentEdges holds the relations/edges for other nodes in the graph.
-type AgentEdges struct {
-	// Responses holds the value of the responses edge.
-	Responses []*Response `json:"responses,omitempty"`
-	// loadedTypes holds the information for reporting if a
-	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
-	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
-
-	namedResponses map[string][]*Response
-}
-
-// ResponsesOrErr returns the Responses value or an error if the edge
-// was not loaded in eager-loading.
-func (e AgentEdges) ResponsesOrErr() ([]*Response, error) {
-	if e.loadedTypes[0] {
-		return e.Responses, nil
-	}
-	return nil, &NotLoadedError{edge: "responses"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -131,11 +106,6 @@ func (a *Agent) Value(name string) (ent.Value, error) {
 	return a.selectValues.Get(name)
 }
 
-// QueryResponses queries the "responses" edge of the Agent entity.
-func (a *Agent) QueryResponses() *ResponseQuery {
-	return NewAgentClient(a.config).QueryResponses(a)
-}
-
 // Update returns a builder for updating this Agent.
 // Note that you need to call Agent.Unwrap() before calling this method if this Agent
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -175,30 +145,6 @@ func (a *Agent) String() string {
 	builder.WriteString(a.APIKey)
 	builder.WriteByte(')')
 	return builder.String()
-}
-
-// NamedResponses returns the Responses named value or an error if the edge was not
-// loaded in eager-loading with this name.
-func (a *Agent) NamedResponses(name string) ([]*Response, error) {
-	if a.Edges.namedResponses == nil {
-		return nil, &NotLoadedError{edge: name}
-	}
-	nodes, ok := a.Edges.namedResponses[name]
-	if !ok {
-		return nil, &NotLoadedError{edge: name}
-	}
-	return nodes, nil
-}
-
-func (a *Agent) appendNamedResponses(name string, edges ...*Response) {
-	if a.Edges.namedResponses == nil {
-		a.Edges.namedResponses = make(map[string][]*Response)
-	}
-	if len(edges) == 0 {
-		a.Edges.namedResponses[name] = []*Response{}
-	} else {
-		a.Edges.namedResponses[name] = append(a.Edges.namedResponses[name], edges...)
-	}
 }
 
 // Agents is a parsable slice of Agent.
