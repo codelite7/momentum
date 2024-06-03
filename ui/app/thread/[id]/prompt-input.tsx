@@ -8,21 +8,24 @@ import {
   CardHeader,
   Textarea,
 } from "@nextui-org/react";
-import { gql, useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 import ModelSelect from "@/components/common/model-select";
+import { sidebarThreadsQuery } from "@/components/left-sidebar/left-sidebar";
+import { gql } from "@/__generated__";
 
 function Divider() {
   return null;
 }
 
 interface props {
-  showModelSelect: boolean;
+  threadId: string;
 }
 
-const createThreadMutation = gql`
+const createThreadMutation = gql(`
   mutation createThread(
     $input: CreateThreadInput!
     $messageInput: CreateMessageInput!
@@ -41,26 +44,69 @@ const createThreadMutation = gql`
       }
     }
   }
-`;
+`);
 
-export default function PromptInput({ showModelSelect }: props) {
+const createMessageMutation = gql(/* Graphql */ `
+  mutation createMessage($input:CreateMessageInput!) {
+    createMessage(input:$input){
+      id
+      content
+      createdAt
+      response {
+        id
+        content
+        createdAt
+      }
+    }
+  }
+`);
+
+export default function PromptInput({ threadId }: props) {
+  const isNew = threadId == "new";
+  const router = useRouter();
   const [value, setValue] = useState("");
   const [createThread, { data, loading, error }] = useMutation(
     createThreadMutation,
     {
+      variables: {
+        input: {
+          name: `${value.substring(0, 15)}...`,
+        },
+        messageInput: {
+          threadID: "",
+          content: value,
+        },
+      },
       onError: () => {
         toast.error("Error creating thread");
       },
       onCompleted: (data) => {
         toast.success("Created thread");
-        console.log("create thread mutation response", data);
+        router.push(`/thread/${data.createThread.id}`);
+      },
+      refetchQueries: [sidebarThreadsQuery],
+    },
+  );
+
+  const [createMessage, createMessageResult] = useMutation(
+    createMessageMutation,
+    {
+      variables: {
+        input: {
+          content: value,
+          threadID: threadId,
+        },
+      },
+      onError: (e) => {
+        console.error(e);
+        toast.error("Error sending message");
       },
     },
   );
 
   return (
     <Card className="w-full">
-      {showModelSelect && (
+      {!threadId && (
         <CardHeader>
           <ModelSelect />
         </CardHeader>
@@ -72,23 +118,17 @@ export default function PromptInput({ showModelSelect }: props) {
             inputWrapper:
               "!bg-transparent hover:!bg-transparent focus:!bg-transparent",
           }}
-          minRows={1}
+          minRows={2}
           placeholder="Prompt goes here"
           value={value}
           onKeyPress={async (e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              createThread({
-                variables: {
-                  input: {
-                    name: "New thread",
-                  },
-                  messageInput: {
-                    threadId: "",
-                    content: value,
-                  },
-                },
-              });
+              if (isNew) {
+                createThread();
+              } else {
+                createMessage();
+              }
             }
           }}
           onValueChange={setValue}
@@ -102,6 +142,7 @@ export default function PromptInput({ showModelSelect }: props) {
             startContent={<i className="pi pi-arrow-down" />}
             type="submit"
             variant="bordered"
+            onPress={() => {}}
           >
             Enter
           </Button>

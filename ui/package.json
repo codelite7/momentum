@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"dev": "mkdir -p __generated__ && concurrently \"relay-compiler --watch\" \"graphql-codegen -w\" \"next dev\"",
+		"dev": "mkdir -p __generated__ && concurrently \"graphql-codegen -w\" \"next dev\"",
 		"build": "next build",
 		"start": "next start",
 		"lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix",
@@ -14,7 +14,6 @@
 	"dependencies": {
 		"@apollo/client": "^3.10.4",
 		"@apollo/experimental-nextjs-app-support": "^0.11.0",
-		"@graphql-codegen/cli": "^5.0.2",
 		"@nextui-org/button": "^2.0.31",
 		"@nextui-org/code": "^2.0.27",
 		"@nextui-org/input": "^2.1.21",
@@ -68,17 +67,21 @@
 		"sonner": "^1.4.41",
 		"tailwind-variants": "^0.1.20",
 		"tailwindcss": "3.4.3",
-		"typescript": "5.0.4",
 		"use-debounce": "^10.0.1",
 		"zustand": "^4.5.2"
 	},
 	"devDependencies": {
+		"@graphql-codegen/cli": "^5.0.2",
+		"@graphql-codegen/client-preset": "^4.2.6",
+		"@graphql-typed-document-node/core": "^3.2.0",
 		"@types/js-cookie": "^3.0.6",
 		"@types/lodash": "^4.17.4",
 		"@types/react-lines-ellipsis": "^0.15.6",
 		"@types/react-relay": "^16.0.6",
 		"@types/relay-runtime": "^14.1.24",
 		"concurrently": "^8.2.2",
-		"relay-compiler": "^16.2.0"
+		"graphql": "^16.8.1",
+		"relay-compiler": "^16.2.0",
+		"typescript": "5.0.4"
 	}
 }

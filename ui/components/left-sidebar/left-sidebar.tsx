@@ -2,40 +2,42 @@
 
 import { useState, useEffect } from "react";
 import { Button, Card, CardBody, CardFooter, Tooltip } from "@nextui-org/react";
-import { redirect } from "next/navigation";
-import { gql, useSuspenseQuery } from "@apollo/client";
+import { redirect, useRouter } from "next/navigation";
+import { useSuspenseQuery } from "@apollo/client";
+import { Link } from "@nextui-org/link";
 
 import useAccountSettingsModalStore from "@/stores/account-settings-modal-store";
 import useSearchModalStore from "@/stores/search-modal-store";
 import ThreadButtons from "@/components/left-sidebar/ThreadButtons";
+import { gql } from "@/__generated__";
 
-export default function LeftSidebar() {
-  const { data, error } = useSuspenseQuery(gql`
-    query homeUserQuery {
-      user {
-        id
-        email
-        threads(
-          first: 50
-          orderBy: { field: LAST_VIEWED_AT, direction: DESC }
-        ) {
-          totalCount
-          pageInfo {
-            hasNextPage
-            hasPreviousPage
-            startCursor
-            endCursor
-          }
-          edges {
-            node {
-              id
-              name
-            }
+export const sidebarThreadsQuery = gql(/* GraphQL */ `
+  query sidebarThreadsQuery {
+    user {
+      id
+      email
+      threads(first: 50, orderBy: { field: LAST_VIEWED_AT, direction: DESC }) {
+        totalCount
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          node {
+            id
+            name
           }
         }
       }
     }
-  `);
+  }
+`);
+
+export default function LeftSidebar() {
+  const router = useRouter();
+  const { data, error } = useSuspenseQuery(sidebarThreadsQuery);
 
   if (error) {
     console.log("left-sidebar error", error);
@@ -98,10 +100,14 @@ export default function LeftSidebar() {
                 <Tooltip showArrow content="New thread" placement="right">
                   <Button
                     isIconOnly
+                    as={Link}
                     className="w-full mt-2"
                     color="primary"
+                    href="/thread/new"
                     size="sm"
-                    onClick={() => {}}
+                    onClick={() => {
+                      redirect("/thread/new");
+                    }}
                   >
                     <img
                       alt="new thread"
@@ -157,10 +163,11 @@ export default function LeftSidebar() {
                 {/* new thread button*/}
                 <Button
                   fullWidth
+                  as={Link}
                   color="primary"
+                  href="/thread/new"
                   size="sm"
                   startContent={<img alt="new thread" src="/layers.svg" />}
-                  onPress={() => redirect("/thread/new")}
                 >
                   New thread
                 </Button>

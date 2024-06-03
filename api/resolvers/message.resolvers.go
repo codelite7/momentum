@@ -7,10 +7,14 @@ package resolvers
 import (
 	"context"
 
+	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
 )
 
 // CreateMessage is the resolver for the createMessage field.
 func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
-	return ent.FromContext(ctx).Message.Create().SetInput(input).Save(ctx)
+	userInfo := common.GetUserIdFromContext(ctx)
+	client := ent.FromContext(ctx)
+	// create message
+	return client.Message.Create().SetInput(input).SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).Save(ctx)
 }

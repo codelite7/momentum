@@ -8,9 +8,9 @@ import { getUser } from "@workos-inc/authkit-nextjs";
 import { Providers } from "./providers";
 
 import { siteConfig } from "@/config/site";
-import LeftSidebar from "@/components/left-sidebar/left-sidebar";
 import AccountSettingsModal from "@/components/account/settings-modal/account-settings-modal";
 import { ApolloWrapper } from "@/app/ApolloWrapper";
+import LeftSidebar from "@/components/left-sidebar/left-sidebar";
 
 export const metadata: Metadata = {
   title: {
@@ -36,7 +36,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { accessToken } = await getUser({ ensureSignedIn: true });
+  const { accessToken } = await getUser();
 
   return (
     <html suppressHydrationWarning lang="en">

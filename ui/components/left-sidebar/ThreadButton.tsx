@@ -8,20 +8,41 @@ import {
   Input,
 } from "@nextui-org/react";
 import { useState } from "react";
-import { redirect, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useMutation } from "@apollo/client";
+import { toast } from "sonner";
 
-import { deleteThread, renameThread } from "@/client/thread";
+import { gql } from "@/__generated__";
+import { sidebarThreadsQuery } from "@/components/left-sidebar/left-sidebar";
 
 type props = {
   thread: any;
 };
 
+const deleteThreadMutation = gql(/* GraphQL */ `
+  mutation deleteThread($id: ID!) {
+    deleteThread(id: $id)
+  }
+`);
+
+const renameThreadMutation = gql(/* GraphQL */ `
+  mutation updateThread($id: ID!, $name: String!) {
+    updateThread(id: $id, input: { name: $name }) {
+      id
+      name
+    }
+  }
+`);
+
 export default function ThreadButton({ thread }: props) {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const [deleteThread] = useMutation(deleteThreadMutation);
+  const [renameThread] = useMutation(renameThreadMutation);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(thread.name);
-  const router = useRouter();
 
   return (
     <div
@@ -79,9 +100,23 @@ export default function ThreadButton({ thread }: props) {
                     fullWidth
                     className="bg-transparent hover:bg-default-200"
                     radius="none"
-                    onPress={async () => {
-                      await deleteThread(thread.id);
-                      redirect("/");
+                    onPress={() => {
+                      deleteThread({
+                        variables: { id: thread.id },
+                        onError: (e) => {
+                          console.error(e);
+                          toast.error("Error deleting thread");
+                        },
+                        onCompleted: () => {
+                          setHovered(false);
+                          setPopoverOpen(false);
+                          toast.success("Deleted thread");
+                          if (thread.id == params.id) {
+                            router.push("/");
+                          }
+                        },
+                        refetchQueries: [sidebarThreadsQuery],
+                      });
                     }}
                   >
                     <div className="flex w-full items-center gap-4">
@@ -108,12 +143,19 @@ export default function ThreadButton({ thread }: props) {
                 setRenaming(false);
               }
             }}
-            onKeyPress={async (e) => {
+            onKeyPress={(e) => {
               if (e.key === "Enter") {
-                const { data } = await renameThread(thread.id, renameValue);
-
-                thread.name = data.updateThread.name;
-                setRenaming(false);
+                renameThread({
+                  variables: { id: thread.id, name: renameValue },
+                  onError: (e) => {
+                    console.error(e);
+                    toast.error("Error renaming thread");
+                  },
+                  onCompleted: (data) => {
+                    toast.success("Renamed thread");
+                    setRenaming(false);
+                  },
+                });
               }
             }}
           />

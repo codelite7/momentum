@@ -9,8 +9,7 @@ import {
   Tooltip,
 } from "@nextui-org/react";
 import { useState } from "react";
-import { ConnectionHandler, graphql, useMutation } from "react-relay";
-import { toast } from "sonner";
+import { ConnectionHandler } from "react-relay";
 
 interface props {
   content: string;
@@ -21,25 +20,25 @@ interface props {
   threadId: string;
 }
 
-const MessageBaseCreateBookmarkMutation = graphql`
-  mutation messageBaseCreateBookmarkMutation(
-    $userId: ID!
-    $messageId: ID
-    $responseID: ID
-    $connections: [ID!]!
-  ) {
-    createBookmark(
-      input: { userID: $userId, messageID: $messageId, responseID: $responseID }
-    ) {
-      edges @prependEdge(connections: $connections) {
-        node {
-          id
-          ...bookmarkFragment
-        }
-      }
-    }
-  }
-`;
+// const MessageBaseCreateBookmarkMutation = graphql`
+//   mutation messageBaseCreateBookmarkMutation(
+//     $userId: ID!
+//     $messageId: ID
+//     $responseID: ID
+//     $connections: [ID!]!
+//   ) {
+//     createBookmark(
+//       input: { userID: $userId, messageID: $messageId, responseID: $responseID }
+//     ) {
+//       edges @prependEdge(connections: $connections) {
+//         node {
+//           id
+//           ...bookmarkFragment
+//         }
+//       }
+//     }
+//   }
+// `;
 
 export default function MessageBase({
   content,
@@ -56,9 +55,9 @@ export default function MessageBase({
     ? sentAtDate.toLocaleTimeString()
     : sentAtDate.toLocaleString();
   const [hovered, setHovered] = useState(false);
-  const [commitMutation, isMutationInFlight] = useMutation(
-    MessageBaseCreateBookmarkMutation,
-  );
+  // const [commitMutation, isMutationInFlight] = useMutation(
+  //   MessageBaseCreateBookmarkMutation,
+  // );
 
   return (
     <Card
@@ -129,20 +128,20 @@ export default function MessageBase({
 
                   console.log("connection id: ", connectionID);
 
-                  commitMutation({
-                    variables: {
-                      userId: "us01HZ5TYGYW36GGJ7Z9VMS5Y5TE",
-                      messageId: isResponse ? null : id,
-                      responseId: isResponse ? id : null,
-                      connections: [connectionID],
-                    },
-                    onError: () => {
-                      toast.error("Error bookmarking message");
-                    },
-                    onCompleted: () => {
-                      toast.success("Bookmarked message");
-                    },
-                  });
+                  // commitMutation({
+                  //   variables: {
+                  //     userId: "us01HZ5TYGYW36GGJ7Z9VMS5Y5TE",
+                  //     messageId: isResponse ? null : id,
+                  //     responseId: isResponse ? id : null,
+                  //     connections: [connectionID],
+                  //   },
+                  //   onError: () => {
+                  //     toast.error("Error bookmarking message");
+                  //   },
+                  //   onCompleted: () => {
+                  //     toast.success("Bookmarked message");
+                  //   },
+                  // });
                 }}
               >
                 <i className="pi pi-bookmark" />

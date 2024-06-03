@@ -6,15 +6,15 @@ const config: CodegenConfig = {
   documents: [
     "app/**/*.{ts,tsx}",
     "client/**/*.{ts,tsx}",
-    "comonents/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
   ],
   generates: {
     "./__generated__/": {
       preset: "client",
-      plugins: [],
       presetConfig: {
         gqlTagName: "gql",
       },
+      plugins: ["typescript", "typescript-operations"],
     },
   },
   ignoreNoDocuments: true,

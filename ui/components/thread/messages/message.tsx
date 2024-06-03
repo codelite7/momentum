@@ -1,38 +1,25 @@
-import { graphql, useFragment } from "react-relay";
-
-import { messageFragment$key } from "@/__generated__/messageFragment.graphql";
+import { Message } from "@/__generated__/graphql";
 import MessageBase from "@/components/thread/messages/message-base";
-import Response from "@/components/thread/response";
-
-const MessageFragment = graphql`
-  fragment messageFragment on Message {
-    id
-    createdAt
-    content
-    response {
-      ...responseFragment
-    }
-  }
-`;
+import Respons from "@/components/thread/response";
 
 type props = {
-  message: messageFragment$key;
+  message: Message;
   threadId: string;
 };
 
 export default function Message({ message, threadId }: props) {
-  const data = useFragment(MessageFragment, message);
-
   return (
     <>
       <MessageBase
-        content={data.content}
-        id={data.id}
-        sentAt={data.createdAt}
+        content={message.content}
+        id={message.id}
+        sentAt={message.createdAt}
         threadId={threadId}
         user={{ name: "Me" }}
       />
-      {data.response && <Response response={data.response} />}
+      {message.response && (
+        <Respons response={message.response} threadId={threadId} />
+      )}
     </>
   );
 }

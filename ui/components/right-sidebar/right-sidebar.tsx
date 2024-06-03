@@ -3,8 +3,6 @@
 import { Button, Card, CardBody, Tooltip } from "@nextui-org/react";
 import { useEffect, useState } from "react";
 
-import Bookmarks from "@/components/right-sidebar/bookmarks";
-
 export function RightSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [width, setWidth] = useState("w-64");
@@ -88,9 +86,9 @@ export function RightSidebar() {
               </div>
             </Button>
             {/* thread bookmarks */}
-            <Bookmarks
-              params={{ id: "1ff4ad0d-4355-4123-a57a-9c76cac135e0" }}
-            />
+            {/*<Bookmarks*/}
+            {/*  params={{ id: "1ff4ad0d-4355-4123-a57a-9c76cac135e0" }}*/}
+            {/*/>*/}
           </>
         )}
       </CardBody>
