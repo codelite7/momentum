@@ -44,7 +44,6 @@ export default function WaitForResponse({ refetch }: WaitForResponseProps) {
         message.content.length > 0
       ) {
         console.log("got response from ai", data);
-        toast.success("got response");
         stopPolling();
         if (refetch) {
           refetch();

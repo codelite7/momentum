@@ -12,7 +12,7 @@ import { useMutation } from "@apollo/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useSetAtom } from "jotai";
+import { useAtomValue } from "jotai";
 
 import ModelSelect from "@/components/common/model-select";
 import { sidebarThreadsQuery } from "@/components/left-sidebar/left-sidebar";
@@ -21,7 +21,8 @@ import {
   createThreadMutation,
   threadByIdQuery,
 } from "@/graphql-queries/queries";
-import { threadAtom } from "@/state/atoms";
+import { lastThreadMessageTypeAtom } from "@/state/atoms";
+import { MessageMessageType } from "@/__generated__/graphql";
 
 function Divider() {
   return null;
@@ -32,8 +33,8 @@ interface props {
 }
 
 export default function PromptInput({ threadId }: props) {
-  const setThread = useSetAtom(threadAtom);
   const isNew = threadId == "";
+  const lastMessageType = useAtomValue(lastThreadMessageTypeAtom);
   const router = useRouter();
   const [value, setValue] = useState("");
   const [createThread, { data, loading, error }] = useMutation(
@@ -72,7 +73,9 @@ export default function PromptInput({ threadId }: props) {
         console.error(e);
         toast.error("Error sending message");
       },
-      onCompleted: (data) => {},
+      onCompleted: (data) => {
+        setValue("");
+      },
       refetchQueries: [threadByIdQuery],
     },
   );
@@ -91,9 +94,11 @@ export default function PromptInput({ threadId }: props) {
             inputWrapper:
               "!bg-transparent hover:!bg-transparent focus:!bg-transparent",
           }}
+          disabled={lastMessageType != MessageMessageType.Ai}
           minRows={2}
           placeholder="Prompt goes here"
           value={value}
+          // TODO put this in a function if we can? I'm not sure if we can since we need the refs to createThread and createMessage
           onKeyPress={async (e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -115,7 +120,13 @@ export default function PromptInput({ threadId }: props) {
             startContent={<i className="pi pi-arrow-down" />}
             type="submit"
             variant="bordered"
-            onPress={() => {}}
+            onPress={() => {
+              if (isNew) {
+                createThread();
+              } else {
+                createMessage();
+              }
+            }}
           >
             Enter
           </Button>

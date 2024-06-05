@@ -7,17 +7,3 @@ export default async function getAccessToken(): Promise<string> {
 
   return accessToken;
 }
-
-// export default async function getAccessToken(): Promise<string> {
-//   const cookie = cookies().get("wos-session");
-//
-//   if (cookie) {
-//     const data: any = await unsealData(cookie.value, {
-//       password: process.env["WORKOS_COOKIE_PASSWORD"]!,
-//     });
-//
-//     return data.accessToken;
-//   }
-//
-//   return "";
-// }
