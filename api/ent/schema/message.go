@@ -24,7 +24,7 @@ func (Message) Mixin() []ent.Mixin {
 func (Message) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("content"),
-		field.Enum("message_type").Values("human", "ai", "system"),
+		field.Enum("message_type").Values("human", "ai", "system").Annotations(entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput)),
 	}
 }
 

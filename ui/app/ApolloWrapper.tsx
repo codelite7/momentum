@@ -7,8 +7,17 @@ import {
   ApolloNextAppProvider,
   InMemoryCache,
 } from "@apollo/experimental-nextjs-app-support";
-import { createHttpLink, from, useApolloClient } from "@apollo/client";
+import {
+  createHttpLink,
+  from,
+  makeVar,
+  ReactiveVar,
+  useApolloClient,
+} from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
+
+import { Thread } from "@/__generated__/graphql";
+import getAccessToken from "@/actions/token";
 
 declare module "@apollo/client" {
   export interface DefaultContext {
@@ -18,10 +27,10 @@ declare module "@apollo/client" {
 
 type props = {
   children: React.ReactNode;
-  accessToken: string;
+  accessTokenn: string;
 };
 
-export function ApolloWrapper({ accessToken, children }: props) {
+export function ApolloWrapper({ accessTokenn, children }: props) {
   function makeClient() {
     const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
       if (graphQLErrors) {
@@ -31,7 +40,11 @@ export function ApolloWrapper({ accessToken, children }: props) {
             `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
           ),
         );
-        if (networkError) console.error(`[Network error]: ${networkError}`);
+      } else if (networkError) {
+        if (networkError.statusCode == 401) {
+          console.error("401");
+        }
+        console.error(`[Network error]: ${networkError}`);
       }
     });
     const httpLink = createHttpLink({
@@ -42,36 +55,52 @@ export function ApolloWrapper({ accessToken, children }: props) {
       fetchOptions: { cache: "no-store" },
     });
     const authLink = setContext(async (_, { headers, token }) => {
-      token = token ? token : accessToken;
-      console.log("authLink access token ", token);
+      // token = token ? token : accessToken;
+      const accessToken = await getAccessToken();
 
       return {
         headers: {
           ...headers,
-          ...(token ? { authorization: `Bearer ${token}` } : {}),
+          ...{ authorization: `Bearer ${accessToken}` },
         },
       };
     });
 
     return new ApolloClient({
-      cache: new InMemoryCache(),
+      cache: new InMemoryCache({
+        typePolicies: {
+          Query: {
+            fields: {
+              thread: {
+                read() {
+                  return threadVar();
+                },
+              },
+            },
+          },
+        },
+      }),
       link: from([errorLink, authLink, httpLink]),
     });
   }
 
   return (
     <ApolloNextAppProvider makeClient={makeClient}>
-      <UpdateAuth accessToken={accessToken}>{children}</UpdateAuth>
+      <UpdateAuth accessTokenn={accessTokenn}>{children}</UpdateAuth>
     </ApolloNextAppProvider>
   );
 }
 
-function UpdateAuth({ accessToken, children }: props) {
+function UpdateAuth({ accessTokenn, children }: props) {
   const apolloClient = useApolloClient();
 
   // just synchronously update the `apolloClient.defaultContext` before any child component can be rendered
   // so the value is available for any query started in a child
-  apolloClient.defaultContext.token = accessToken;
+  apolloClient.defaultContext.token = accessTokenn;
 
   return <>{children}</>;
 }
+
+export const threadVar: ReactiveVar<Thread | undefined> = makeVar<
+  Thread | undefined
+>(undefined);

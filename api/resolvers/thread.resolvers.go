@@ -7,8 +7,10 @@ package resolvers
 import (
 	"context"
 
+	"github.com/codelite7/momentum/api/cmd/run/queue"
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
+	message2 "github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
@@ -19,11 +21,16 @@ func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThr
 	userInfo := common.GetUserIdFromContext(ctx)
 	thread, err := client.Thread.Create().SetCreatedByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(input).Save(ctx)
 	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
+		return nil, gqlerror.Wrap(err)
 	}
-	_, err = client.Message.Create().SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(messageInput).SetThread(thread).Save(ctx)
+	message, err := client.Message.Create().SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(messageInput).SetThread(thread).SetMessageType(message2.MessageTypeHuman).Save(ctx)
 	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
+		return nil, gqlerror.Wrap(err)
+	}
+	// enqueue message
+	err = queue.EnqueueMessageEvent(message.ID)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
 	}
 	// get so we get the messages back
 	return client.Thread.Get(ctx, thread.ID)
@@ -45,5 +52,6 @@ func (r *mutationResolver) DeleteThread(ctx context.Context, id pulid.ID) (pulid
 
 // Thread is the resolver for the thread field.
 func (r *queryResolver) Thread(ctx context.Context, id pulid.ID) (*ent.Thread, error) {
-	return r.client.Thread.Get(ctx, id)
+	thread, err := r.client.Thread.Get(ctx, id)
+	return thread, err
 }

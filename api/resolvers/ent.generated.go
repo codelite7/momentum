@@ -5560,7 +5560,7 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"content", "messageType", "threadID", "bookmarkIDs"}
+	fieldsInOrder := [...]string{"content", "threadID", "bookmarkIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5574,13 +5574,6 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 				return it, err
 			}
 			it.Content = data
-		case "messageType":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageType"))
-			data, err := ec.unmarshalNMessageMessageType2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋmessageᚐMessageType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MessageType = data
 		case "threadID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("threadID"))
 			data, err := ec.unmarshalNID2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
@@ -6679,7 +6672,7 @@ func (ec *executionContext) unmarshalInputUpdateMessageInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"content", "messageType", "threadID", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks"}
+	fieldsInOrder := [...]string{"content", "threadID", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6693,13 +6686,6 @@ func (ec *executionContext) unmarshalInputUpdateMessageInput(ctx context.Context
 				return it, err
 			}
 			it.Content = data
-		case "messageType":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageType"))
-			data, err := ec.unmarshalOMessageMessageType2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋmessageᚐMessageType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MessageType = data
 		case "threadID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("threadID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)

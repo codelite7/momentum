@@ -36,7 +36,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { accessToken } = await getUser();
+  const { accessToken } = await getUser({ ensureSignedIn: true });
 
   return (
     <html suppressHydrationWarning lang="en">
@@ -48,7 +48,7 @@ export default async function RootLayout({
         )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <ApolloWrapper accessToken={accessToken}>
+          <ApolloWrapper accessTokenn={accessToken}>
             <div className="flex h-full w-full overflow-hidden">
               <LeftSidebar />
               <div className="h-full w-full">{children}</div>

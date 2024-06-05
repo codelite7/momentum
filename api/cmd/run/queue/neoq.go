@@ -29,6 +29,10 @@ func startHandlers(queue neoq.Neoq) error {
 	if err != nil {
 		return err
 	}
+	err = startMessageEventHandler(queue)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -7,11 +7,12 @@ package resolvers
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
-	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/vektah/gqlparser/v2/gqlerror"
-
+	"github.com/codelite7/momentum/api/cmd/run/queue"
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/thread"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateMessage is the resolver for the createMessage field.
@@ -19,14 +20,28 @@ func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMe
 	userInfo := common.GetUserIdFromContext(ctx)
 	client := ent.FromContext(ctx)
 	// if the last message in the thread was sent by a human, return an error, we can't have two human messages in a row
-	previousMessage, err := client.Message.Query().Order(message.ByCreatedAt(sql.OrderAsc())).First(ctx)
-	if err != nil {
+	previousMessage, err := client.Message.Query().Where(message.HasThreadWith(thread.ID(input.ThreadID))).Order(message.ByCreatedAt(sql.OrderDesc())).First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
 		return nil, gqlerror.Wrap(err)
 	}
 	if previousMessage != nil && previousMessage.MessageType == message.MessageTypeHuman {
 		return nil, gqlerror.Errorf("please wait to get a response before sending another message")
 	}
-	// create message
-	// todo: enqueue stuff
-	return client.Message.Create().SetInput(input).SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).Save(ctx)
+	messag, err := client.Message.Create().SetInput(input).SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetMessageType(message.MessageTypeHuman).Save(ctx)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
+	}
+	// lock the message row since we can't pass a tx to neoq, we need it to wait until this tx is committed so that if it
+	// encounters a not found error it means this commit failed and the job should be ignored
+	_, err = client.Message.Query().ForUpdate().Where(message.ID(messag.ID)).FirstID(ctx)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
+	}
+	// enqueue message
+	err = queue.EnqueueMessageEvent(messag.ID)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
+	}
+
+	return messag, nil
 }

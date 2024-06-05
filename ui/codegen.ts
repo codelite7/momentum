@@ -7,6 +7,7 @@ const config: CodegenConfig = {
     "app/**/*.{ts,tsx}",
     "client/**/*.{ts,tsx}",
     "components/**/*.{ts,tsx}",
+    "graphql-queries/**/*.{ts,tsx}",
   ],
   generates: {
     "./__generated__/": {

@@ -37,9 +37,6 @@ func authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil && !config.DisableJwtValidation {
 				return unauthenticated(c)
 			}
-			if err != nil {
-				return unauthenticated(c)
-			}
 			workosUserId := token.Subject()
 			if workosUserId == "" {
 				err := tracerr.New("authenticated token subject is empty, it should contain the workos user id")

@@ -1,61 +1,39 @@
 "use client";
 
-import { useSuspenseQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
+import { useAtom } from "jotai";
 
 import PromptInput from "@/app/thread/[id]/prompt-input";
-import { gql, useFragment } from "@/__generated__";
+import { Thread } from "@/__generated__/graphql";
+import { threadByIdQuery } from "@/graphql-queries/queries";
 import Messages from "@/components/thread/messages/messages";
+import { threadAtom } from "@/state/atoms";
 
 type props = {
   threadId: string;
 };
 
-const threadByIdQuery = gql(/* Graphql */ `
-  query thread($id: ID!) {
-    thread(id: $id) {
-      ...threadByIdThreadFragment
-    }
-  }
-`);
-
-export const threadByIdThreadFragment = gql(/* Graphql */ `
-  fragment threadByIdThreadFragment on Thread {
-      id
-      createdAt
-      name
-      messages(first: 5) {
-        totalCount
-        pageInfo {
-          hasNextPage
-          hasPreviousPage
-          startCursor
-          endCursor
-        }
-        edges {
-          node {
-            id
-            createdAt
-            content
-            response {
-              id
-              content
-            }
-          }
-        }
-      }
-  }
-`);
 export default function Thread({ threadId }: props) {
-  let { data, error } = useSuspenseQuery(threadByIdQuery, {
-    variables: { id: threadId },
-  });
+  const [thread, setThread] = useAtom(threadAtom);
 
-  const result = useFragment(threadByIdThreadFragment, data.thread);
+  const { data, refetch } = useQuery(threadByIdQuery, {
+    notifyOnNetworkStatusChange: true,
+    variables: { id: threadId },
+    onError: (e) => console.error(e),
+    onCompleted: (e) => {
+      // not in onComplete hook so that refetch triggers re-render
+      setThread(data?.thread as Thread);
+    },
+  });
 
   return (
     <>
-      <Messages thread={result} />
-      <PromptInput threadId={threadId} />
+      {thread && thread.messages && (
+        <>
+          <Messages refetch={refetch} />
+          <PromptInput threadId={threadId} />
+        </>
+      )}
     </>
   );
 }

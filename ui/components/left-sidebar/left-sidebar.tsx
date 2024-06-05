@@ -42,7 +42,6 @@ export default function LeftSidebar() {
   if (error) {
     console.log("left-sidebar error", error);
   } else {
-    console.log("left-sidebar ", data);
   }
   const toggleAccountSettings = useAccountSettingsModalStore(
     (state: any) => state.toggle,

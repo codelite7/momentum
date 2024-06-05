@@ -12,10 +12,16 @@ import { useMutation } from "@apollo/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useSetAtom } from "jotai";
 
 import ModelSelect from "@/components/common/model-select";
 import { sidebarThreadsQuery } from "@/components/left-sidebar/left-sidebar";
-import { gql } from "@/__generated__";
+import {
+  createMessageMutation,
+  createThreadMutation,
+  threadByIdQuery,
+} from "@/graphql-queries/queries";
+import { threadAtom } from "@/state/atoms";
 
 function Divider() {
   return null;
@@ -25,44 +31,9 @@ interface props {
   threadId: string;
 }
 
-const createThreadMutation = gql(`
-  mutation createThread(
-    $input: CreateThreadInput!
-    $messageInput: CreateMessageInput!
-  ) {
-    createThread(input: $input, messageInput: $messageInput) {
-      id
-      lastViewedAt
-      messages {
-        edges {
-          node {
-            id
-            createdAt
-            content
-          }
-        }
-      }
-    }
-  }
-`);
-
-const createMessageMutation = gql(/* Graphql */ `
-  mutation createMessage($input:CreateMessageInput!) {
-    createMessage(input:$input){
-      id
-      content
-      createdAt
-      response {
-        id
-        content
-        createdAt
-      }
-    }
-  }
-`);
-
 export default function PromptInput({ threadId }: props) {
-  const isNew = threadId == "new";
+  const setThread = useSetAtom(threadAtom);
+  const isNew = threadId == "";
   const router = useRouter();
   const [value, setValue] = useState("");
   const [createThread, { data, loading, error }] = useMutation(
@@ -101,11 +72,13 @@ export default function PromptInput({ threadId }: props) {
         console.error(e);
         toast.error("Error sending message");
       },
+      onCompleted: (data) => {},
+      refetchQueries: [threadByIdQuery],
     },
   );
 
   return (
-    <Card className="w-full">
+    <Card className="w-full min-h-36">
       {!threadId && (
         <CardHeader>
           <ModelSelect />

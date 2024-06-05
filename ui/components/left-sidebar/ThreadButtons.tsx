@@ -6,8 +6,6 @@ type props = {
   threads: any;
 };
 export default function ThreadButtons({ threads }: props) {
-  console.log("threads", threads);
-
   return (
     <InfiniteScroller
       hideScrollBar

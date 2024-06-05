@@ -9,18 +9,19 @@ import (
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/go-resty/resty/v2"
-	"time"
+	"github.com/ztrue/tracerr"
+	"go.uber.org/zap"
 )
 
 func GetThreadName(messageContent string) (string, error) {
 	prompt := fmt.Sprintf("Provide a concise 3 word summary of the following text:%s", messageContent)
-	return Prompt([]*ChatMessage{&ChatMessage{
+	return Prompt([]ChatMessage{ChatMessage{
 		Type: "human",
 		Data: ChatMessageData{Content: prompt},
 	}})
 }
 
-func Prompt(chatMessages []*ChatMessage) (string, error) {
+func Prompt(chatMessages []ChatMessage) (string, error) {
 	client := resty.New()
 	resp, err := client.R().
 		SetBody(chatMessages).
@@ -28,25 +29,26 @@ func Prompt(chatMessages []*ChatMessage) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if resp.StatusCode() != 200 {
+		err := tracerr.Errorf("unexpected status code received from langchain: %d", resp.StatusCode())
+		Logger.Error("error prompting for response", zap.Error(err))
+		return "", err
+	}
 	return resp.String(), nil
 }
-func GetMessageHistory(ctx context.Context, tx *ent.Tx, threadId pulid.ID, lastMessageCreatedAt time.Time) ([]*ent.Message, error) {
-	return tx.Message.Query().Where(
+func GetMessageHistory(ctx context.Context, threadId pulid.ID) ([]*ent.Message, error) {
+	return EntClient.Message.Query().Where(
 		message.HasThreadWith(thread.ID(threadId)),
-		message.CreatedAtLTE(lastMessageCreatedAt),
-	).All(ctx)
+	).Order(message.ByCreatedAt()).All(ctx)
 }
 
-func ChatMessagesFromMessages(messages []*ent.Message) ([]*ChatMessage, error) {
-	chatMessages := make([]*ChatMessage, 0)
+func ChatMessagesFromMessages(messages []*ent.Message) []ChatMessage {
+	chatMessages := make([]ChatMessage, 0)
 	for _, message := range messages {
-		humanChatMessage, err := chatMessageFromMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		chatMessages = append(chatMessages, humanChatMessage)
+		chatMessages = append(chatMessages, chatMessageFromMessage(message))
 	}
-	return chatMessages, nil
+
+	return chatMessages
 }
 
 type ChatMessage struct {
@@ -57,9 +59,6 @@ type ChatMessageData struct {
 	Content string `json:"content"`
 }
 
-func chatMessageFromMessage(message *ent.Message) (*ChatMessage, error) {
-	chatMessage := &ChatMessage{Data: ChatMessageData{Content: message.Content}}
-	chatMessage.Type = "human"
-
-	return chatMessage, nil
+func chatMessageFromMessage(messag *ent.Message) ChatMessage {
+	return ChatMessage{Type: messag.MessageType.String(), Data: ChatMessageData{Content: messag.Content}}
 }
