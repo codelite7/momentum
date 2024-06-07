@@ -94,7 +94,7 @@ export default function PromptInput({ threadId }: props) {
             inputWrapper:
               "!bg-transparent hover:!bg-transparent focus:!bg-transparent",
           }}
-          disabled={lastMessageType != MessageMessageType.Ai}
+          disabled={!isNew && lastMessageType != MessageMessageType.Ai}
           minRows={2}
           placeholder="Prompt goes here"
           value={value}

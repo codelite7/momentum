@@ -15,6 +15,7 @@ import {
   useApolloClient,
 } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
+import { useRouter } from "next/navigation";
 
 import { Thread } from "@/__generated__/graphql";
 import getAccessToken from "@/actions/token";
@@ -31,22 +32,37 @@ type props = {
 };
 
 export function ApolloWrapper({ accessTokenn, children }: props) {
+  const router = useRouter();
+
   function makeClient() {
-    const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
-      if (graphQLErrors) {
-        console.error("[GraphQL error on operation]:", operation);
-        graphQLErrors.forEach(({ message, locations, path }) =>
-          console.error(
-            `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
-          ),
-        );
-      } else if (networkError) {
-        if (networkError.statusCode == 401) {
-          console.error("401");
+    const errorLink = onError(
+      ({ graphQLErrors, networkError, operation, forward }) => {
+        if (graphQLErrors) {
+          console.error("[GraphQL error on operation]:", operation);
+          graphQLErrors.forEach(({ message, locations, path }) =>
+            console.error(
+              `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
+            ),
+          );
+        } else if (networkError) {
+          if (networkError.statusCode == 401) {
+            router.refresh();
+            operation.setContext(async (request) => {
+              const accessToken = await getAccessToken();
+
+              return {
+                headers: {
+                  authorization: accessToken,
+                },
+              };
+            });
+
+            return forward(operation);
+          }
+          console.error(`[Network error]: ${networkError}`);
         }
-        console.error(`[Network error]: ${networkError}`);
-      }
-    });
+      },
+    );
     const httpLink = createHttpLink({
       // this needs to be an absolute url, as relative urls cannot be used in SSR
       uri: "http://localhost:3001/query",
@@ -55,13 +71,12 @@ export function ApolloWrapper({ accessTokenn, children }: props) {
       fetchOptions: { cache: "no-store" },
     });
     const authLink = setContext(async (_, { headers, token }) => {
-      // token = token ? token : accessToken;
-      const accessToken = await getAccessToken();
+      token = token ? token : accessTokenn;
 
       return {
         headers: {
           ...headers,
-          ...{ authorization: `Bearer ${accessToken}` },
+          ...(token ? { authorization: `Bearer ${accessTokenn}` } : {}),
         },
       };
     });

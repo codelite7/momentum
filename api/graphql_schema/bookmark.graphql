@@ -1,4 +1,4 @@
 extend type Mutation {
-    createBookmark(input: CreateBookmarkInput!): BookmarkConnection
+    createBookmark(input: CreateBookmarkInput!): Bookmark!
     deleteBookmark(id: ID!):ID!
 }

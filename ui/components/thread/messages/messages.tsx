@@ -3,17 +3,17 @@
 import { useEffect, useRef } from "react";
 import { useAtomValue } from "jotai";
 import { ApolloQueryResult } from "@apollo/client";
+import { MessageType } from "graphql-ws";
 
-import InfiniteScroller from "@/components/common/scroll/infinite-scroller";
-import Message from "@/components/thread/messages/message";
 import {
-  Message as MessageType,
   MessageMessageType,
   ThreadQuery,
   ThreadQueryVariables,
 } from "@/__generated__/graphql";
 import { lastThreadMessageTypeAtom, threadMessagesAtom } from "@/state/atoms";
+import Message from "@/components/thread/messages/message";
 import WaitForResponse from "@/components/thread/messages/waitForResponse";
+import InfiniteScroller from "@/components/common/scroll/infinite-scroller";
 
 interface MessagesProps {
   refetch?: (
@@ -34,16 +34,14 @@ export default function Messages({ refetch }: MessagesProps) {
   }, [messages]);
 
   return (
-    <>
-      <InfiniteScroller hideScrollBar>
-        {messages.map((message: MessageType) => {
-          return <Message key={message.id} message={message} />;
-        })}
-        {lastMessageType == MessageMessageType.Human && (
-          <WaitForResponse refetch={refetch} />
-        )}
-        <div ref={messagesEndRef} />
-      </InfiniteScroller>
-    </>
+    <InfiniteScroller>
+      {messages.map((message: MessageType) => {
+        return <Message key={message.id} message={message} />;
+      })}
+      {lastMessageType == MessageMessageType.Human && (
+        <WaitForResponse refetch={refetch} />
+      )}
+      <div ref={messagesEndRef} />
+    </InfiniteScroller>
   );
 }

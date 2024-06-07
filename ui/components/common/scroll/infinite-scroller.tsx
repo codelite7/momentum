@@ -19,11 +19,13 @@ export default function InfiniteScroller(props: any) {
   let flexGap = gap ? gap : 2;
 
   return (
-    <ScrollShadow
-      {...rest}
-      onScroll={(e) => onInfiniteScroll(e, onScrollDown, onScrollUp)}
-    >
-      <div className={`flex flex-col gap-${flexGap}`}>{children}</div>
-    </ScrollShadow>
+    <div className="h-full overflow-y-auto">
+      <ScrollShadow
+        {...rest}
+        onScroll={(e) => onInfiniteScroll(e, onScrollDown, onScrollUp)}
+      >
+        <div className={`flex flex-col gap-${flexGap}`}>{children}</div>
+      </ScrollShadow>
+    </div>
   );
 }

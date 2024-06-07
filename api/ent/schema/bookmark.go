@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
@@ -25,10 +26,7 @@ func (Bookmark) Fields() []ent.Field {
 func (Bookmark) Edges() []ent.Edge {
 	return []ent.Edge{
 		// a bookmark is created by a user
-		//edge.From("user", User.Type).Ref("bookmarks").Unique().Required(),
-		edge.From("user", User.Type).Ref("bookmarks").Unique().Required(),
-		// a bookmark may be associated with a thread
-		edge.From("thread", Thread.Type).Ref("bookmarks").Unique(),
+		edge.From("user", User.Type).Ref("bookmarks").Unique().Required().Annotations(entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput)),
 		// a bookmark may be associated with a message
 		edge.From("message", Message.Type).Ref("bookmarks").Unique(),
 	}

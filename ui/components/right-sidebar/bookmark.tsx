@@ -32,88 +32,99 @@
 //   }
 // `;
 
+import { Button, Card, CardBody, CardHeader, Tooltip } from "@nextui-org/react";
+import LinesEllipsis from "react-lines-ellipsis";
+import { useMutation } from "@apollo/client";
+import { toast } from "sonner";
+import { cloneDeep } from "lodash";
+import { useSetAtom } from "jotai/index";
+
+import { Bookmark } from "@/__generated__/graphql";
+import {
+  deleteBookmarkMutation,
+  threadBookmarksQuery,
+} from "@/graphql-queries/queries";
+import { threadAtom } from "@/state/atoms";
+
 type props = {
-  // bookmark: bookmarkFragment$key;
   showThreadName?: boolean;
+  bookmark: Bookmark;
 };
 
-export default function Bookmark({ showThreadName }: props) {
-  // const data = useFragment<bookmarkFragment$key>(BookmarkFragment, bookmark);
-  // const [commitMutation, isMutationInFlight] = useMutation(
-  //   BookmarkDeleteMutation,
-  // );
+export default function Bookmark({ showThreadName, bookmark }: props) {
+  const setThread = useSetAtom(threadAtom);
+  const [deleteBookmark] = useMutation(deleteBookmarkMutation, {
+    variables: {
+      id: bookmark.id,
+    },
+    onError: (e) => {
+      toast.error("Error deleting bookmark");
+      console.error(e);
+    },
+    onCompleted: (data) => {
+      toast.success("Deleted bookmark");
+      setThread((thread) => {
+        let updated = cloneDeep(thread);
+
+        thread?.messages?.edges?.forEach((edge) => {
+          if (edge?.node && edge.node.id == bookmark.message?.id) {
+            let newEdges = edge.node.bookmarks.edges?.filter((edge) => {
+              let result = edge?.node?.id != bookmark.id;
+
+              return result;
+            });
+
+            edge.node.bookmarks.edges = newEdges;
+          }
+        });
+
+        console.log("updated bookmarks");
+
+        return updated;
+      });
+    },
+    refetchQueries: [threadBookmarksQuery],
+  });
 
   return (
-    <></>
-    // <Card isHoverable className="border-1 border-default">
-    //   <CardHeader>
-    //     <div className="flex w-full justify-between">
-    //       <div className="items-center gap-2 ">
-    //         <i className="pi pi-bookmark text-primary" />
-    //         {showThreadName && (
-    //           <span>
-    //             {data.message
-    //               ? data.message.thread.name
-    //               : data.response?.message.thread.name}
-    //           </span>
-    //         )}
-    //       </div>
-    //       <div>
-    //         <Tooltip content="Copy to clipboard">
-    //           <Button
-    //             isIconOnly
-    //             className="bg-transparent hover:bg-default-200"
-    //             size="sm"
-    //             onPress={() =>
-    //               navigator.clipboard.writeText(getClipboardContent(data))
-    //             }
-    //           >
-    //             <i className="pi pi-clipboard" />
-    //           </Button>
-    //         </Tooltip>
-    //         <Tooltip content="Delete bookmark">
-    //           <Button
-    //             isIconOnly
-    //             className="bg-transparent hover:bg-default-200"
-    //             size="sm"
-    //             onPress={() => {
-    //               commitMutation({
-    //                 variables: {
-    //                   id: data.id,
-    //                 },
-    //                 onError: (e) => {
-    //                   toast.error("Error deleting bookmark");
-    //                 },
-    //                 onCompleted: (response) => {
-    //                   toast.success("Deleted bookmark");
-    //                 },
-    //               });
-    //             }}
-    //           >
-    //             <i className="pi pi-times" />
-    //           </Button>
-    //         </Tooltip>
-    //       </div>
-    //     </div>
-    //   </CardHeader>
-    //   <CardBody>
-    //     {data.message?.content && (
-    //       <LinesEllipsis maxLine={8} text={data.message.content} />
-    //     )}
-    //     {data.response?.content && (
-    //       <LinesEllipsis maxLine={8} text={data.response.content} />
-    //     )}
-    //   </CardBody>
-    // </Card>
+    <Card isHoverable className="border-1 border-default">
+      <CardHeader>
+        <div className="flex w-full justify-between">
+          <div className="items-center gap-2 ">
+            <i className="pi pi-bookmark text-primary" />
+            {showThreadName && <span>{bookmark.message?.thread.name}</span>}
+          </div>
+          <div>
+            <Tooltip content="Copy to clipboard">
+              <Button
+                isIconOnly
+                className="bg-transparent hover:bg-default-200"
+                size="sm"
+                onPress={() =>
+                  navigator.clipboard.writeText(bookmark.message?.content ?? "")
+                }
+              >
+                <i className="pi pi-clipboard" />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Delete bookmark">
+              <Button
+                isIconOnly
+                className="bg-transparent hover:bg-default-200"
+                size="sm"
+                onPress={() => {
+                  deleteBookmark();
+                }}
+              >
+                <i className="pi pi-times" />
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
+      </CardHeader>
+      <CardBody>
+        <LinesEllipsis maxLine={8} text={bookmark.message?.content} />
+      </CardBody>
+    </Card>
   );
 }
-
-// function getClipboardContent(bookmark: bookmarkFragment$data) {
-//   if (bookmark.message?.content) {
-//     return bookmark.message.content;
-//   } else if (bookmark.response?.content) {
-//     return bookmark.response.content;
-//   }
-//
-//   return "";
-// }

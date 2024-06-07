@@ -2,10 +2,15 @@
 
 import { Button, Card, CardBody, Tooltip } from "@nextui-org/react";
 import { useEffect, useState } from "react";
+import { useAtomValue } from "jotai/index";
+
+import Bookmarks from "@/components/right-sidebar/bookmarks";
+import { threadAtom } from "@/state/atoms";
 
 export function RightSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [width, setWidth] = useState("w-64");
+  const thread = useAtomValue(threadAtom);
 
   useEffect(() => {
     let width = "w-64";
@@ -85,10 +90,7 @@ export function RightSidebar() {
                 Search all bookmarks
               </div>
             </Button>
-            {/* thread bookmarks */}
-            {/*<Bookmarks*/}
-            {/*  params={{ id: "1ff4ad0d-4355-4123-a57a-9c76cac135e0" }}*/}
-            {/*/>*/}
+            {thread && <Bookmarks />}
           </>
         )}
       </CardBody>

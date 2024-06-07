@@ -19,7 +19,7 @@ import (
 
 type MutationResolver interface {
 	CreateAgent(ctx context.Context, input ent.CreateAgentInput) (*ent.Agent, error)
-	CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.BookmarkConnection, error)
+	CreateBookmark(ctx context.Context, input ent.CreateBookmarkInput) (*ent.Bookmark, error)
 	DeleteBookmark(ctx context.Context, id pulid.ID) (pulid.ID, error)
 	CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error)
 	CreateThread(ctx context.Context, input ent.CreateThreadInput, messageInput ent.CreateMessageInput) (*ent.Thread, error)
@@ -263,11 +263,14 @@ func (ec *executionContext) _Mutation_createBookmark(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*ent.BookmarkConnection)
+	res := resTmp.(*ent.Bookmark)
 	fc.Result = res
-	return ec.marshalOBookmarkConnection2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkConnection(ctx, field.Selections, res)
+	return ec.marshalNBookmark2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmark(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createBookmark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -278,14 +281,18 @@ func (ec *executionContext) fieldContext_Mutation_createBookmark(ctx context.Con
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "edges":
-				return ec.fieldContext_BookmarkConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_BookmarkConnection_pageInfo(ctx, field)
-			case "totalCount":
-				return ec.fieldContext_BookmarkConnection_totalCount(ctx, field)
+			case "id":
+				return ec.fieldContext_Bookmark_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Bookmark_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Bookmark_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_Bookmark_user(ctx, field)
+			case "message":
+				return ec.fieldContext_Bookmark_message(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type BookmarkConnection", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
 		},
 	}
 	defer func() {
@@ -743,6 +750,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createBookmark(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "deleteBookmark":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteBookmark(ctx, field)

@@ -6,7 +6,7 @@ export const threadByIdQuery = gql(/* Graphql */ `
       id
       createdAt
       name
-      messages(first: 50) {
+      messages {
         totalCount
         pageInfo {
           hasNextPage
@@ -20,11 +20,56 @@ export const threadByIdQuery = gql(/* Graphql */ `
             createdAt
             content
             messageType
+            bookmarks {
+              edges {
+                node {
+                  id
+                }
+              }
+            }
           }
         }
       }
     }
   }
+`);
+
+export const threadByMessageIdQuery = gql(/* Graphql */ `
+  query threadByMessageIdQuery($messageId: ID!) {
+  threads(where: {hasMessagesWith: {id: $messageId}}) {
+    edges {
+      node {
+        id
+        createdAt
+        name
+        messages {
+          totalCount
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+          edges {
+            node {
+              id
+              createdAt
+              content
+              messageType
+              bookmarks {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 `);
 
 export const createThreadMutation = gql(/* Graphql */ `
@@ -75,3 +120,39 @@ query mostRecentMessage($threadId: ID!, $after:Time!) {
   }
 }
 `);
+
+export const threadBookmarksQuery = gql(`
+query bookmarks($threadId:ID!){
+  bookmarks(where:{hasMessageWith:{hasThreadWith:{id:$threadId}}}) {
+    edges {
+      node {
+        id
+        createdAt
+        message {
+          id
+          createdAt
+          content
+        }
+      }
+    }
+  }
+}
+`);
+
+export const createBookmarkMutation = gql(/* Graphql */ `
+mutation createBookmark($messageId:ID!){
+  createBookmark(input:{messageID:$messageId}){
+    id
+    createdAt
+    message {
+      id
+      createdAt
+      content
+    }
+  }
+}`);
+
+export const deleteBookmarkMutation = gql(/* Graphql */ `
+mutation deleteBookmark($id:ID!) {
+  deleteBookmark(id:$id)
+}`);

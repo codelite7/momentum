@@ -15,6 +15,9 @@ module.exports = {
       fontFamily: {
         satoshi: ["var(--font-satoshi)"],
       },
+      width: {
+        68: "17rem",
+      },
     },
   },
   darkMode: "class",

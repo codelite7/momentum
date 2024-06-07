@@ -10,8 +10,17 @@ import {
   Tooltip,
 } from "@nextui-org/react";
 import { Cursor, useTypewriter } from "react-simple-typewriter";
+import { useMutation } from "@apollo/client";
+import { toast } from "sonner";
+import { Link } from "@nextui-org/link";
 
-import { Message, MessageMessageType } from "@/__generated__/graphql";
+import { Bookmark, Message, MessageMessageType } from "@/__generated__/graphql";
+import {
+  createBookmarkMutation,
+  deleteBookmarkMutation,
+  threadBookmarksQuery,
+} from "@/graphql-queries/queries";
+import { getSentAtDisplay } from "@/common/helpers";
 
 type props = {
   message: Message;
@@ -19,19 +28,53 @@ type props = {
 };
 
 export default function Message({ message, animate }: props) {
+  console.log("message bookmarks", message.bookmarks);
   const sentAtDisplay = getSentAtDisplay(message.createdAt);
   const [hovered, setHovered] = useState(false);
   const [text] = useTypewriter({
     words: [message.content],
     typeSpeed: 5,
   });
-  // const [commitMutation, isMutationInFlight] = useMutation(
-  //   MessageBaseCreateBookmarkMutation,
-  // );
+  let bookmarkss: Bookmark[] = [];
+
+  message.bookmarks?.edges?.forEach((edge) => {
+    if (edge?.node) {
+      bookmarkss.push(edge.node as Bookmark);
+    }
+  });
+
+  const [createBookmark] = useMutation(createBookmarkMutation, {
+    variables: {
+      messageId: message.id,
+    },
+    onError: (e) => {
+      toast.error("Error bookmarking message");
+      console.error(e);
+    },
+    onCompleted: (data) => {
+      toast.success("Bookmarked message");
+      bookmarkss.push(data.createBookmark as Bookmark);
+    },
+    refetchQueries: [threadBookmarksQuery],
+  });
+  const [deleteBookmark] = useMutation(deleteBookmarkMutation, {
+    variables: {
+      id: bookmarkss.length > 0 ? bookmarkss[0].id : "",
+    },
+    onError: (e) => {
+      toast.error("Error deleting bookmark");
+      console.error(e);
+    },
+    onCompleted: (data) => {
+      toast.success("Deleted bookmark");
+      bookmarkss = [];
+    },
+    refetchQueries: [threadBookmarksQuery],
+  });
 
   return (
     <Card
-      className="mb-6 bg-black hover:bg-default-100 mr-2"
+      className="mb-6 bg-black hover:bg-default-100"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -84,23 +127,18 @@ export default function Message({ message, animate }: props) {
                 isIconOnly
                 size="sm"
                 onPress={() => {
-                  // commitMutation({
-                  //   variables: {
-                  //     userId: "us01HZ5TYGYW36GGJ7Z9VMS5Y5TE",
-                  //     messageId: isResponse ? null : id,
-                  //     responseId: isResponse ? id : null,
-                  //     connections: [connectionID],
-                  //   },
-                  //   onError: () => {
-                  //     toast.error("Error bookmarking message");
-                  //   },
-                  //   onCompleted: () => {
-                  //     toast.success("Bookmarked message");
-                  //   },
-                  // });
+                  if (bookmarkss.length > 0) {
+                    deleteBookmark();
+                  } else {
+                    createBookmark();
+                  }
                 }}
               >
-                <i className="pi pi-bookmark" />
+                {bookmarkss.length > 0 ? (
+                  <i className="pi pi-bookmark-fill text-primary" />
+                ) : (
+                  <i className="pi pi-bookmark" />
+                )}
               </Button>
             </Tooltip>
             <Tooltip
@@ -117,7 +155,12 @@ export default function Message({ message, animate }: props) {
               </Button>
             </Tooltip>
             <Tooltip showArrow content="Create child thread" placement="bottom">
-              <Button isIconOnly size="sm">
+              <Button
+                isIconOnly
+                as={Link}
+                href={`/thread/new?parentId=${message.id}`}
+                size="sm"
+              >
                 <i className="pi pi-arrow-right" />
               </Button>
             </Tooltip>
@@ -141,21 +184,4 @@ export default function Message({ message, animate }: props) {
       </CardBody>
     </Card>
   );
-}
-
-function getSentAtDisplay(createdAt: string): string {
-  let sentAtDisplay = "";
-
-  if (createdAt) {
-    const sentAtDate = new Date(createdAt);
-    const sentToday =
-      new Date(createdAt).setHours(0, 0, 0, 0) ==
-      new Date().setHours(0, 0, 0, 0);
-
-    sentAtDisplay = sentToday
-      ? sentAtDate.toLocaleTimeString()
-      : sentAtDate.toLocaleString();
-  }
-
-  return sentAtDisplay;
 }
