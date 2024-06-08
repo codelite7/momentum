@@ -34,6 +34,10 @@ export const threadByIdQuery = gql(/* Graphql */ `
                 }
               }
             }
+            child {
+              id
+              name
+            }
           }
         }
       }

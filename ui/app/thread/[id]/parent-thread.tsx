@@ -18,7 +18,7 @@ export default function ParentThread({ parentId }: ParentThreadProps) {
 
   const { data } = useQuery(threadByMessageIdQuery, {
     notifyOnNetworkStatusChange: true,
-    variables: { messageId: parentId },
+    variables: { messageId: parentId ?? "" },
     onError: (e) => console.error(e),
     onCompleted: (data) => {
       if (
@@ -57,13 +57,11 @@ export default function ParentThread({ parentId }: ParentThreadProps) {
           <CardBody>
             <ScrollArea.Root>
               <ScrollArea.Viewport>
-                {messages.map((message) => (
-                  <>
-                    <span key={message.id}>{message.content}</span>
-                    <br />
-                    <br />
-                  </>
-                ))}
+                <div className="flex flex-col gap-2">
+                  {messages.map((message) => (
+                    <div key={message.id}>{message.content}</div>
+                  ))}
+                </div>
               </ScrollArea.Viewport>
             </ScrollArea.Root>
           </CardBody>

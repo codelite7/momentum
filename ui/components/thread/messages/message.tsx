@@ -154,18 +154,60 @@ export default function Message({ message, animate }: props) {
                 <i className="pi pi-clipboard" />
               </Button>
             </Tooltip>
-            <Tooltip showArrow content="Create child thread" placement="bottom">
-              <Button
-                isIconOnly
-                as={Link}
-                href={`/thread/new?parentId=${message.id}`}
-                size="sm"
+            {message.child ? (
+              <Tooltip
+                showArrow
+                content={message.child.name}
+                placement="bottom"
               >
-                <i className="pi pi-arrow-right" />
-              </Button>
-            </Tooltip>
+                <Button
+                  isIconOnly
+                  as={Link}
+                  color="primary"
+                  href={`/thread/${message.child.id}`}
+                  size="sm"
+                >
+                  <i className="pi pi-arrow-right" />
+                </Button>
+              </Tooltip>
+            ) : (
+              <Tooltip
+                showArrow
+                content="Create child thread"
+                placement="bottom"
+              >
+                <Button
+                  isIconOnly
+                  as={Link}
+                  href={`/thread/new?parentId=${message.id}`}
+                  size="sm"
+                >
+                  <i className="pi pi-arrow-right" />
+                </Button>
+              </Tooltip>
+            )}
           </div>
-        ) : null}
+        ) : (
+          <div className="flex gap-1">
+            {message.child && (
+              <Tooltip
+                showArrow
+                content={message.child.name}
+                placement="bottom"
+              >
+                <Button
+                  isIconOnly
+                  as={Link}
+                  color="primary"
+                  href={`/thread/${message.child.id}`}
+                  size="sm"
+                >
+                  <i className="pi pi-arrow-right" />
+                </Button>
+              </Tooltip>
+            )}
+          </div>
+        )}
       </CardHeader>
       <CardBody>
         {animate ? (
