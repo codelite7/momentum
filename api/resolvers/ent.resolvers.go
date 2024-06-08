@@ -47,7 +47,11 @@ func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[pulid.ID
 	return r.client.User.Query().Paginate(ctx, after, first, before, last, ent.WithUserOrder(orderBy), ent.WithUserFilter(where.Filter))
 }
 
+// Message returns MessageResolver implementation.
+func (r *Resolver) Message() MessageResolver { return &messageResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type messageResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

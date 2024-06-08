@@ -16,7 +16,6 @@ require (
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lestrrat-go/jwx/v2 v2.0.21
 	github.com/oklog/ulid/v2 v2.0.2
-	github.com/samber/lo v1.39.0
 	github.com/urfave/cli/v2 v2.27.2
 	github.com/vektah/gqlparser/v2 v2.5.11
 	github.com/workos/workos-go/v4 v4.11.0

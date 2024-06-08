@@ -11,7 +11,7 @@ import {
 import { useMutation } from "@apollo/client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAtomValue } from "jotai";
 
 import ModelSelect from "@/components/common/model-select";
@@ -33,6 +33,8 @@ interface props {
 }
 
 export default function PromptInput({ threadId }: props) {
+  const searchParams = useSearchParams();
+  const parentId = searchParams.get("parentId");
   const isNew = threadId == "";
   const lastMessageType = useAtomValue(lastThreadMessageTypeAtom);
   const router = useRouter();
@@ -43,6 +45,7 @@ export default function PromptInput({ threadId }: props) {
       variables: {
         input: {
           name: `${value.substring(0, 15)}...`,
+          parentID: parentId,
         },
         messageInput: {
           threadID: "",

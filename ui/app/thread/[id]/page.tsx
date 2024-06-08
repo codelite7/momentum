@@ -24,7 +24,7 @@ export default function Page({
         {isNew ? (
           <NewThread parentId={parentId} />
         ) : (
-          <Thread threadId={params.id} />
+          <Thread parentId={parentId} threadId={params.id} />
         )}
       </div>
       <div className="h-full">

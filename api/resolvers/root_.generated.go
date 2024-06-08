@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Message() MessageResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 }
@@ -82,7 +83,9 @@ type ComplexityRoot struct {
 	}
 
 	Message struct {
+		Bookmarked  func(childComplexity int) int
 		Bookmarks   func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) int
+		Child       func(childComplexity int) int
 		Content     func(childComplexity int) int
 		CreatedAt   func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -134,8 +137,6 @@ type ComplexityRoot struct {
 	}
 
 	Thread struct {
-		Bookmarks    func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.BookmarkOrder, where *ent.BookmarkWhereInput) int
-		Children     func(childComplexity int, after *entgql.Cursor[pulid.ID], first *int, before *entgql.Cursor[pulid.ID], last *int, orderBy []*ent.ThreadOrder, where *ent.ThreadWhereInput) int
 		CreatedAt    func(childComplexity int) int
 		CreatedBy    func(childComplexity int) int
 		ID           func(childComplexity int) int
@@ -338,6 +339,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BookmarkEdge.Node(childComplexity), true
 
+	case "Message.bookmarked":
+		if e.complexity.Message.Bookmarked == nil {
+			break
+		}
+
+		return e.complexity.Message.Bookmarked(childComplexity), true
+
 	case "Message.bookmarks":
 		if e.complexity.Message.Bookmarks == nil {
 			break
@@ -349,6 +357,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Message.Bookmarks(childComplexity, args["after"].(*entgql.Cursor[pulid.ID]), args["first"].(*int), args["before"].(*entgql.Cursor[pulid.ID]), args["last"].(*int), args["orderBy"].([]*ent.BookmarkOrder), args["where"].(*ent.BookmarkWhereInput)), true
+
+	case "Message.child":
+		if e.complexity.Message.Child == nil {
+			break
+		}
+
+		return e.complexity.Message.Child(childComplexity), true
 
 	case "Message.content":
 		if e.complexity.Message.Content == nil {
@@ -660,30 +675,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Users(childComplexity, args["after"].(*entgql.Cursor[pulid.ID]), args["first"].(*int), args["before"].(*entgql.Cursor[pulid.ID]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
-
-	case "Thread.bookmarks":
-		if e.complexity.Thread.Bookmarks == nil {
-			break
-		}
-
-		args, err := ec.field_Thread_bookmarks_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Thread.Bookmarks(childComplexity, args["after"].(*entgql.Cursor[pulid.ID]), args["first"].(*int), args["before"].(*entgql.Cursor[pulid.ID]), args["last"].(*int), args["orderBy"].([]*ent.BookmarkOrder), args["where"].(*ent.BookmarkWhereInput)), true
-
-	case "Thread.children":
-		if e.complexity.Thread.Children == nil {
-			break
-		}
-
-		args, err := ec.field_Thread_children_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Thread.Children(childComplexity, args["after"].(*entgql.Cursor[pulid.ID]), args["first"].(*int), args["before"].(*entgql.Cursor[pulid.ID]), args["last"].(*int), args["orderBy"].([]*ent.ThreadOrder), args["where"].(*ent.ThreadWhereInput)), true
 
 	case "Thread.createdAt":
 		if e.complexity.Thread.CreatedAt == nil {
@@ -1279,6 +1270,7 @@ input CreateMessageInput {
   content: String!
   threadID: ID!
   bookmarkIDs: [ID!]
+  childID: ID
 }
 """
 CreateThreadInput is used for create Thread object.
@@ -1288,9 +1280,7 @@ input CreateThreadInput {
   name: String!
   lastViewedAt: Time
   messageIDs: [ID!]
-  bookmarkIDs: [ID!]
   parentID: ID
-  childIDs: [ID!]
 }
 """
 CreateUserInput is used for create User object.
@@ -1346,6 +1336,7 @@ type Message implements Node {
     """
     where: BookmarkWhereInput
   ): BookmarkConnection!
+  child: Thread
 }
 """
 A connection to a list of items.
@@ -1484,6 +1475,11 @@ input MessageWhereInput {
   """
   hasBookmarks: Boolean
   hasBookmarksWith: [BookmarkWhereInput!]
+  """
+  child edge predicates
+  """
+  hasChild: Boolean
+  hasChildWith: [ThreadWhereInput!]
 }
 """
 An object with an ID.
@@ -1743,69 +1739,7 @@ type Thread implements Node {
     """
     where: MessageWhereInput
   ): MessageConnection!
-  bookmarks(
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for Bookmarks returned from the connection.
-    """
-    orderBy: [BookmarkOrder!]
-
-    """
-    Filtering options for Bookmarks returned from the connection.
-    """
-    where: BookmarkWhereInput
-  ): BookmarkConnection!
-  parent: Thread
-  children(
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for Threads returned from the connection.
-    """
-    orderBy: [ThreadOrder!]
-
-    """
-    Filtering options for Threads returned from the connection.
-    """
-    where: ThreadWhereInput
-  ): ThreadConnection!
+  parent: Message
 }
 """
 A connection to a list of items.
@@ -1938,20 +1872,10 @@ input ThreadWhereInput {
   hasMessages: Boolean
   hasMessagesWith: [MessageWhereInput!]
   """
-  bookmarks edge predicates
-  """
-  hasBookmarks: Boolean
-  hasBookmarksWith: [BookmarkWhereInput!]
-  """
   parent edge predicates
   """
   hasParent: Boolean
-  hasParentWith: [ThreadWhereInput!]
-  """
-  children edge predicates
-  """
-  hasChildren: Boolean
-  hasChildrenWith: [ThreadWhereInput!]
+  hasParentWith: [MessageWhereInput!]
 }
 """
 The builtin Time type
@@ -1983,6 +1907,8 @@ input UpdateMessageInput {
   addBookmarkIDs: [ID!]
   removeBookmarkIDs: [ID!]
   clearBookmarks: Boolean
+  childID: ID
+  clearChild: Boolean
 }
 """
 UpdateThreadInput is used for update Thread object.
@@ -1994,14 +1920,8 @@ input UpdateThreadInput {
   addMessageIDs: [ID!]
   removeMessageIDs: [ID!]
   clearMessages: Boolean
-  addBookmarkIDs: [ID!]
-  removeBookmarkIDs: [ID!]
-  clearBookmarks: Boolean
   parentID: ID
   clearParent: Boolean
-  addChildIDs: [ID!]
-  removeChildIDs: [ID!]
-  clearChildren: Boolean
 }
 """
 UpdateUserInput is used for update User object.
@@ -2245,6 +2165,10 @@ input UserWhereInput {
 `, BuiltIn: false},
 	{Name: "../graphql_schema/message.graphql", Input: `extend type Mutation {
     createMessage(input: CreateMessageInput!): Message
+}
+
+extend type Message {
+    bookmarked: Boolean!
 }`, BuiltIn: false},
 	{Name: "../graphql_schema/thread.graphql", Input: `extend type Mutation {
     createThread(input: CreateThreadInput!, messageInput

@@ -6,6 +6,13 @@ export const threadByIdQuery = gql(/* Graphql */ `
       id
       createdAt
       name
+      parent {
+        id
+        thread {
+          id
+          name
+        }
+      }
       messages {
         totalCount
         pageInfo {

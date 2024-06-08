@@ -2,10 +2,9 @@ import { useAtomValue } from "jotai/index";
 import { Link } from "@nextui-org/link";
 import { Button } from "@nextui-org/react";
 
-import { parentThreadAtom, threadAtom } from "@/state/atoms";
+import { threadAtom } from "@/state/atoms";
 
 export default function ThreadHeader() {
-  const parentThread = useAtomValue(parentThreadAtom);
   const thread = useAtomValue(threadAtom);
 
   return (
@@ -14,10 +13,10 @@ export default function ThreadHeader() {
       {/* name / links*/}
       <div>
         {/* parent thread link */}
-        {parentThread && (
+        {thread && thread.parent && (
           <>
-            <Link color="primary" href={`/thread/${parentThread.id}`}>
-              {parentThread.name}
+            <Link color="primary" href={`/thread/${thread.parent.thread.id}`}>
+              {thread.parent.thread.name}
             </Link>
             &nbsp;/&nbsp;
           </>
@@ -25,10 +24,10 @@ export default function ThreadHeader() {
         <span>{thread?.name}</span>
       </div>
       {/* back button */}
-      {parentThread && (
+      {thread && thread.parent && (
         <Button
           as={Link}
-          href={`/thread/${parentThread.id}`}
+          href={`/thread/${thread.parent.thread.id}`}
           radius="sm"
           size="sm"
           startContent={<i className="pi pi-arrow-left" />}

@@ -197,7 +197,7 @@ var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:        "postgres-uri",
 		Aliases:     []string{"pu"},
-		Value:       "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
+		Value:       "postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable",
 		Usage:       "postgres connection string",
 		EnvVars:     []string{"POSTGRES_URI"},
 		Destination: &config.PostgresUri,

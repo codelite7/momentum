@@ -6,6 +6,8 @@ package resolvers
 
 import (
 	"context"
+	"github.com/codelite7/momentum/api/ent/bookmark"
+	"github.com/codelite7/momentum/api/ent/user"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/cmd/run/queue"
@@ -15,6 +17,19 @@ import (
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
+
+// Bookmarked is the resolver for the bookmarked field.
+func (r *messageResolver) Bookmarked(ctx context.Context, obj *ent.Message) (bool, error) {
+	userInfo := common.GetUserIdFromContext(ctx)
+	_, err := r.client.Bookmark.Query().Where(bookmark.HasMessageWith(message.ID(obj.ID), message.HasSentByWith(user.ID(userInfo.UserId)))).First(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return false, nil
+		}
+		return false, gqlerror.Wrap(err)
+	}
+	return true, nil
+}
 
 // CreateMessage is the resolver for the createMessage field.
 func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {

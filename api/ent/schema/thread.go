@@ -35,9 +35,7 @@ func (Thread) Edges() []ent.Edge {
 		edge.From("created_by", User.Type).Ref("threads").Unique().Required().Annotations(entgql.Skip(entgql.SkipMutationCreateInput | entgql.SkipMutationUpdateInput)),
 		// a thread may have many messages
 		edge.To("messages", Message.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)),
-		// a thread may be bookmarked many times
-		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)),
-		// a thread may have a parent thread and many child threads
-		edge.To("children", Thread.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)).From("parent").Unique(),
+		// a thread may have a parent message
+		edge.From("parent", Message.Type).Ref("child").Unique(),
 	}
 }

@@ -22,6 +22,9 @@ import (
 
 // region    ************************** generated!.gotpl **************************
 
+type MessageResolver interface {
+	Bookmarked(ctx context.Context, obj *ent.Message) (bool, error)
+}
 type QueryResolver interface {
 	Node(ctx context.Context, id pulid.ID) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []pulid.ID) ([]ent.Noder, error)
@@ -450,126 +453,6 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
 		arg5, err = ec.unmarshalOUserWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐUserWhereInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["where"] = arg5
-	return args, nil
-}
-
-func (ec *executionContext) field_Thread_bookmarks_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *entgql.Cursor[pulid.ID]
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg1
-	var arg2 *entgql.Cursor[pulid.ID]
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["before"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg3
-	var arg4 []*ent.BookmarkOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg4, err = ec.unmarshalOBookmarkOrder2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkOrderᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["orderBy"] = arg4
-	var arg5 *ent.BookmarkWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg5, err = ec.unmarshalOBookmarkWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkWhereInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["where"] = arg5
-	return args, nil
-}
-
-func (ec *executionContext) field_Thread_children_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *entgql.Cursor[pulid.ID]
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg1
-	var arg2 *entgql.Cursor[pulid.ID]
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["before"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg3
-	var arg4 []*ent.ThreadOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg4, err = ec.unmarshalOThreadOrder2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThreadOrderᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["orderBy"] = arg4
-	var arg5 *ent.ThreadWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg5, err = ec.unmarshalOThreadWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThreadWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1532,6 +1415,10 @@ func (ec *executionContext) fieldContext_Bookmark_message(ctx context.Context, f
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_Message_bookmarks(ctx, field)
+			case "child":
+				return ec.fieldContext_Message_child(ctx, field)
+			case "bookmarked":
+				return ec.fieldContext_Message_bookmarked(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
@@ -2114,12 +2001,8 @@ func (ec *executionContext) fieldContext_Message_thread(ctx context.Context, fie
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
 				return ec.fieldContext_Thread_messages(ctx, field)
-			case "bookmarks":
-				return ec.fieldContext_Thread_bookmarks(ctx, field)
 			case "parent":
 				return ec.fieldContext_Thread_parent(ctx, field)
-			case "children":
-				return ec.fieldContext_Thread_children(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Thread", field.Name)
 		},
@@ -2186,6 +2069,109 @@ func (ec *executionContext) fieldContext_Message_bookmarks(ctx context.Context, 
 	if fc.Args, err = ec.field_Message_bookmarks_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Message_child(ctx context.Context, field graphql.CollectedField, obj *ent.Message) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Message_child(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Child(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Thread)
+	fc.Result = res
+	return ec.marshalOThread2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThread(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Message_child(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Message",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Thread_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Thread_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Thread_updatedAt(ctx, field)
+			case "name":
+				return ec.fieldContext_Thread_name(ctx, field)
+			case "lastViewedAt":
+				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
+			case "createdBy":
+				return ec.fieldContext_Thread_createdBy(ctx, field)
+			case "messages":
+				return ec.fieldContext_Thread_messages(ctx, field)
+			case "parent":
+				return ec.fieldContext_Thread_parent(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Thread", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Message_bookmarked(ctx context.Context, field graphql.CollectedField, obj *ent.Message) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Message_bookmarked(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Message().Bookmarked(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Message_bookmarked(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Message",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -2387,6 +2373,10 @@ func (ec *executionContext) fieldContext_MessageEdge_node(ctx context.Context, f
 				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
 				return ec.fieldContext_Message_bookmarks(ctx, field)
+			case "child":
+				return ec.fieldContext_Message_child(ctx, field)
+			case "bookmarked":
+				return ec.fieldContext_Message_bookmarked(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
@@ -3083,12 +3073,8 @@ func (ec *executionContext) fieldContext_Query_thread(ctx context.Context, field
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
 				return ec.fieldContext_Thread_messages(ctx, field)
-			case "bookmarks":
-				return ec.fieldContext_Thread_bookmarks(ctx, field)
 			case "parent":
 				return ec.fieldContext_Thread_parent(ctx, field)
-			case "children":
-				return ec.fieldContext_Thread_children(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Thread", field.Name)
 		},
@@ -3639,69 +3625,6 @@ func (ec *executionContext) fieldContext_Thread_messages(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Thread_bookmarks(ctx context.Context, field graphql.CollectedField, obj *ent.Thread) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Thread_bookmarks(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Bookmarks(ctx, fc.Args["after"].(*entgql.Cursor[pulid.ID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[pulid.ID]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BookmarkOrder), fc.Args["where"].(*ent.BookmarkWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.BookmarkConnection)
-	fc.Result = res
-	return ec.marshalNBookmarkConnection2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Thread_bookmarks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Thread",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_BookmarkConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_BookmarkConnection_pageInfo(ctx, field)
-			case "totalCount":
-				return ec.fieldContext_BookmarkConnection_totalCount(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type BookmarkConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Thread_bookmarks_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Thread_parent(ctx context.Context, field graphql.CollectedField, obj *ent.Thread) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Thread_parent(ctx, field)
 	if err != nil {
@@ -3725,9 +3648,9 @@ func (ec *executionContext) _Thread_parent(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Thread)
+	res := resTmp.(*ent.Message)
 	fc.Result = res
-	return ec.marshalOThread2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThread(ctx, field.Selections, res)
+	return ec.marshalOMessage2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Thread_parent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3739,91 +3662,28 @@ func (ec *executionContext) fieldContext_Thread_parent(ctx context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Thread_id(ctx, field)
+				return ec.fieldContext_Message_id(ctx, field)
 			case "createdAt":
-				return ec.fieldContext_Thread_createdAt(ctx, field)
+				return ec.fieldContext_Message_createdAt(ctx, field)
 			case "updatedAt":
-				return ec.fieldContext_Thread_updatedAt(ctx, field)
-			case "name":
-				return ec.fieldContext_Thread_name(ctx, field)
-			case "lastViewedAt":
-				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
-			case "createdBy":
-				return ec.fieldContext_Thread_createdBy(ctx, field)
-			case "messages":
-				return ec.fieldContext_Thread_messages(ctx, field)
+				return ec.fieldContext_Message_updatedAt(ctx, field)
+			case "content":
+				return ec.fieldContext_Message_content(ctx, field)
+			case "messageType":
+				return ec.fieldContext_Message_messageType(ctx, field)
+			case "sentBy":
+				return ec.fieldContext_Message_sentBy(ctx, field)
+			case "thread":
+				return ec.fieldContext_Message_thread(ctx, field)
 			case "bookmarks":
-				return ec.fieldContext_Thread_bookmarks(ctx, field)
-			case "parent":
-				return ec.fieldContext_Thread_parent(ctx, field)
-			case "children":
-				return ec.fieldContext_Thread_children(ctx, field)
+				return ec.fieldContext_Message_bookmarks(ctx, field)
+			case "child":
+				return ec.fieldContext_Message_child(ctx, field)
+			case "bookmarked":
+				return ec.fieldContext_Message_bookmarked(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Thread", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Thread_children(ctx context.Context, field graphql.CollectedField, obj *ent.Thread) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Thread_children(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Children(ctx, fc.Args["after"].(*entgql.Cursor[pulid.ID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[pulid.ID]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ThreadOrder), fc.Args["where"].(*ent.ThreadWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.ThreadConnection)
-	fc.Result = res
-	return ec.marshalNThreadConnection2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThreadConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Thread_children(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Thread",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_ThreadConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_ThreadConnection_pageInfo(ctx, field)
-			case "totalCount":
-				return ec.fieldContext_ThreadConnection_totalCount(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ThreadConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Thread_children_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -4023,12 +3883,8 @@ func (ec *executionContext) fieldContext_ThreadEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
 				return ec.fieldContext_Thread_messages(ctx, field)
-			case "bookmarks":
-				return ec.fieldContext_Thread_bookmarks(ctx, field)
 			case "parent":
 				return ec.fieldContext_Thread_parent(ctx, field)
-			case "children":
-				return ec.fieldContext_Thread_children(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Thread", field.Name)
 		},
@@ -5467,7 +5323,7 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"content", "threadID", "bookmarkIDs"}
+	fieldsInOrder := [...]string{"content", "threadID", "bookmarkIDs", "childID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5495,6 +5351,13 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 				return it, err
 			}
 			it.BookmarkIDs = data
+		case "childID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("childID"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChildID = data
 		}
 	}
 
@@ -5508,7 +5371,7 @@ func (ec *executionContext) unmarshalInputCreateThreadInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "lastViewedAt", "messageIDs", "bookmarkIDs", "parentID", "childIDs"}
+	fieldsInOrder := [...]string{"name", "lastViewedAt", "messageIDs", "parentID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5536,13 +5399,6 @@ func (ec *executionContext) unmarshalInputCreateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.MessageIDs = data
-		case "bookmarkIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bookmarkIDs"))
-			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.BookmarkIDs = data
 		case "parentID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
@@ -5550,13 +5406,6 @@ func (ec *executionContext) unmarshalInputCreateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.ParentID = data
-		case "childIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("childIDs"))
-			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ChildIDs = data
 		}
 	}
 
@@ -5656,7 +5505,7 @@ func (ec *executionContext) unmarshalInputMessageWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "content", "contentNEQ", "contentIn", "contentNotIn", "contentGT", "contentGTE", "contentLT", "contentLTE", "contentContains", "contentHasPrefix", "contentHasSuffix", "contentEqualFold", "contentContainsFold", "messageType", "messageTypeNEQ", "messageTypeIn", "messageTypeNotIn", "hasSentBy", "hasSentByWith", "hasThread", "hasThreadWith", "hasBookmarks", "hasBookmarksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "content", "contentNEQ", "contentIn", "contentNotIn", "contentGT", "contentGTE", "contentLT", "contentLTE", "contentContains", "contentHasPrefix", "contentHasSuffix", "contentEqualFold", "contentContainsFold", "messageType", "messageTypeNEQ", "messageTypeIn", "messageTypeNotIn", "hasSentBy", "hasSentByWith", "hasThread", "hasThreadWith", "hasBookmarks", "hasBookmarksWith", "hasChild", "hasChildWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6013,6 +5862,20 @@ func (ec *executionContext) unmarshalInputMessageWhereInput(ctx context.Context,
 				return it, err
 			}
 			it.HasBookmarksWith = data
+		case "hasChild":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChild"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasChild = data
+		case "hasChildWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChildWith"))
+			data, err := ec.unmarshalOThreadWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThreadWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasChildWith = data
 		}
 	}
 
@@ -6064,7 +5927,7 @@ func (ec *executionContext) unmarshalInputThreadWhereInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "lastViewedAt", "lastViewedAtNEQ", "lastViewedAtIn", "lastViewedAtNotIn", "lastViewedAtGT", "lastViewedAtGTE", "lastViewedAtLT", "lastViewedAtLTE", "hasCreatedBy", "hasCreatedByWith", "hasMessages", "hasMessagesWith", "hasBookmarks", "hasBookmarksWith", "hasParent", "hasParentWith", "hasChildren", "hasChildrenWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "lastViewedAt", "lastViewedAtNEQ", "lastViewedAtIn", "lastViewedAtNotIn", "lastViewedAtGT", "lastViewedAtGTE", "lastViewedAtLT", "lastViewedAtLTE", "hasCreatedBy", "hasCreatedByWith", "hasMessages", "hasMessagesWith", "hasParent", "hasParentWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6435,20 +6298,6 @@ func (ec *executionContext) unmarshalInputThreadWhereInput(ctx context.Context, 
 				return it, err
 			}
 			it.HasMessagesWith = data
-		case "hasBookmarks":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBookmarks"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasBookmarks = data
-		case "hasBookmarksWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBookmarksWith"))
-			data, err := ec.unmarshalOBookmarkWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐBookmarkWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasBookmarksWith = data
 		case "hasParent":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasParent"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -6458,25 +6307,11 @@ func (ec *executionContext) unmarshalInputThreadWhereInput(ctx context.Context, 
 			it.HasParent = data
 		case "hasParentWith":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasParentWith"))
-			data, err := ec.unmarshalOThreadWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThreadWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOMessageWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐMessageWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.HasParentWith = data
-		case "hasChildren":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChildren"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasChildren = data
-		case "hasChildrenWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasChildrenWith"))
-			data, err := ec.unmarshalOThreadWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThreadWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasChildrenWith = data
 		}
 	}
 
@@ -6558,7 +6393,7 @@ func (ec *executionContext) unmarshalInputUpdateMessageInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"content", "threadID", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks"}
+	fieldsInOrder := [...]string{"content", "threadID", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "childID", "clearChild"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6600,6 +6435,20 @@ func (ec *executionContext) unmarshalInputUpdateMessageInput(ctx context.Context
 				return it, err
 			}
 			it.ClearBookmarks = data
+		case "childID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("childID"))
+			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChildID = data
+		case "clearChild":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearChild"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearChild = data
 		}
 	}
 
@@ -6613,7 +6462,7 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "lastViewedAt", "addMessageIDs", "removeMessageIDs", "clearMessages", "addBookmarkIDs", "removeBookmarkIDs", "clearBookmarks", "parentID", "clearParent", "addChildIDs", "removeChildIDs", "clearChildren"}
+	fieldsInOrder := [...]string{"name", "lastViewedAt", "addMessageIDs", "removeMessageIDs", "clearMessages", "parentID", "clearParent"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6655,27 +6504,6 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.ClearMessages = data
-		case "addBookmarkIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addBookmarkIDs"))
-			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AddBookmarkIDs = data
-		case "removeBookmarkIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeBookmarkIDs"))
-			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RemoveBookmarkIDs = data
-		case "clearBookmarks":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearBookmarks"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearBookmarks = data
 		case "parentID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐID(ctx, v)
@@ -6690,27 +6518,6 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.ClearParent = data
-		case "addChildIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addChildIDs"))
-			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AddChildIDs = data
-		case "removeChildIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeChildIDs"))
-			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RemoveChildIDs = data
-		case "clearChildren":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearChildren"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearChildren = data
 		}
 	}
 
@@ -7724,6 +7531,75 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "child":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Message_child(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "bookmarked":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Message_bookmarked(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8235,42 +8111,6 @@ func (ec *executionContext) _Thread(ctx context.Context, sel ast.SelectionSet, o
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "bookmarks":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Thread_bookmarks(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "parent":
 			field := field
 
@@ -8281,42 +8121,6 @@ func (ec *executionContext) _Thread(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Thread_parent(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "children":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Thread_children(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 

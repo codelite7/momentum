@@ -36,5 +36,7 @@ func (Message) Edges() []ent.Edge {
 		edge.From("thread", Thread.Type).Ref("messages").Unique().Required(),
 		// a message may have many bookmarks
 		edge.To("bookmarks", Bookmark.Type).Annotations(entgql.RelayConnection(), entsql.OnDelete(entsql.Cascade)),
+		// a message may be the parent of a thread
+		edge.To("child", Thread.Type).Unique(),
 	}
 }
