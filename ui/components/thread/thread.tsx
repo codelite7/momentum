@@ -34,7 +34,7 @@ export default function Thread({ threadId, parentId }: props) {
       {thread && thread.messages && (
         <>
           <ThreadHeader />
-          <div className="w-full h-full flex gap-2 px-2 overflow-hidden pb-2">
+          <div className="w-full h-full flex gap-2 px-2 overflow-hidden">
             {thread.parent && <ParentThread parentId={thread.parent.id} />}
 
             {/* prompt input */}

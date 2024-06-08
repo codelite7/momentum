@@ -69,7 +69,7 @@ export default function ThreadButton({ thread }: props) {
                 <Button
                   className="flex flex-row start min-w-9 px-0 hover:bg-default-100 rounded-l-none"
                   size="sm"
-                  onClick={() => router.push(`/thread/${thread.id}`)}
+                  onPress={() => router.push(`/thread/${thread.id}`)}
                 >
                   <div className="flex start items-center justify-between h-full">
                     <i className="pi pi-ellipsis-v" />

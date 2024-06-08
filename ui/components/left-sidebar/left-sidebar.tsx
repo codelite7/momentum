@@ -104,7 +104,7 @@ export default function LeftSidebar() {
                     color="primary"
                     href="/thread/new"
                     size="sm"
-                    onClick={() => {
+                    onPress={() => {
                       redirect("/thread/new");
                     }}
                   >

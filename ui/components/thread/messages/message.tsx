@@ -149,7 +149,7 @@ export default function Message({ message, animate }: props) {
               <Button
                 isIconOnly
                 size="sm"
-                onClick={() => navigator.clipboard.writeText(message.content)}
+                onPress={() => navigator.clipboard.writeText(message.content)}
               >
                 <i className="pi pi-clipboard" />
               </Button>

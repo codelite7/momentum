@@ -10,7 +10,7 @@ export default function NewThread({ parentId }: NewThreadProps) {
   return (
     <>
       <ThreadHeader />
-      <div className="w-full h-full flex gap-2 px-2 overflow-hidden pb-2">
+      <div className="w-full h-full flex gap-2 px-2 overflow-hidden">
         {/* header */}
         {parentId && <ParentThread parentId={parentId} />}
 
