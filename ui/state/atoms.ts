@@ -52,3 +52,5 @@ export const parentThreadMessagesAtom = atom<Message[]>((get) => {
 
   return messages;
 });
+
+export const searchModalIsOpenAtom = atom<boolean>(false);

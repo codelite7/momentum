@@ -167,3 +167,30 @@ export const deleteBookmarkMutation = gql(/* Graphql */ `
 mutation deleteBookmark($id:ID!) {
   deleteBookmark(id:$id)
 }`);
+
+export const searchResultsQuery = gql(/* Graphql */ `
+  query searchResultsQuery($query: String!) {
+    messages(where: { contentContainsFold: $query }) {
+      totalCount
+      edges {
+        node {
+          id
+          createdAt
+          content
+          messageType
+          thread {
+            id
+            name
+            parent {
+              id
+              thread {
+               id
+               name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);

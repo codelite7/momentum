@@ -11,6 +11,7 @@ import { siteConfig } from "@/config/site";
 import AccountSettingsModal from "@/components/account/settings-modal/account-settings-modal";
 import { ApolloWrapper } from "@/app/ApolloWrapper";
 import LeftSidebar from "@/components/left-sidebar/left-sidebar";
+import SearchModal from "@/components/search/search-modal";
 
 export const metadata: Metadata = {
   title: {
@@ -54,7 +55,7 @@ export default async function RootLayout({
               <div className="h-full w-full">{children}</div>
             </div>
             <AccountSettingsModal />
-            {/*<SearchModal />*/}
+            <SearchModal />
           </ApolloWrapper>
           <Toaster
             toastOptions={{

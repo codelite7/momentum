@@ -10,12 +10,12 @@ import {
   ModalHeader,
   Spinner,
 } from "@nextui-org/react";
-import { useShallow } from "zustand/react/shallow";
 import { useDebouncedCallback } from "use-debounce";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { useAtom } from "jotai";
 
-import useSearchModalStore from "@/stores/search-modal-store";
+import { searchModalIsOpenAtom } from "@/state/atoms";
 
 const DynamicSearchResults = dynamic(
   () => import("@/components/search/search-results"),
@@ -31,10 +31,7 @@ const DynamicSearchResults = dynamic(
 );
 
 export default function SearchModal() {
-  const [isOpen, toggle] = useSearchModalStore(
-    useShallow((state: any) => [state.isOpen, state.toggle]),
-  );
-  const [matchedMessages, setMatchedMessages] = useState([]);
+  const [isOpen, setIsOpen] = useAtom(searchModalIsOpenAtom);
   const [query, setQuery] = useState("");
   const debounced = useDebouncedCallback((query) => {
     setQuery(query);
@@ -51,7 +48,7 @@ export default function SearchModal() {
       onClose={() => {
         debounced.cancel();
         setQuery("");
-        toggle();
+        setIsOpen(false);
       }}
     >
       <ModalContent>

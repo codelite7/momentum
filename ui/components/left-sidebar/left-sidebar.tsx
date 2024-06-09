@@ -5,11 +5,12 @@ import { Button, Card, CardBody, CardFooter, Tooltip } from "@nextui-org/react";
 import { redirect, useRouter } from "next/navigation";
 import { useSuspenseQuery } from "@apollo/client";
 import { Link } from "@nextui-org/link";
+import { useSetAtom } from "jotai/index";
 
 import useAccountSettingsModalStore from "@/stores/account-settings-modal-store";
-import useSearchModalStore from "@/stores/search-modal-store";
 import ThreadButtons from "@/components/left-sidebar/ThreadButtons";
 import { gql } from "@/__generated__";
+import { searchModalIsOpenAtom } from "@/state/atoms";
 
 export const sidebarThreadsQuery = gql(/* GraphQL */ `
   query sidebarThreadsQuery {
@@ -36,6 +37,7 @@ export const sidebarThreadsQuery = gql(/* GraphQL */ `
 `);
 
 export default function LeftSidebar() {
+  const setSearchModalIsOpen = useSetAtom(searchModalIsOpenAtom);
   const router = useRouter();
   const { data, error } = useSuspenseQuery(sidebarThreadsQuery);
 
@@ -46,7 +48,6 @@ export default function LeftSidebar() {
   const toggleAccountSettings = useAccountSettingsModalStore(
     (state: any) => state.toggle,
   );
-  const toggleSearch = useSearchModalStore((state: any) => state.toggle);
   const [collapsed, setCollapsed] = useState(false);
   const [width, setWidth] = useState("w-52");
   const user = data?.user;
@@ -91,7 +92,7 @@ export default function LeftSidebar() {
                     color="primary"
                     size="sm"
                     variant="bordered"
-                    onPress={toggleSearch}
+                    onPress={() => setSearchModalIsOpen(true)}
                   >
                     <img alt="search" className="h-4 w-4" src="/search.svg" />
                   </Button>
@@ -152,7 +153,7 @@ export default function LeftSidebar() {
                   color="primary"
                   size="sm"
                   variant="bordered"
-                  onPress={toggleSearch}
+                  onPress={() => setSearchModalIsOpen(true)}
                 >
                   <div className="w-full flex start text-white rounded items-center">
                     <img alt="search" className="mr-2" src="/search.svg" />
