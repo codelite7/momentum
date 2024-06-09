@@ -23,12 +23,12 @@ interface MessagesProps {
 
 export default function Messages({ refetch }: MessagesProps) {
   const messages = useAtomValue(threadMessagesAtom);
+
   const lastMessageType = useAtomValue(lastThreadMessageTypeAtom);
   const messagesEndRef = useRef(null);
 
   // scroll to bottom after render
   useEffect(() => {
-    console.log("messages", messages);
     // @ts-ignore
     messagesEndRef?.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -36,7 +36,7 @@ export default function Messages({ refetch }: MessagesProps) {
   return (
     <InfiniteScroller>
       {messages.map((message: MessageType) => {
-        return <Message key={message.id} message={message} />;
+        return <Message key={message.id} message={message} refetch={refetch} />;
       })}
       {lastMessageType == MessageMessageType.Human && (
         <WaitForResponse refetch={refetch} />

@@ -36,15 +36,13 @@ import { Button, Card, CardBody, CardHeader, Tooltip } from "@nextui-org/react";
 import LinesEllipsis from "react-lines-ellipsis";
 import { useMutation } from "@apollo/client";
 import { toast } from "sonner";
-import { cloneDeep } from "lodash";
-import { useSetAtom } from "jotai/index";
 
 import { Bookmark } from "@/__generated__/graphql";
 import {
   deleteBookmarkMutation,
   threadBookmarksQuery,
+  threadByIdQuery,
 } from "@/graphql-queries/queries";
-import { threadAtom } from "@/state/atoms";
 
 type props = {
   showThreadName?: boolean;
@@ -52,7 +50,6 @@ type props = {
 };
 
 export default function Bookmark({ showThreadName, bookmark }: props) {
-  const setThread = useSetAtom(threadAtom);
   const [deleteBookmark] = useMutation(deleteBookmarkMutation, {
     variables: {
       id: bookmark.id,
@@ -63,27 +60,8 @@ export default function Bookmark({ showThreadName, bookmark }: props) {
     },
     onCompleted: (data) => {
       toast.success("Deleted bookmark");
-      setThread((thread) => {
-        let updated = cloneDeep(thread);
-
-        thread?.messages?.edges?.forEach((edge) => {
-          if (edge?.node && edge.node.id == bookmark.message?.id) {
-            let newEdges = edge.node.bookmarks.edges?.filter((edge) => {
-              let result = edge?.node?.id != bookmark.id;
-
-              return result;
-            });
-
-            edge.node.bookmarks.edges = newEdges;
-          }
-        });
-
-        console.log("updated bookmarks");
-
-        return updated;
-      });
     },
-    refetchQueries: [threadBookmarksQuery],
+    refetchQueries: [threadByIdQuery, threadBookmarksQuery],
   });
 
   return (

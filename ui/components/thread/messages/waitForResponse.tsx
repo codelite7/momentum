@@ -43,7 +43,6 @@ export default function WaitForResponse({ refetch }: WaitForResponseProps) {
         message.messageType == MessageMessageType.Ai &&
         message.content.length > 0
       ) {
-        console.log("got response from ai", data);
         stopPolling();
         if (refetch) {
           refetch();

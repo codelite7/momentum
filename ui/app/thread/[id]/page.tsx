@@ -14,8 +14,6 @@ export default function Page({
   const isNew = params.id == "new";
   const parentId = searchParams.parentId;
 
-  console.log("parentId", parentId);
-
   return (
     <div className="h-full flex">
       <div

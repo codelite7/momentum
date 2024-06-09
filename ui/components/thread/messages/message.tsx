@@ -10,11 +10,17 @@ import {
   Tooltip,
 } from "@nextui-org/react";
 import { Cursor, useTypewriter } from "react-simple-typewriter";
-import { useMutation } from "@apollo/client";
+import { ApolloQueryResult, useMutation } from "@apollo/client";
 import { toast } from "sonner";
 import { Link } from "@nextui-org/link";
 
-import { Bookmark, Message, MessageMessageType } from "@/__generated__/graphql";
+import {
+  Bookmark,
+  Message,
+  MessageMessageType,
+  ThreadQuery,
+  ThreadQueryVariables,
+} from "@/__generated__/graphql";
 import {
   createBookmarkMutation,
   deleteBookmarkMutation,
@@ -25,10 +31,14 @@ import { getSentAtDisplay } from "@/common/helpers";
 type props = {
   message: Message;
   animate?: boolean;
+  refetch?:
+    | ((
+        variables?: Partial<ThreadQueryVariables>,
+      ) => Promise<ApolloQueryResult<ThreadQuery>>)
+    | undefined;
 };
 
-export default function Message({ message, animate }: props) {
-  console.log("message bookmarks", message.bookmarks);
+export default function Message({ message, animate, refetch }: props) {
   const sentAtDisplay = getSentAtDisplay(message.createdAt);
   const [hovered, setHovered] = useState(false);
   const [text] = useTypewriter({
@@ -53,7 +63,12 @@ export default function Message({ message, animate }: props) {
     },
     onCompleted: (data) => {
       toast.success("Bookmarked message");
-      bookmarkss.push(data.createBookmark as Bookmark);
+      if (refetch) {
+        refetch();
+      } else {
+        toast.error("Error bookmarking message");
+        console.error("refetch is undefined");
+      }
     },
     refetchQueries: [threadBookmarksQuery],
   });
@@ -67,7 +82,12 @@ export default function Message({ message, animate }: props) {
     },
     onCompleted: (data) => {
       toast.success("Deleted bookmark");
-      bookmarkss = [];
+      if (refetch) {
+        refetch();
+      } else {
+        toast.error("Error deleting bookmark");
+        console.error("refetch is undefined");
+      }
     },
     refetchQueries: [threadBookmarksQuery],
   });

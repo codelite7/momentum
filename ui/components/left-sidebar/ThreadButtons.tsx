@@ -23,8 +23,6 @@ export default function ThreadButtons({ threads }: props) {
     return true;
   });
 
-  console.log("filtered threads", filteredThreads);
-
   if (thread) {
     filteredThreads.unshift({ node: thread });
   }

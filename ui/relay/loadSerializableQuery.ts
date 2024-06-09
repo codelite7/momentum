@@ -33,7 +33,6 @@ export default async function loadSerializableQuery<
 ): Promise<SerializablePreloadedQuery<TRequest, TQuery>> {
   const token = await getAccessToken();
 
-  console.log("loadSerialize", token);
   const response = await networkFetch(params, variables, token);
 
   return {
