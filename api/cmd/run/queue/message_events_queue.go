@@ -68,7 +68,7 @@ func handleMessageEvent(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	result, err := common.Prompt(chatMessages)
+	result, err := common.Prompt(chatMessages, thread.Provider)
 	if err != nil {
 		return err
 	}

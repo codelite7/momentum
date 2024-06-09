@@ -17,6 +17,7 @@ import (
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
@@ -1997,6 +1998,8 @@ func (ec *executionContext) fieldContext_Message_thread(ctx context.Context, fie
 				return ec.fieldContext_Thread_name(ctx, field)
 			case "lastViewedAt":
 				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
+			case "provider":
+				return ec.fieldContext_Thread_provider(ctx, field)
 			case "createdBy":
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
@@ -2119,6 +2122,8 @@ func (ec *executionContext) fieldContext_Message_child(ctx context.Context, fiel
 				return ec.fieldContext_Thread_name(ctx, field)
 			case "lastViewedAt":
 				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
+			case "provider":
+				return ec.fieldContext_Thread_provider(ctx, field)
 			case "createdBy":
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
@@ -3069,6 +3074,8 @@ func (ec *executionContext) fieldContext_Query_thread(ctx context.Context, field
 				return ec.fieldContext_Thread_name(ctx, field)
 			case "lastViewedAt":
 				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
+			case "provider":
+				return ec.fieldContext_Thread_provider(ctx, field)
 			case "createdBy":
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
@@ -3502,6 +3509,50 @@ func (ec *executionContext) fieldContext_Thread_lastViewedAt(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Thread_provider(ctx context.Context, field graphql.CollectedField, obj *ent.Thread) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Thread_provider(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(thread.Provider)
+	fc.Result = res
+	return ec.marshalNThreadProvider2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Thread_provider(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Thread",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ThreadProvider does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Thread_createdBy(ctx context.Context, field graphql.CollectedField, obj *ent.Thread) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Thread_createdBy(ctx, field)
 	if err != nil {
@@ -3879,6 +3930,8 @@ func (ec *executionContext) fieldContext_ThreadEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Thread_name(ctx, field)
 			case "lastViewedAt":
 				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
+			case "provider":
+				return ec.fieldContext_Thread_provider(ctx, field)
 			case "createdBy":
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
@@ -5371,7 +5424,7 @@ func (ec *executionContext) unmarshalInputCreateThreadInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "lastViewedAt", "messageIDs", "parentID"}
+	fieldsInOrder := [...]string{"name", "lastViewedAt", "provider", "messageIDs", "parentID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5392,6 +5445,13 @@ func (ec *executionContext) unmarshalInputCreateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.LastViewedAt = data
+		case "provider":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
+			data, err := ec.unmarshalNThreadProvider2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Provider = data
 		case "messageIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
@@ -5927,7 +5987,7 @@ func (ec *executionContext) unmarshalInputThreadWhereInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "lastViewedAt", "lastViewedAtNEQ", "lastViewedAtIn", "lastViewedAtNotIn", "lastViewedAtGT", "lastViewedAtGTE", "lastViewedAtLT", "lastViewedAtLTE", "hasCreatedBy", "hasCreatedByWith", "hasMessages", "hasMessagesWith", "hasParent", "hasParentWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "updatedAt", "updatedAtNEQ", "updatedAtIn", "updatedAtNotIn", "updatedAtGT", "updatedAtGTE", "updatedAtLT", "updatedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "lastViewedAt", "lastViewedAtNEQ", "lastViewedAtIn", "lastViewedAtNotIn", "lastViewedAtGT", "lastViewedAtGTE", "lastViewedAtLT", "lastViewedAtLTE", "provider", "providerNEQ", "providerIn", "providerNotIn", "hasCreatedBy", "hasCreatedByWith", "hasMessages", "hasMessagesWith", "hasParent", "hasParentWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6270,6 +6330,34 @@ func (ec *executionContext) unmarshalInputThreadWhereInput(ctx context.Context, 
 				return it, err
 			}
 			it.LastViewedAtLTE = data
+		case "provider":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
+			data, err := ec.unmarshalOThreadProvider2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Provider = data
+		case "providerNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("providerNEQ"))
+			data, err := ec.unmarshalOThreadProvider2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProviderNEQ = data
+		case "providerIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("providerIn"))
+			data, err := ec.unmarshalOThreadProvider2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProviderᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProviderIn = data
+		case "providerNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("providerNotIn"))
+			data, err := ec.unmarshalOThreadProvider2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProviderᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProviderNotIn = data
 		case "hasCreatedBy":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatedBy"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -6462,7 +6550,7 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "lastViewedAt", "addMessageIDs", "removeMessageIDs", "clearMessages", "parentID", "clearParent"}
+	fieldsInOrder := [...]string{"name", "lastViewedAt", "provider", "addMessageIDs", "removeMessageIDs", "clearMessages", "parentID", "clearParent"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6483,6 +6571,13 @@ func (ec *executionContext) unmarshalInputUpdateThreadInput(ctx context.Context,
 				return it, err
 			}
 			it.LastViewedAt = data
+		case "provider":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
+			data, err := ec.unmarshalOThreadProvider2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Provider = data
 		case "addMessageIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addMessageIDs"))
 			data, err := ec.unmarshalOID2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋschemaᚋpulidᚐIDᚄ(ctx, v)
@@ -8039,6 +8134,11 @@ func (ec *executionContext) _Thread(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "provider":
+			out.Values[i] = ec._Thread_provider(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "createdBy":
 			field := field
 
@@ -8787,6 +8887,16 @@ func (ec *executionContext) marshalNThreadOrderField2ᚖgithubᚗcomᚋcodelite7
 	return v
 }
 
+func (ec *executionContext) unmarshalNThreadProvider2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx context.Context, v interface{}) (thread.Provider, error) {
+	var res thread.Provider
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNThreadProvider2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx context.Context, sel ast.SelectionSet, v thread.Provider) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNThreadWhereInput2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThreadWhereInput(ctx context.Context, v interface{}) (*ent.ThreadWhereInput, error) {
 	res, err := ec.unmarshalInputThreadWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -9354,6 +9464,89 @@ func (ec *executionContext) unmarshalOThreadOrder2ᚕᚖgithubᚗcomᚋcodelite7
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalOThreadProvider2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProviderᚄ(ctx context.Context, v interface{}) ([]thread.Provider, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]thread.Provider, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNThreadProvider2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOThreadProvider2ᚕgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProviderᚄ(ctx context.Context, sel ast.SelectionSet, v []thread.Provider) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNThreadProvider2githubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOThreadProvider2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx context.Context, v interface{}) (*thread.Provider, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(thread.Provider)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOThreadProvider2ᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚋthreadᚐProvider(ctx context.Context, sel ast.SelectionSet, v *thread.Provider) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOThreadWhereInput2ᚕᚖgithubᚗcomᚋcodelite7ᚋmomentumᚋapiᚋentᚐThreadWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.ThreadWhereInput, error) {

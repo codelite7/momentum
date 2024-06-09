@@ -26,6 +26,7 @@ func (Thread) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").Annotations(entgql.OrderField("NAME")),
 		field.Time("last_viewed_at").Default(time.Now).Annotations(entgql.OrderField("LAST_VIEWED_AT")),
+		field.Enum("provider").Values("openai", "groq", "anthropic"),
 	}
 }
 

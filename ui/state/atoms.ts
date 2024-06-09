@@ -5,6 +5,7 @@ import {
   Message,
   MessageMessageType,
   Thread,
+  ThreadProvider,
 } from "@/__generated__/graphql";
 
 export const threadAtom = atom<Thread | undefined>(undefined);
@@ -54,3 +55,5 @@ export const parentThreadMessagesAtom = atom<Message[]>((get) => {
 });
 
 export const searchModalIsOpenAtom = atom<boolean>(false);
+
+export const modelSelectAtom = atom<ThreadProvider>(ThreadProvider.Openai);

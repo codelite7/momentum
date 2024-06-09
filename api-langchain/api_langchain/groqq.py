@@ -1,22 +1,20 @@
 import os
 
 from langchain_core.messages import messages_from_dict
+from langchain_groq import ChatGroq
 from pyramid.response import Response
-from langchain_community.chat_models import ChatPerplexity
-from langchain_core.prompts import ChatPromptTemplate
 
-perplexityChat = ChatPerplexity(
+chat = ChatGroq(
     temperature=0,
-    pplx_api_key=os.environ.get('PERPLEXITY_API_KEY', ''),
-    model="llama-3-sonar-large-32k-online"
+    model="llama3-8b-8192"
 )
 system = "You are a helpful assistant."
 
 
-def perplexity(request):
+def groq(request):
     try:
         messages = messages_from_dict(request.json_body)
-        response = perplexityChat.invoke(messages)
+        response = chat.invoke(messages)
         content = response.content
         return Response(content)
     except Exception as e:

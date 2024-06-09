@@ -13,19 +13,19 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetThreadName(messageContent string) (string, error) {
+func GetThreadName(messageContent string, provider thread.Provider) (string, error) {
 	prompt := fmt.Sprintf("Provide a concise 3 word summary of the following text:%s", messageContent)
 	return Prompt([]ChatMessage{ChatMessage{
 		Type: "human",
 		Data: ChatMessageData{Content: prompt},
-	}})
+	}}, provider)
 }
 
-func Prompt(chatMessages []ChatMessage) (string, error) {
+func Prompt(chatMessages []ChatMessage, provider thread.Provider) (string, error) {
 	client := resty.New()
 	resp, err := client.R().
 		SetBody(chatMessages).
-		Post(fmt.Sprintf("%s/perplexity", config.ApiLangchainBaseUrl))
+		Post(fmt.Sprintf("%s/%s", config.ApiLangchainBaseUrl, provider.String()))
 	if err != nil {
 		return "", err
 	}

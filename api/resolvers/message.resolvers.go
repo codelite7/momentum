@@ -6,15 +6,15 @@ package resolvers
 
 import (
 	"context"
-	"github.com/codelite7/momentum/api/ent/bookmark"
-	"github.com/codelite7/momentum/api/ent/user"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/cmd/run/queue"
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
+	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 

@@ -2,6 +2,10 @@
 
 import { Select, SelectItem } from "@nextui-org/react";
 import { useState } from "react";
+import { useSetAtom } from "jotai/index";
+
+import { modelSelectAtom } from "@/state/atoms";
+import { ThreadProvider } from "@/__generated__/graphql";
 
 interface modelOption {
   label: string;
@@ -9,14 +13,14 @@ interface modelOption {
 }
 
 const models = [
-  { label: "GPT 4", value: "gpt-4", iconExtension: "png" },
-  { label: "Opus", value: "opus", iconExtension: "png" },
-  { label: "Mistral", value: "mistral", iconExtension: "svg" },
+  { label: "GPT 4", value: "openai", iconExtension: "png" },
+  { label: "Claude", value: "anthropic", iconExtension: "png" },
   { label: "Groq", value: "groq", iconExtension: "png" },
 ];
 
 export default function ModelSelect() {
-  const [value, setValue] = useState(new Set(["gpt-4"]));
+  const setAtomValue = useSetAtom(modelSelectAtom);
+  const [value, setValue] = useState(new Set(["openai"]));
 
   return (
     <div className="flex w-36">
@@ -45,6 +49,7 @@ export default function ModelSelect() {
         onSelectionChange={(e: any) => {
           if (e.size > 0) {
             setValue(e);
+            setAtomValue(e.anchorKey as ThreadProvider);
           }
         }}
       >

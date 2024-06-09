@@ -487,6 +487,8 @@ func (ec *executionContext) fieldContext_Mutation_createThread(ctx context.Conte
 				return ec.fieldContext_Thread_name(ctx, field)
 			case "lastViewedAt":
 				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
+			case "provider":
+				return ec.fieldContext_Thread_provider(ctx, field)
 			case "createdBy":
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
@@ -560,6 +562,8 @@ func (ec *executionContext) fieldContext_Mutation_updateThread(ctx context.Conte
 				return ec.fieldContext_Thread_name(ctx, field)
 			case "lastViewedAt":
 				return ec.fieldContext_Thread_lastViewedAt(ctx, field)
+			case "provider":
+				return ec.fieldContext_Thread_provider(ctx, field)
 			case "createdBy":
 				return ec.fieldContext_Thread_createdBy(ctx, field)
 			case "messages":
