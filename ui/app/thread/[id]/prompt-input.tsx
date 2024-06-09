@@ -21,7 +21,7 @@ import {
   createThreadMutation,
   threadByIdQuery,
 } from "@/graphql-queries/queries";
-import { lastThreadMessageTypeAtom } from "@/state/atoms";
+import { lastThreadMessageTypeAtom, modelSelectAtom } from "@/state/atoms";
 import { MessageMessageType } from "@/__generated__/graphql";
 
 function Divider() {
@@ -39,6 +39,7 @@ export default function PromptInput({ threadId }: props) {
   const lastMessageType = useAtomValue(lastThreadMessageTypeAtom);
   const router = useRouter();
   const [value, setValue] = useState("");
+  const threadProvider = useAtomValue(modelSelectAtom);
   const [createThread, { data, loading, error }] = useMutation(
     createThreadMutation,
     {
@@ -46,6 +47,7 @@ export default function PromptInput({ threadId }: props) {
         input: {
           name: `${value.substring(0, 15)}...`,
           parentID: parentId,
+          provider: threadProvider,
         },
         messageInput: {
           threadID: "",
