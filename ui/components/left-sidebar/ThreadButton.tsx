@@ -11,9 +11,12 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation } from "@apollo/client";
 import { toast } from "sonner";
+import { useSetAtom } from "jotai/index";
+import { cloneDeep } from "lodash";
 
 import { gql } from "@/__generated__";
 import { sidebarThreadsQuery } from "@/components/left-sidebar/left-sidebar";
+import { threadAtom } from "@/state/atoms";
 
 type props = {
   thread: any;
@@ -35,6 +38,7 @@ const renameThreadMutation = gql(/* GraphQL */ `
 `);
 
 export default function ThreadButton({ thread }: props) {
+  const setThread = useSetAtom(threadAtom);
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [deleteThread] = useMutation(deleteThreadMutation);
@@ -152,6 +156,17 @@ export default function ThreadButton({ thread }: props) {
                     toast.error("Error renaming thread");
                   },
                   onCompleted: (data) => {
+                    setThread((thread) => {
+                      if (thread) {
+                        let updated = cloneDeep(thread);
+
+                        updated.name = renameValue;
+
+                        return updated;
+                      }
+
+                      return thread;
+                    });
                     toast.success("Renamed thread");
                     setRenaming(false);
                   },
