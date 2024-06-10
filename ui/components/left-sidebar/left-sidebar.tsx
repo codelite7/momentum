@@ -64,7 +64,7 @@ export default function LeftSidebar() {
   return (
     <>
       <Card
-        className={`h-full ${width} rounded-none !transition-all !duration-1000`}
+        className={`h-full ${width} rounded-none !transition-all !duration-1000 border-r-1 border-default`}
       >
         <CardBody className="h-full overflow-hidden p-0">
           {collapsed ? (
@@ -177,7 +177,7 @@ export default function LeftSidebar() {
             </>
           )}
         </CardBody>
-        <CardFooter className="bg-black rounded-none">
+        <CardFooter className="bg-background rounded-none">
           {collapsed ? (
             <>
               <Tooltip showArrow content="Account settings" placement="right">
@@ -207,7 +207,7 @@ export default function LeftSidebar() {
             >
               <img
                 alt="avatar"
-                className="h-4 w-4"
+                className="h-4 w-4 fill-primary-700"
                 src="/default-user-avatar.svg"
               />
             </Button>

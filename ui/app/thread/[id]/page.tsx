@@ -17,7 +17,7 @@ export default function Page({
   return (
     <div className="h-full flex">
       <div
-        className={`flex flex-col h-full w-full place-content-${isNew ? "center" : "end"}  pb-12 transition-all`}
+        className={`flex flex-col h-full w-full place-content-${isNew ? "center" : "end"}  pb-2 transition-all`}
       >
         {isNew ? (
           <NewThread parentId={parentId} />

@@ -94,7 +94,7 @@ export default function Message({ message, animate, refetch }: props) {
 
   return (
     <Card
-      className="mb-6 bg-black hover:bg-default-100"
+      className="mb-6 bg-background hover:bg-forward/10"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -130,14 +130,14 @@ export default function Message({ message, animate, refetch }: props) {
         </div>
         {/* context actions */}
         {hovered ? (
-          <div className="flex gap-1">
+          <div className="flex bg-back/100">
             {message.messageType == MessageMessageType.Ai && (
               <Tooltip
                 showArrow
                 content="Generate new response"
                 placement="bottom"
               >
-                <Button isIconOnly size="sm">
+                <Button isIconOnly className="bg-back/100" size="sm">
                   <i className="pi pi-sync" />
                 </Button>
               </Tooltip>
@@ -145,6 +145,7 @@ export default function Message({ message, animate, refetch }: props) {
             <Tooltip showArrow content="Bookmark" placement="bottom">
               <Button
                 isIconOnly
+                className="bg-back/100"
                 size="sm"
                 onPress={() => {
                   if (bookmarkss.length > 0) {
@@ -168,6 +169,7 @@ export default function Message({ message, animate, refetch }: props) {
             >
               <Button
                 isIconOnly
+                className="bg-back/100"
                 size="sm"
                 onPress={() => navigator.clipboard.writeText(message.content)}
               >
@@ -199,6 +201,7 @@ export default function Message({ message, animate, refetch }: props) {
                 <Button
                   isIconOnly
                   as={Link}
+                  className="bg-back/100"
                   href={`/thread/new?parentId=${message.id}`}
                   size="sm"
                 >

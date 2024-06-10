@@ -24,11 +24,11 @@ export function RightSidebar() {
   return (
     <Card
       disableAnimation
-      className={`h-full ${width} rounded-none !transition-all !duration-1000`}
+      className={`h-full ${width} rounded-none !transition-all !duration-1000 bg-background border-l-1 border-default`}
     >
-      <CardBody className="p-2">
+      <CardBody className="p-0">
         {collapsed ? (
-          <>
+          <div className="px-4 pt-2">
             {/* expand button*/}
             <Tooltip showArrow content="Expand" placement="right">
               <Button
@@ -57,11 +57,11 @@ export function RightSidebar() {
                 <img alt="search" className="h-4 w-4" src="/search.svg" />
               </Button>
             </Tooltip>
-          </>
+          </div>
         ) : (
           <>
             {/* header */}
-            <div className="flex items-center mb-4">
+            <div className="flex items-center min-h-11 w-full bg-card-background border-b-1 border-default px-4">
               <Tooltip showArrow content="Collapse" placement="left">
                 <Button
                   isIconOnly
@@ -77,20 +77,22 @@ export function RightSidebar() {
               </Tooltip>
               Bookmarks
             </div>
-            {/* bookmarks search*/}
-            <Button
-              fullWidth
-              className="flex flex-row start mb-2 mt-4"
-              color="primary"
-              size="sm"
-              variant="bordered"
-            >
-              <div className="w-full flex start text-white rounded items-center">
-                <img alt="search" className="mr-2" src="/search.svg" />
-                Search all bookmarks
-              </div>
-            </Button>
-            {thread && <Bookmarks />}
+            <div className="px-4 mt-2">
+              {/* bookmarks search*/}
+              {/*<Button*/}
+              {/*  fullWidth*/}
+              {/*  className="flex flex-row start my-2"*/}
+              {/*  color="primary"*/}
+              {/*  size="sm"*/}
+              {/*  variant="bordered"*/}
+              {/*>*/}
+              {/*  <div className="w-full flex start text-white rounded items-center">*/}
+              {/*    <img alt="search" className="mr-2" src="/search.svg" />*/}
+              {/*    Search all bookmarks*/}
+              {/*  </div>*/}
+              {/*</Button>*/}
+              {thread && <Bookmarks />}
+            </div>
           </>
         )}
       </CardBody>

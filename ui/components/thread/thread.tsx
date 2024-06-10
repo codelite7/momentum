@@ -34,11 +34,11 @@ export default function Thread({ threadId, parentId }: props) {
       {thread && thread.messages && (
         <>
           <ThreadHeader />
-          <div className="w-full h-full flex gap-2 px-2 overflow-hidden">
+          <div className="flex w-full h-full flex gap-2 px-2 overflow-hidden pt-2">
             {thread.parent && <ParentThread parentId={thread.parent.id} />}
 
             {/* prompt input */}
-            <div className="flex flex-col w-full h-full place-content-center p-2">
+            <div className="flex flex-col w-full h-full place-content-center px-2">
               <Messages refetch={refetch} />
               <PromptInput threadId={threadId} />
             </div>

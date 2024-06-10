@@ -9,7 +9,7 @@ export default function ThreadHeader() {
 
   return (
     // container
-    <div className="w-full flex items-center justify-between p-2">
+    <div className="w-full flex items-center justify-between border-b-1 border-default bg-card-background min-h-11 px-4">
       {/* name / links*/}
       <div>
         {/* parent thread link */}

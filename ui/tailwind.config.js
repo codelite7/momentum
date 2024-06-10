@@ -39,8 +39,8 @@ module.exports = {
         },
         radius: {
           small: "4px", // rounded-small
-          medium: "12px", // rounded-medium
-          large: "14px", // rounded-large
+          medium: "4px", // rounded-medium
+          large: "4px", // rounded-large
         },
         borderWidth: {
           small: "1px", // border-small
@@ -51,9 +51,15 @@ module.exports = {
       themes: {
         dark: {
           colors: {
+            background: "#0B0A09",
+            "card-background": "#000000",
+            content1: "#000000", // card elements use content1 as their background color variable, so this sets the bg color for all cards by default
+            default: "#44403C",
+            forward: "#ffffff",
+            back: "#000000",
             primary: {
               // how does forground and background work? Is it always one shade?
-              background: "#000000",
+              background: "#0B0A09",
               foreground: "#000000",
               DEFAULT: "#39E2CB",
               50: "#39E2CB",
