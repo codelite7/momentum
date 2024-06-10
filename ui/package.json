@@ -51,6 +51,7 @@
 		"framer-motion": "^11.1.1",
 		"intl-messageformat": "^10.5.0",
 		"iron-session": "^8.0.1",
+		"jose": "^5.4.0",
 		"jotai": "^2.8.2",
 		"js-cookie": "^3.0.5",
 		"lodash": "^4.17.21",

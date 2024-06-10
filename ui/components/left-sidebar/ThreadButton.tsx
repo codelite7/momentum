@@ -47,6 +47,7 @@ export default function ThreadButton({ thread }: props) {
   const [hovered, setHovered] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(thread.name);
+  const [selected, setSelected] = useState(thread.id == params.id);
 
   return (
     <div
@@ -56,7 +57,7 @@ export default function ThreadButton({ thread }: props) {
     >
       {(hovered && !renaming) || popoverOpen ? (
         <div
-          className="flex flex-row start w-full hover:bg-default-200 cursor-pointer pl-2 text-sm rounded-md"
+          className={`flex flex-row start w-full hover:bg-stone-100 cursor-pointer pl-2 text-sm rounded-md`}
           onClick={() => router.push(`/thread/${thread.id}`)}
         >
           <div className="flex start items-center justify-between w-full">
@@ -71,7 +72,7 @@ export default function ThreadButton({ thread }: props) {
             >
               <PopoverTrigger>
                 <Button
-                  className="flex flex-row start min-w-9 px-0 hover:bg-default-100 rounded-l-none"
+                  className="flex flex-row start min-w-9 px-0 rounded-l-none bg-stone-100 hover:bg-background"
                   size="sm"
                   onPress={() => router.push(`/thread/${thread.id}`)}
                 >
@@ -83,11 +84,11 @@ export default function ThreadButton({ thread }: props) {
                 {/*  <i className="pi pi-ellipsis-v" />*/}
                 {/*</div>*/}
               </PopoverTrigger>
-              <PopoverContent className="p-0">
+              <PopoverContent className="p-0 border-default">
                 <div className="flex flex-col w-full h-full">
                   <Button
                     fullWidth
-                    className="bg-transparent hover:bg-default-200"
+                    className="bg-transparent hover:bg-stone-100"
                     radius="none"
                     onPress={() => {
                       setRenaming(true);
@@ -102,7 +103,7 @@ export default function ThreadButton({ thread }: props) {
                   </Button>
                   <Button
                     fullWidth
-                    className="bg-transparent hover:bg-default-200"
+                    className="bg-transparent hover:bg-stone-100"
                     radius="none"
                     onPress={() => {
                       deleteThread({
@@ -177,7 +178,7 @@ export default function ThreadButton({ thread }: props) {
         </div>
       ) : (
         <div
-          className="flex flex-row start w-full h-8 pl-2 text-sm"
+          className={`flex flex-row start w-full h-8 pl-2 text-sm rounded ${selected && "bg-stone-100"}`}
           onClick={() => router.push(`/thread/${thread.id}`)}
         >
           <div className="flex start items-center justify-between w-full h-full">

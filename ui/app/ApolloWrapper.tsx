@@ -28,10 +28,10 @@ declare module "@apollo/client" {
 
 type props = {
   children: React.ReactNode;
-  accessTokenn: string;
+  accessToken: string;
 };
 
-export function ApolloWrapper({ accessTokenn, children }: props) {
+export function ApolloWrapper({ accessToken, children }: props) {
   const router = useRouter();
 
   function makeClient() {
@@ -45,20 +45,6 @@ export function ApolloWrapper({ accessTokenn, children }: props) {
             ),
           );
         } else if (networkError) {
-          if (networkError.statusCode == 401) {
-            router.refresh();
-            operation.setContext(async (request) => {
-              const accessToken = await getAccessToken();
-
-              return {
-                headers: {
-                  authorization: accessToken,
-                },
-              };
-            });
-
-            return forward(operation);
-          }
           console.error(`[Network error]: ${networkError}`);
         }
       },
@@ -71,12 +57,12 @@ export function ApolloWrapper({ accessTokenn, children }: props) {
       fetchOptions: { cache: "no-store" },
     });
     const authLink = setContext(async (_, { headers, token }) => {
-      token = token ? token : accessTokenn;
+      const accessToken = await getAccessToken();
 
       return {
         headers: {
           ...headers,
-          ...(token ? { authorization: `Bearer ${accessTokenn}` } : {}),
+          ...{ authorization: `Bearer ${accessToken}` },
         },
       };
     });
@@ -101,17 +87,18 @@ export function ApolloWrapper({ accessTokenn, children }: props) {
 
   return (
     <ApolloNextAppProvider makeClient={makeClient}>
-      <UpdateAuth accessTokenn={accessTokenn}>{children}</UpdateAuth>
+      <UpdateAuth accessToken={accessToken}>{children}</UpdateAuth>
     </ApolloNextAppProvider>
   );
 }
 
-function UpdateAuth({ accessTokenn, children }: props) {
+function UpdateAuth({ accessToken, children }: props) {
   const apolloClient = useApolloClient();
 
   // just synchronously update the `apolloClient.defaultContext` before any child component can be rendered
   // so the value is available for any query started in a child
-  apolloClient.defaultContext.token = accessTokenn;
+  apolloClient.defaultContext.token = accessToken;
+  console.log("accessToken", accessToken);
 
   return <>{children}</>;
 }

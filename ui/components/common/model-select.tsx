@@ -28,7 +28,7 @@ export default function ModelSelect() {
         aria-label="Select a model"
         classNames={{
           base: "max-w-xs",
-          trigger: "h-12",
+          trigger: "border-default",
         }}
         items={models}
         renderValue={(items) => {
@@ -46,6 +46,7 @@ export default function ModelSelect() {
         }}
         selectedKeys={value}
         size="sm"
+        variant="bordered"
         onSelectionChange={(e: any) => {
           if (e.size > 0) {
             setValue(e);

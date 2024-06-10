@@ -9,9 +9,9 @@ import { Providers } from "./providers";
 
 import { siteConfig } from "@/config/site";
 import AccountSettingsModal from "@/components/account/settings-modal/account-settings-modal";
-import { ApolloWrapper } from "@/app/ApolloWrapper";
 import LeftSidebar from "@/components/left-sidebar/left-sidebar";
 import SearchModal from "@/components/search/search-modal";
+import AccessToken from "@/components/common/accessToken";
 
 export const metadata: Metadata = {
   title: {
@@ -48,26 +48,28 @@ export default async function RootLayout({
           myFont.className,
         )}
       >
-        <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <ApolloWrapper accessTokenn={accessToken}>
+        {/* typescript and jsx don't know about nextjs's magic that allows async jsx on server components*/}
+        {/* @ts-expect-error Server Component */}
+        <AccessToken>
+          <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
             <div className="flex h-full w-full overflow-hidden">
               <LeftSidebar />
               <div className="h-full w-full">{children}</div>
             </div>
             <AccountSettingsModal />
             <SearchModal />
-          </ApolloWrapper>
-          <Toaster
-            toastOptions={{
-              classNames: {
-                error: "bg-danger border-0",
-                success: "bg-success  border-0",
-                warning: "bg-warning  border-0",
-                info: "bg-primary  border-0",
-              },
-            }}
-          />
-        </Providers>
+            <Toaster
+              toastOptions={{
+                classNames: {
+                  error: "bg-danger border-0",
+                  success: "bg-success  border-0",
+                  warning: "bg-warning  border-0",
+                  info: "bg-primary  border-0",
+                },
+              }}
+            />
+          </Providers>
+        </AccessToken>
       </body>
     </html>
   );

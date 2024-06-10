@@ -64,15 +64,15 @@ export default function SearchModal() {
             />
           </div>
         </ModalHeader>
-        <ModalBody>
+        <ModalBody className="m-0 px-4 py-6">
           <Card>
-            <CardBody>
+            <CardBody className="p-0">
               {query ? (
                 <DynamicSearchResults query={query} />
               ) : (
-                <div className="flex w-full place-content-center">
+                <div className="flex w-full h-full place-content-center bg-stone-100 px-4 py-2">
                   <span>
-                    Type to search{" "}
+                    Type to search&nbsp;
                     <span className="tracking-widest">STRATIFI</span>
                   </span>
                 </div>

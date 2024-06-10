@@ -88,7 +88,7 @@ export default function PromptInput({ threadId }: props) {
   return (
     <Card className="w-full min-h-36 border-1 border-default">
       {!threadId && (
-        <CardHeader>
+        <CardHeader className="bg-background border-b-1 border-default">
           <ModelSelect />
         </CardHeader>
       )}

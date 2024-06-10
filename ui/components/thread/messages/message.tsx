@@ -54,6 +54,7 @@ export default function Message({ message, animate, refetch }: props) {
   });
 
   const [createBookmark] = useMutation(createBookmarkMutation, {
+    notifyOnNetworkStatusChange: true,
     variables: {
       messageId: message.id,
     },
