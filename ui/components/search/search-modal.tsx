@@ -40,8 +40,9 @@ export default function SearchModal() {
   return (
     <Modal
       classNames={{
+        base: "border-1 border-default",
         body: "px-0 mt-4",
-        header: "px-0 mt-4 border-b-1",
+        header: "px-0 mt-4 border-b-1 border-default bg-background",
       }}
       isOpen={isOpen}
       size="4xl"

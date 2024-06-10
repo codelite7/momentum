@@ -23,7 +23,7 @@ export default function MessageResult({ query, message }: props) {
     : sentAtDate.toLocaleString();
 
   return (
-    <Card>
+    <Card className="border-b-1 border-default">
       <CardHeader>
         <>
           {message.thread.parent?.thread && (
