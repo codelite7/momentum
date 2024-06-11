@@ -5,7 +5,7 @@ type: application
 version: 1.0.0
 appVersion: "bdb785a"
 dependencies:
-  - name: postgresql
-    version: 15.2.8
-    repository: https://charts.bitnami.com/bitnami
-    condition: bitnamiPostgres.enabled
+  - name: cluster
+    repository: https://cloudnative-pg.github.io/charts
+    version: 0.0.9
+    condition: cluster.enabled

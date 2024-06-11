@@ -36,33 +36,19 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "%s%s" "api" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: WORKOS_COOKIE_PASSWORD
+              value: {{ .Values.workos.cookiePassword | quote }}
+            - name: WORKOS_REDIRECT_URI
+              value: {{ .Values.workos.redirectUri | quote }}
+            - name: WORKOS_CLIENT_ID
+              value: {{ .Values.workos.clientId | quote }}
+            - name: WORKOS_API_KEY
+              value: {{ .Values.workos.apiKey | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          command:
-            - /main
-            - run
-            - -wci
-            - {{ .Values.workos.clientId }}
-            - -wak
-            - {{ .Values.workos.apiKey }}
-          env:
-            {{- if .Values.cluster.enabled }}
-            - name: POSTGRESQL_URI
-              valueFrom:
-                secretKeyRef:
-                  name: "api-cluster-app"
-                  key: uri
-                        {{- end }}
-            - name: PORT
-              value: {{ .Values.service.port | quote }}
-            - name: DEFAULT_AGENTS
-              value: {{ .Values.defaultAgents | quote }}
-            - name: API_LANGCHAIN_BASE_URL
-              value: {{ .Values.apiLangchain.baseUrl }}
-            - name: SESSION_REQUIRED
-              value: {{ .Values.sessionRequired | quote }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:

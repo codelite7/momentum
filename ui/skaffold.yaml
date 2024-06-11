@@ -1,8 +1,8 @@
-apiVersion: skaffold/v2beta25
+uiVersion: skaffold/v2beta25
 kind: Config
 build:
   artifacts:
-    - image: api
+    - image: ui
       custom:
         buildCommand: >
           DOCKER_BUILDKIT=1
@@ -15,18 +15,14 @@ build:
             path: Dockerfile
 deploy:
   helm:
-    hooks:
-      before:
-        - host:
-            command: [ "kubectl", "apply", "--server-side", "-f", "https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.23/releases/cnpg-1.23.1.yaml" ]
     releases:
-      - name: api
-        namespace: api
+      - name: ui
+        namespace: ui
         createNamespace: true
         chartPath: ./chart
         version: '>=1.0.0'
         artifactOverrides:
-          image: api
+          image: ui
         imageStrategy:
           helm: {}
         valuesFiles:
@@ -39,7 +35,7 @@ profiles:
       - env: SKAFFOLD_ACTIONS=true
     build:
       artifacts:
-        - image: api
+        - image: ui
           custom:
             buildCommand: >
               docker buildx build

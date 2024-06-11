@@ -45,7 +45,6 @@ service:
 
 ingress:
   enabled: false
-  clusterIssuer: letsencrypt-staging
   className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
@@ -74,11 +73,11 @@ resources: {}
 
 livenessProbe:
   httpGet:
-    path: /health
+    path: /
     port: http
 readinessProbe:
   httpGet:
-    path: /health
+    path: /
     port: http
 
 autoscaling:
@@ -106,27 +105,8 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-app:
-  postgresql:
-    uri: "postgres://postgres:postgres@api-postgresql:5432/postgres?sslmode=disable"
-bitnamiPostgres:
-  enabled: true
-postgresql:
-  auth:
-    postgresPassword: postgres
-defaultAgents: '[{"provider":"perplexity","model":"llama-3-sonar-large-32k-online","api_key":""}]'
-apiLangchain:
-  baseUrl: 'http://api-langchain:6543'
-sessionRequired: true
-cluster:
-  enabled: true
-  type: postgis # postgresql db with pogtgis extension installed
-  mode: standalone
-  cluster:
-    instances: 1
-  backups:
-    enabled: false
 workos:
-  apiKey: ''
+  cookiePasword: ''
+  redirectUri: http://localhost:3000/auth/callback
   clientId: ''
+  apiKey: ''
