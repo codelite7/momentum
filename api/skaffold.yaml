@@ -30,8 +30,8 @@ deploy:
         imageStrategy:
           helm: {}
         valuesFiles:
-#          - skaffold-values.yaml
-           - skaffold-values-local.yaml
+          - skaffold-values.yaml
+          - skaffold-values-local.yaml
         wait: false
 profiles:
   - name: actions

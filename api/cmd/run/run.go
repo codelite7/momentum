@@ -148,41 +148,20 @@ type Key struct {
 }
 
 func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
-	//signingKeys, err := getJWKSKeys()
-	//if err != nil {
-	//	return nil, err
-	//}
 	e := echo.New()
-	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
-	e.Use(AuthMiddleware())
-	//e.Use(echojwt.WithConfig(echojwt.Config{
-	//	Skipper: func(c echo.Context) bool {
-	//		if c.Request().Method == echo.OPTIONS {
-	//			return true
-	//		}
-	//		if c.Request().URL.Path == "/health" {
-	//			return true
-	//		}
-	//		return false
-	//	},
-	//	SigningKeys:            signingKeys,
-	//	SigningMethod:          "RS256",
-	//	ContinueOnIgnoredError: !config.ValidateJwt,
-	//	ErrorHandler: func(c echo.Context, err error) error {
-	//		common.Logger.Error("error getting jwt", zap.Error(err))
-	//		return nil
-	//	},
-	//	SuccessHandler: func(c echo.Context) {
-	//
-	//	},
-	//}))
-	e.GET("/health", func(c echo.Context) error {
+	// health and playground are open
+	health := e.Group("/health")
+	health.GET("", func(c echo.Context) error {
 		return nil
 	})
-	e.GET("/", echo.WrapHandler(playground.Handler("Todo", "/query")))
-	e.POST("/query", echo.WrapHandler(graphqlServer))
+	playgroundd := e.Group("/playground")
+	playgroundd.GET("", echo.WrapHandler(playground.Handler("Api", "/query")))
+	// query is authenticated via middleware
+	query := e.Group("/query")
+	query.POST("", echo.WrapHandler(graphqlServer))
+	query.Use(AuthMiddleware())
 
 	return e, nil
 }
@@ -197,7 +176,7 @@ var flags = []cli.Flag{
 	&cli.StringFlag{
 		Name:        "postgresql-uri",
 		Aliases:     []string{"pu"},
-		Value:       "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
+		Value:       "postgres://postgres:NULL@localhost:5432/postgres?sslmode=disable",
 		Usage:       "postgres connection string",
 		EnvVars:     []string{"POSTGRESQL_URI"},
 		Destination: &config.PostgresUri,

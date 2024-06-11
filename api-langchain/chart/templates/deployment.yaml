@@ -39,8 +39,12 @@ spec:
           env:
             - name: PORT
               value: {{ .Values.service.port | quote }}
-            - name: PERPLEXITY_API_KEY
-              value: {{ .Values.perplexity.apiKey }}
+            - name: ANTHROPIC_API_KEY
+              value: {{ .Values.anthropic.apiKey }}
+            - name: GROQ_API_KEY
+              value: {{ .Values.groq.apiKey }}
+            - name: OPENAI_API_KEY
+              value: {{ .Values.openai.apiKey }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

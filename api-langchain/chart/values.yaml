@@ -107,3 +107,9 @@ tolerations: []
 affinity: {}
 perplexity:
   apiKey: ''
+groq:
+  apiKey: ''
+anthropic:
+  apiKey: ''
+openai:
+  apiKey: ''
