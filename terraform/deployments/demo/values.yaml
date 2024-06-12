@@ -28,9 +28,12 @@ ui:
   values:
     image:
       repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
+    ingress:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
     workos:
       cookiePassword: ${workosCookiePassword}
       redirectUri: https://stratifi.derp.ninja/auth/callback
       clientId: 'client_01HY70VRFAXS6Z3K0Z161PNQA3'
       apiKey: ${workosApiKey}
-    apiAddress: https://api.derp.ninja/query
+    apiAddress: https://api.stratifi.ninja/query
