@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { sealData } from "iron-session";
 import { WorkOS } from "@workos-inc/node";
+import { redirect } from "next/navigation";
 const workos = new WorkOS(process.env.WORKOS_API_KEY ?? "");
 
 export async function GET(request: NextRequest) {
@@ -42,19 +43,14 @@ export async function GET(request: NextRequest) {
       });
       // store the access token insecurely so it can be used for client side fetching
       cookies().set("accessToken", accessToken);
-      const url = request.nextUrl.clone();
 
-      // Cleanup params
-      url.searchParams.delete("code");
-      url.searchParams.delete("state");
+      redirect("/");
 
-      // Redirect to the requested path and store the session
-      url.pathname = returnPathname ?? "/";
-
-      const response = NextResponse.redirect(url);
-
-      return response;
-    } catch (error) {
+      // return response;
+    } catch (error: any) {
+      // next does some weird stuff with redirects where it depends on this error being thrown? So if you call redirect() in a try/catch
+      // you have to catch and re-throw the redirect error or the redirect fails.
+      if (error.message === "NEXT_REDIRECT") throw error;
       const errorRes = {
         error: error instanceof Error ? error.message : String(error),
       };
