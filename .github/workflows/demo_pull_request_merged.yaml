@@ -88,21 +88,6 @@ jobs:
           commenter_input: ${{ format('{0}{1}', steps.validate.outputs.stdout, steps.validate.outputs.stderr) }}
           commenter_exitcode: ${{ steps.validate.outputs.exitcode }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: NPM Install
-        uses: bahmutov/npm-install@v1
-        with:
-          working-directory: ui
-
-      - name: NPM Build
-        working-directory: ui
-        run: |
-          npm run build-prod
-
       - name: Terraform Apply
         id: apply
         run: terraform apply -auto-approve
