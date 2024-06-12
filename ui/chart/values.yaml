@@ -110,3 +110,4 @@ workos:
   redirectUri: http://localhost:3000/auth/callback
   clientId: ''
   apiKey: ''
+apiAddress: http://localhost:3001/query # not a cluster service because this is making requests from the browser

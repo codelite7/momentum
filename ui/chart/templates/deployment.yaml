@@ -45,6 +45,8 @@ spec:
               value: {{ .Values.workos.clientId | quote }}
             - name: WORKOS_API_KEY
               value: {{ .Values.workos.apiKey | quote }}
+            - name: API_ADDRESS
+              value: {{ .Values.apiAddress }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
