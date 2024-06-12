@@ -98,7 +98,6 @@ function UpdateAuth({ accessToken, children }: props) {
   // just synchronously update the `apolloClient.defaultContext` before any child component can be rendered
   // so the value is available for any query started in a child
   apolloClient.defaultContext.token = accessToken;
-  console.log("accessToken", accessToken);
 
   return <>{children}</>;
 }
