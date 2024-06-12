@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button, Card, CardBody, CardFooter, Tooltip } from "@nextui-org/react";
 import { redirect, useRouter } from "next/navigation";
-import { useSuspenseQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import { Link } from "@nextui-org/link";
 import { useSetAtom } from "jotai/index";
 
@@ -39,7 +39,7 @@ export const sidebarThreadsQuery = gql(/* GraphQL */ `
 export default function LeftSidebar() {
   const setSearchModalIsOpen = useSetAtom(searchModalIsOpenAtom);
   const router = useRouter();
-  const { data, error } = useSuspenseQuery(sidebarThreadsQuery);
+  const { data, error } = useQuery(sidebarThreadsQuery);
 
   if (error) {
     console.error("left-sidebar error", error);
@@ -173,7 +173,7 @@ export default function LeftSidebar() {
                 </Button>
               </div>
               {/* thread buttons */}
-              <ThreadButtons threads={user.threads} />
+              {user?.threads && <ThreadButtons threads={user.threads} />}
             </>
           )}
         </CardBody>

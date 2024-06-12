@@ -38,8 +38,8 @@ export function ApolloWrapper({ accessToken, children, apiAddress }: props) {
   function makeClient() {
     const errorLink = onError(
       ({ graphQLErrors, networkError, operation, forward }) => {
+        console.error("error executing request for operation: ", operation);
         if (graphQLErrors) {
-          console.error("[GraphQL error on operation]:", operation);
           graphQLErrors.forEach(({ message, locations, path }) =>
             console.error(
               `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
