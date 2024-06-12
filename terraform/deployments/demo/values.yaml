@@ -36,4 +36,4 @@ ui:
       redirectUri: https://stratifi.derp.ninja/auth/callback
       clientId: 'client_01HY70VRFAXS6Z3K0Z161PNQA3'
       apiKey: ${workosApiKey}
-    apiAddress: https://api.stratifi.ninja/query
+    apiAddress: https://api.stratifi.derp.ninja/query
