@@ -3,7 +3,7 @@ name: api
 description: Manifold api helm chart
 type: application
 version: 1.0.0
-appVersion: "a1a151e"
+appVersion: "12f1c27"
 dependencies:
   - name: cluster
     repository: https://cloudnative-pg.github.io/charts
