@@ -14,6 +14,8 @@ import {
 import { useShallow } from "zustand/react/shallow";
 
 import useAccountSettingsModalStore from "@/stores/account-settings-modal-store";
+import {signOut} from "@/actions/auth";
+import {redirect} from "next/navigation";
 
 export default function AccountSettingsModal() {
   const [isOpen, toggle] = useAccountSettingsModalStore(
@@ -62,6 +64,10 @@ export default function AccountSettingsModal() {
                     color="primary"
                     size="sm"
                     startContent={<i className="pi pi-sign-out" />}
+                    onPress={async () => {
+                      await signOut();
+                      redirect('/')
+                    }}
                   >
                     Sign out
                   </Button>
