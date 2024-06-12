@@ -17,11 +17,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
-      - name: NPM Install
-        uses: bahmutov/npm-install@v1
+      - uses: pnpm/action-setup@v4
         with:
-          working-directory: ui
+          version: 8
+      - name: NPM Install
+        working-directory: ui
+        run: |
+          pnpm install
       - name: NPM Build
         working-directory: ui
         run: |
-          npm run build
+          pnpm run build

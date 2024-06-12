@@ -3,9 +3,9 @@
 import { useEffect, useRef } from "react";
 import { useAtomValue } from "jotai";
 import { ApolloQueryResult } from "@apollo/client";
-import { MessageType } from "graphql-ws";
 
 import {
+  Message as MessageType,
   MessageMessageType,
   ThreadQuery,
   ThreadQueryVariables,

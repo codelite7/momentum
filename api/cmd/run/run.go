@@ -160,8 +160,8 @@ func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
 	playgroundd.GET("", echo.WrapHandler(playground.Handler("Api", "/query")))
 	// query is authenticated via middleware
 	query := e.Group("/query")
-	query.POST("", echo.WrapHandler(graphqlServer))
 	query.Use(AuthMiddleware())
+	query.POST("", echo.WrapHandler(graphqlServer))
 
 	return e, nil
 }

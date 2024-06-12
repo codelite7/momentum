@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ui
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    namespace: ui
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://github.com/codelite7/momentum
+    path: ui/chart
+    targetRevision: {{ .Values.ui.targetRevision }}
+    helm:
+      releaseName: ui
+      {{- with .Values.ui.values }}
+      values: |
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  syncPolicy:
+    {{- toYaml .Values.ui.syncPolicy | nindent 4 }}

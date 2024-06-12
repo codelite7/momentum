@@ -15,7 +15,6 @@ const config: CodegenConfig = {
       presetConfig: {
         gqlTagName: "gql",
       },
-      plugins: ["typescript", "typescript-operations"],
     },
   },
   ignoreNoDocuments: true,

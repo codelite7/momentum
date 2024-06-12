@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { sealData } from "iron-session";
 import { WorkOS } from "@workos-inc/node";
-const workos = new WorkOS(process.env.WORKOS_API_KEY!);
+const workos = new WorkOS(process.env.WORKOS_API_KEY ?? "");
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");

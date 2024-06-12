@@ -18,7 +18,6 @@ import { onError } from "@apollo/client/link/error";
 import { useRouter } from "next/navigation";
 
 import { Thread } from "@/__generated__/graphql";
-import getAccessToken from "@/actions/token";
 
 declare module "@apollo/client" {
   export interface DefaultContext {
@@ -51,13 +50,14 @@ export function ApolloWrapper({ accessToken, children }: props) {
     );
     const httpLink = createHttpLink({
       // this needs to be an absolute url, as relative urls cannot be used in SSR
-      uri: "http://localhost:3001/query",
+      uri: process.env.NEXT_PUBLIC_API_ADDRESS,
       // you can disable result caching here if you want to
       // (this does not work if you are rendering your page with `export const dynamic = "force-static"`)
       fetchOptions: { cache: "no-store" },
     });
     const authLink = setContext(async (_, { headers, token }) => {
-      const accessToken = await getAccessToken();
+      // const accessToken = await getAccessToken();
+      console.log("authLink accessToken: ", accessToken);
 
       return {
         headers: {
