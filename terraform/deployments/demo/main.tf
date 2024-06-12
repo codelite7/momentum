@@ -17,8 +17,11 @@ module "app" {
   syncPolicy = yamldecode(file("syncPolicy.yaml"))
   values = templatefile("values.yaml", {
     defaultAgents: local.secrets.defaultAgents,
-    supertokensApiKey: local.secrets.supertokensApiKey,
-    perplexityApiKey: local.secrets.perplexityApiKey,
+    workosApiKey: local.secrets.workosApiKey,
+    workosCookiePassword: local.secrets.workosCookiePassword,
+    openaiApiKey: local.secrets.openaiApiKey,
+    groqApiKey: local.secrets.groqApiKey,
+    anthropicApiKey: local.secrets.anthropicApiKey,
   })
 }
 
