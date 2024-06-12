@@ -9,6 +9,11 @@ export type props = {
 
 export default async function AccessToken({ children }: props) {
   const { accessToken } = await getUser({ ensureSignedIn: true });
+  const apiAddress = process.env.API_ADDRESS;
 
-  return <ApolloWrapper accessToken={accessToken}>{children}</ApolloWrapper>;
+  return (
+    <ApolloWrapper accessToken={accessToken} apiAddress={apiAddress}>
+      {children}
+    </ApolloWrapper>
+  );
 }

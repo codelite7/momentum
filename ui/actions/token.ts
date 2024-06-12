@@ -16,8 +16,6 @@ const JWKS = createRemoteJWKSet(
 export default async function getAccessToken(): Promise<string> {
   const { accessToken } = await getUser({ ensureSignedIn: true });
 
-  console.log("getAccessToken: ", accessToken);
-
   return accessToken;
   // const validToken = await verifyAccessToken(accessToken);
   //

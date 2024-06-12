@@ -42,7 +42,7 @@ export default function LeftSidebar() {
   const { data, error } = useSuspenseQuery(sidebarThreadsQuery);
 
   if (error) {
-    console.log("left-sidebar error", error);
+    console.error("left-sidebar error", error);
   } else {
   }
   const toggleAccountSettings = useAccountSettingsModalStore(
