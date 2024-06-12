@@ -4,3 +4,8 @@ description: Cluster wide objects
 type: application
 version: 1.0.0
 appVersion: 1.0.0
+dependencies:
+  - name: cloudnative-pg
+    repository: https://cloudnative-pg.github.io/charts
+    version: 0.21.4
+    condition: cloudnativePg.enabled
