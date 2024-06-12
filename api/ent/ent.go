@@ -15,9 +15,10 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
+	"github.com/codelite7/momentum/api/ent/workoseventcursor"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -78,12 +79,13 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			agent.Table:    agent.ValidColumn,
-			bookmark.Table: bookmark.ValidColumn,
-			message.Table:  message.ValidColumn,
-			response.Table: response.ValidColumn,
-			thread.Table:   thread.ValidColumn,
-			user.Table:     user.ValidColumn,
+			agent.Table:             agent.ValidColumn,
+			bookmark.Table:          bookmark.ValidColumn,
+			message.Table:           message.ValidColumn,
+			tenant.Table:            tenant.ValidColumn,
+			thread.Table:            thread.ValidColumn,
+			user.Table:              user.ValidColumn,
+			workoseventcursor.Table: workoseventcursor.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

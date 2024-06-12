@@ -12,10 +12,10 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // MessageCreate is the builder for creating a Message entity.
@@ -53,28 +53,45 @@ func (mc *MessageCreate) SetNillableUpdatedAt(t *time.Time) *MessageCreate {
 	return mc
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (mc *MessageCreate) SetTenantID(pu pulid.ID) *MessageCreate {
+	mc.mutation.SetTenantID(pu)
+	return mc
+}
+
 // SetContent sets the "content" field.
 func (mc *MessageCreate) SetContent(s string) *MessageCreate {
 	mc.mutation.SetContent(s)
 	return mc
 }
 
+// SetMessageType sets the "message_type" field.
+func (mc *MessageCreate) SetMessageType(mt message.MessageType) *MessageCreate {
+	mc.mutation.SetMessageType(mt)
+	return mc
+}
+
 // SetID sets the "id" field.
-func (mc *MessageCreate) SetID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetID(u)
+func (mc *MessageCreate) SetID(pu pulid.ID) *MessageCreate {
+	mc.mutation.SetID(pu)
 	return mc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (mc *MessageCreate) SetNillableID(u *uuid.UUID) *MessageCreate {
-	if u != nil {
-		mc.SetID(*u)
+func (mc *MessageCreate) SetNillableID(pu *pulid.ID) *MessageCreate {
+	if pu != nil {
+		mc.SetID(*pu)
 	}
 	return mc
 }
 
+// SetTenant sets the "tenant" edge to the Tenant entity.
+func (mc *MessageCreate) SetTenant(t *Tenant) *MessageCreate {
+	return mc.SetTenantID(t.ID)
+}
+
 // SetSentByID sets the "sent_by" edge to the User entity by ID.
-func (mc *MessageCreate) SetSentByID(id uuid.UUID) *MessageCreate {
+func (mc *MessageCreate) SetSentByID(id pulid.ID) *MessageCreate {
 	mc.mutation.SetSentByID(id)
 	return mc
 }
@@ -85,7 +102,7 @@ func (mc *MessageCreate) SetSentBy(u *User) *MessageCreate {
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by ID.
-func (mc *MessageCreate) SetThreadID(id uuid.UUID) *MessageCreate {
+func (mc *MessageCreate) SetThreadID(id pulid.ID) *MessageCreate {
 	mc.mutation.SetThreadID(id)
 	return mc
 }
@@ -96,37 +113,37 @@ func (mc *MessageCreate) SetThread(t *Thread) *MessageCreate {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (mc *MessageCreate) AddBookmarkIDs(ids ...uuid.UUID) *MessageCreate {
+func (mc *MessageCreate) AddBookmarkIDs(ids ...pulid.ID) *MessageCreate {
 	mc.mutation.AddBookmarkIDs(ids...)
 	return mc
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (mc *MessageCreate) AddBookmarks(b ...*Bookmark) *MessageCreate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
 	return mc.AddBookmarkIDs(ids...)
 }
 
-// SetResponseID sets the "response" edge to the Response entity by ID.
-func (mc *MessageCreate) SetResponseID(id uuid.UUID) *MessageCreate {
-	mc.mutation.SetResponseID(id)
+// SetChildID sets the "child" edge to the Thread entity by ID.
+func (mc *MessageCreate) SetChildID(id pulid.ID) *MessageCreate {
+	mc.mutation.SetChildID(id)
 	return mc
 }
 
-// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
-func (mc *MessageCreate) SetNillableResponseID(id *uuid.UUID) *MessageCreate {
+// SetNillableChildID sets the "child" edge to the Thread entity by ID if the given value is not nil.
+func (mc *MessageCreate) SetNillableChildID(id *pulid.ID) *MessageCreate {
 	if id != nil {
-		mc = mc.SetResponseID(*id)
+		mc = mc.SetChildID(*id)
 	}
 	return mc
 }
 
-// SetResponse sets the "response" edge to the Response entity.
-func (mc *MessageCreate) SetResponse(r *Response) *MessageCreate {
-	return mc.SetResponseID(r.ID)
+// SetChild sets the "child" edge to the Thread entity.
+func (mc *MessageCreate) SetChild(t *Thread) *MessageCreate {
+	return mc.SetChildID(t.ID)
 }
 
 // Mutation returns the MessageMutation object of the builder.
@@ -186,8 +203,22 @@ func (mc *MessageCreate) check() error {
 	if _, ok := mc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Message.updated_at"`)}
 	}
+	if _, ok := mc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Message.tenant_id"`)}
+	}
 	if _, ok := mc.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "Message.content"`)}
+	}
+	if _, ok := mc.mutation.MessageType(); !ok {
+		return &ValidationError{Name: "message_type", err: errors.New(`ent: missing required field "Message.message_type"`)}
+	}
+	if v, ok := mc.mutation.MessageType(); ok {
+		if err := message.MessageTypeValidator(v); err != nil {
+			return &ValidationError{Name: "message_type", err: fmt.Errorf(`ent: validator failed for field "Message.message_type": %w`, err)}
+		}
+	}
+	if _, ok := mc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant", err: errors.New(`ent: missing required edge "Message.tenant"`)}
 	}
 	if _, ok := mc.mutation.SentByID(); !ok {
 		return &ValidationError{Name: "sent_by", err: errors.New(`ent: missing required edge "Message.sent_by"`)}
@@ -210,7 +241,7 @@ func (mc *MessageCreate) sqlSave(ctx context.Context) (*Message, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*pulid.ID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -224,7 +255,7 @@ func (mc *MessageCreate) sqlSave(ctx context.Context) (*Message, error) {
 func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Message{config: mc.config}
-		_spec = sqlgraph.NewCreateSpec(message.Table, sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(message.Table, sqlgraph.NewFieldSpec(message.FieldID, field.TypeString))
 	)
 	if id, ok := mc.mutation.ID(); ok {
 		_node.ID = id
@@ -242,6 +273,27 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 		_spec.SetField(message.FieldContent, field.TypeString, value)
 		_node.Content = value
 	}
+	if value, ok := mc.mutation.MessageType(); ok {
+		_spec.SetField(message.FieldMessageType, field.TypeEnum, value)
+		_node.MessageType = value
+	}
+	if nodes := mc.mutation.TenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   message.TenantTable,
+			Columns: []string{message.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.TenantID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := mc.mutation.SentByIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -250,7 +302,7 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 			Columns: []string{message.SentByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -267,7 +319,7 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 			Columns: []string{message.ThreadColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -284,7 +336,7 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 			Columns: []string{message.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -292,15 +344,15 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := mc.mutation.ResponseIDs(); len(nodes) > 0 {
+	if nodes := mc.mutation.ChildIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   message.ResponseTable,
-			Columns: []string{message.ResponseColumn},
+			Table:   message.ChildTable,
+			Columns: []string{message.ChildColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

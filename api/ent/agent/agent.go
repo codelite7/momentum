@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 const (
@@ -25,17 +24,8 @@ const (
 	FieldModel = "model"
 	// FieldAPIKey holds the string denoting the api_key field in the database.
 	FieldAPIKey = "api_key"
-	// EdgeResponses holds the string denoting the responses edge name in mutations.
-	EdgeResponses = "responses"
 	// Table holds the table name of the agent in the database.
 	Table = "agents"
-	// ResponsesTable is the table that holds the responses relation/edge.
-	ResponsesTable = "responses"
-	// ResponsesInverseTable is the table name for the Response entity.
-	// It exists in this package in order to avoid circular dependency with the "response" package.
-	ResponsesInverseTable = "responses"
-	// ResponsesColumn is the table column denoting the responses relation/edge.
-	ResponsesColumn = "agent_responses"
 )
 
 // Columns holds all SQL columns for agent fields.
@@ -64,7 +54,7 @@ var (
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
+	DefaultID func() pulid.ID
 )
 
 // OrderOption defines the ordering options for the Agent queries.
@@ -98,25 +88,4 @@ func ByModel(opts ...sql.OrderTermOption) OrderOption {
 // ByAPIKey orders the results by the api_key field.
 func ByAPIKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAPIKey, opts...).ToFunc()
-}
-
-// ByResponsesCount orders the results by responses count.
-func ByResponsesCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newResponsesStep(), opts...)
-	}
-}
-
-// ByResponses orders the results by responses terms.
-func ByResponses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newResponsesStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-func newResponsesStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ResponsesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ResponsesTable, ResponsesColumn),
-	)
 }

@@ -14,9 +14,10 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // UserUpdate is the builder for updating User entities.
@@ -61,14 +62,14 @@ func (uu *UserUpdate) SetNillableEmail(s *string) *UserUpdate {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (uu *UserUpdate) AddBookmarkIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) AddBookmarkIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.AddBookmarkIDs(ids...)
 	return uu
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (uu *UserUpdate) AddBookmarks(b ...*Bookmark) *UserUpdate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -76,14 +77,14 @@ func (uu *UserUpdate) AddBookmarks(b ...*Bookmark) *UserUpdate {
 }
 
 // AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
-func (uu *UserUpdate) AddThreadIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) AddThreadIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.AddThreadIDs(ids...)
 	return uu
 }
 
 // AddThreads adds the "threads" edges to the Thread entity.
 func (uu *UserUpdate) AddThreads(t ...*Thread) *UserUpdate {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -91,18 +92,44 @@ func (uu *UserUpdate) AddThreads(t ...*Thread) *UserUpdate {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (uu *UserUpdate) AddMessageIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) AddMessageIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.AddMessageIDs(ids...)
 	return uu
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (uu *UserUpdate) AddMessages(m ...*Message) *UserUpdate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
 	return uu.AddMessageIDs(ids...)
+}
+
+// AddTenantIDs adds the "tenants" edge to the Tenant entity by IDs.
+func (uu *UserUpdate) AddTenantIDs(ids ...pulid.ID) *UserUpdate {
+	uu.mutation.AddTenantIDs(ids...)
+	return uu
+}
+
+// AddTenants adds the "tenants" edges to the Tenant entity.
+func (uu *UserUpdate) AddTenants(t ...*Tenant) *UserUpdate {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uu.AddTenantIDs(ids...)
+}
+
+// SetActiveTenantID sets the "active_tenant" edge to the Tenant entity by ID.
+func (uu *UserUpdate) SetActiveTenantID(id pulid.ID) *UserUpdate {
+	uu.mutation.SetActiveTenantID(id)
+	return uu
+}
+
+// SetActiveTenant sets the "active_tenant" edge to the Tenant entity.
+func (uu *UserUpdate) SetActiveTenant(t *Tenant) *UserUpdate {
+	return uu.SetActiveTenantID(t.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -117,14 +144,14 @@ func (uu *UserUpdate) ClearBookmarks() *UserUpdate {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to Bookmark entities by IDs.
-func (uu *UserUpdate) RemoveBookmarkIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) RemoveBookmarkIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.RemoveBookmarkIDs(ids...)
 	return uu
 }
 
 // RemoveBookmarks removes "bookmarks" edges to Bookmark entities.
 func (uu *UserUpdate) RemoveBookmarks(b ...*Bookmark) *UserUpdate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -138,14 +165,14 @@ func (uu *UserUpdate) ClearThreads() *UserUpdate {
 }
 
 // RemoveThreadIDs removes the "threads" edge to Thread entities by IDs.
-func (uu *UserUpdate) RemoveThreadIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) RemoveThreadIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.RemoveThreadIDs(ids...)
 	return uu
 }
 
 // RemoveThreads removes "threads" edges to Thread entities.
 func (uu *UserUpdate) RemoveThreads(t ...*Thread) *UserUpdate {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -159,18 +186,45 @@ func (uu *UserUpdate) ClearMessages() *UserUpdate {
 }
 
 // RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (uu *UserUpdate) RemoveMessageIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) RemoveMessageIDs(ids ...pulid.ID) *UserUpdate {
 	uu.mutation.RemoveMessageIDs(ids...)
 	return uu
 }
 
 // RemoveMessages removes "messages" edges to Message entities.
 func (uu *UserUpdate) RemoveMessages(m ...*Message) *UserUpdate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
 	return uu.RemoveMessageIDs(ids...)
+}
+
+// ClearTenants clears all "tenants" edges to the Tenant entity.
+func (uu *UserUpdate) ClearTenants() *UserUpdate {
+	uu.mutation.ClearTenants()
+	return uu
+}
+
+// RemoveTenantIDs removes the "tenants" edge to Tenant entities by IDs.
+func (uu *UserUpdate) RemoveTenantIDs(ids ...pulid.ID) *UserUpdate {
+	uu.mutation.RemoveTenantIDs(ids...)
+	return uu
+}
+
+// RemoveTenants removes "tenants" edges to Tenant entities.
+func (uu *UserUpdate) RemoveTenants(t ...*Tenant) *UserUpdate {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uu.RemoveTenantIDs(ids...)
+}
+
+// ClearActiveTenant clears the "active_tenant" edge to the Tenant entity.
+func (uu *UserUpdate) ClearActiveTenant() *UserUpdate {
+	uu.mutation.ClearActiveTenant()
+	return uu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -200,8 +254,19 @@ func (uu *UserUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uu *UserUpdate) check() error {
+	if _, ok := uu.mutation.ActiveTenantID(); uu.mutation.ActiveTenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "User.active_tenant"`)
+	}
+	return nil
+}
+
 func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
+	if err := uu.check(); err != nil {
+		return n, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	if ps := uu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -223,7 +288,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -236,7 +301,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -252,7 +317,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -268,7 +333,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -281,7 +346,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -297,7 +362,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -313,7 +378,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -326,7 +391,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -342,7 +407,81 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.TenantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedTenantsIDs(); len(nodes) > 0 && !uu.mutation.TenantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.TenantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.ActiveTenantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ActiveTenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -399,14 +538,14 @@ func (uuo *UserUpdateOne) SetNillableEmail(s *string) *UserUpdateOne {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (uuo *UserUpdateOne) AddBookmarkIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddBookmarkIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.AddBookmarkIDs(ids...)
 	return uuo
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (uuo *UserUpdateOne) AddBookmarks(b ...*Bookmark) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -414,14 +553,14 @@ func (uuo *UserUpdateOne) AddBookmarks(b ...*Bookmark) *UserUpdateOne {
 }
 
 // AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
-func (uuo *UserUpdateOne) AddThreadIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddThreadIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.AddThreadIDs(ids...)
 	return uuo
 }
 
 // AddThreads adds the "threads" edges to the Thread entity.
 func (uuo *UserUpdateOne) AddThreads(t ...*Thread) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -429,18 +568,44 @@ func (uuo *UserUpdateOne) AddThreads(t ...*Thread) *UserUpdateOne {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (uuo *UserUpdateOne) AddMessageIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddMessageIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.AddMessageIDs(ids...)
 	return uuo
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (uuo *UserUpdateOne) AddMessages(m ...*Message) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
 	return uuo.AddMessageIDs(ids...)
+}
+
+// AddTenantIDs adds the "tenants" edge to the Tenant entity by IDs.
+func (uuo *UserUpdateOne) AddTenantIDs(ids ...pulid.ID) *UserUpdateOne {
+	uuo.mutation.AddTenantIDs(ids...)
+	return uuo
+}
+
+// AddTenants adds the "tenants" edges to the Tenant entity.
+func (uuo *UserUpdateOne) AddTenants(t ...*Tenant) *UserUpdateOne {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uuo.AddTenantIDs(ids...)
+}
+
+// SetActiveTenantID sets the "active_tenant" edge to the Tenant entity by ID.
+func (uuo *UserUpdateOne) SetActiveTenantID(id pulid.ID) *UserUpdateOne {
+	uuo.mutation.SetActiveTenantID(id)
+	return uuo
+}
+
+// SetActiveTenant sets the "active_tenant" edge to the Tenant entity.
+func (uuo *UserUpdateOne) SetActiveTenant(t *Tenant) *UserUpdateOne {
+	return uuo.SetActiveTenantID(t.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -455,14 +620,14 @@ func (uuo *UserUpdateOne) ClearBookmarks() *UserUpdateOne {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to Bookmark entities by IDs.
-func (uuo *UserUpdateOne) RemoveBookmarkIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveBookmarkIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.RemoveBookmarkIDs(ids...)
 	return uuo
 }
 
 // RemoveBookmarks removes "bookmarks" edges to Bookmark entities.
 func (uuo *UserUpdateOne) RemoveBookmarks(b ...*Bookmark) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -476,14 +641,14 @@ func (uuo *UserUpdateOne) ClearThreads() *UserUpdateOne {
 }
 
 // RemoveThreadIDs removes the "threads" edge to Thread entities by IDs.
-func (uuo *UserUpdateOne) RemoveThreadIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveThreadIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.RemoveThreadIDs(ids...)
 	return uuo
 }
 
 // RemoveThreads removes "threads" edges to Thread entities.
 func (uuo *UserUpdateOne) RemoveThreads(t ...*Thread) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -497,18 +662,45 @@ func (uuo *UserUpdateOne) ClearMessages() *UserUpdateOne {
 }
 
 // RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (uuo *UserUpdateOne) RemoveMessageIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveMessageIDs(ids ...pulid.ID) *UserUpdateOne {
 	uuo.mutation.RemoveMessageIDs(ids...)
 	return uuo
 }
 
 // RemoveMessages removes "messages" edges to Message entities.
 func (uuo *UserUpdateOne) RemoveMessages(m ...*Message) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
 	return uuo.RemoveMessageIDs(ids...)
+}
+
+// ClearTenants clears all "tenants" edges to the Tenant entity.
+func (uuo *UserUpdateOne) ClearTenants() *UserUpdateOne {
+	uuo.mutation.ClearTenants()
+	return uuo
+}
+
+// RemoveTenantIDs removes the "tenants" edge to Tenant entities by IDs.
+func (uuo *UserUpdateOne) RemoveTenantIDs(ids ...pulid.ID) *UserUpdateOne {
+	uuo.mutation.RemoveTenantIDs(ids...)
+	return uuo
+}
+
+// RemoveTenants removes "tenants" edges to Tenant entities.
+func (uuo *UserUpdateOne) RemoveTenants(t ...*Tenant) *UserUpdateOne {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uuo.RemoveTenantIDs(ids...)
+}
+
+// ClearActiveTenant clears the "active_tenant" edge to the Tenant entity.
+func (uuo *UserUpdateOne) ClearActiveTenant() *UserUpdateOne {
+	uuo.mutation.ClearActiveTenant()
+	return uuo
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -551,8 +743,19 @@ func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uuo *UserUpdateOne) check() error {
+	if _, ok := uuo.mutation.ActiveTenantID(); uuo.mutation.ActiveTenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "User.active_tenant"`)
+	}
+	return nil
+}
+
 func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
-	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
+	if err := uuo.check(); err != nil {
+		return _node, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	id, ok := uuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "User.id" for update`)}
@@ -591,7 +794,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -604,7 +807,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -620,7 +823,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -636,7 +839,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -649,7 +852,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -665,7 +868,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -681,7 +884,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -694,7 +897,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -710,7 +913,81 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.TenantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedTenantsIDs(); len(nodes) > 0 && !uuo.mutation.TenantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.TenantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ActiveTenantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ActiveTenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

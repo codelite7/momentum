@@ -43,27 +43,20 @@ spec:
           command:
             - /main
             - run
+            - -wci
+            - {{ .Values.workos.clientId }}
+            - -wak
+            - {{ .Values.workos.apiKey }}
           env:
-            - name: POSTGRES_URI
-              value: {{ .Values.app.postgresql.uri }}
+            {{- if .Values.cluster.enabled }}
+            - name: POSTGRESQL_URI
+              valueFrom:
+                secretKeyRef:
+                  name: "api-cluster-app"
+                  key: uri
+                        {{- end }}
             - name: PORT
               value: {{ .Values.service.port | quote }}
-            - name: SUPERTOKENS_URI
-              value: {{ .Values.supertokens.uri }}
-            - name: SUPERTOKENS_API_KEY
-              value: {{ .Values.supertokens.apiKey }}
-            - name: SUPERTOKENS_API_DOMAIN
-              value: {{ .Values.supertokens.apiDomain }}
-            - name: SUPERTOKENS_WEBSITE_DOMAIN
-              value: {{ .Values.supertokens.websiteDomain }}
-            - name: SUPERTOKENS_API_BASE_PATH
-              value: {{ .Values.supertokens.apiBasePath }}
-            - name: SUPERTOKENS_WEBSITE_BASE_PATH
-              value: {{ .Values.supertokens.websiteBasePath }}
-            - name: SUPERTOKENS_GOOGLE_CLIENT_ID
-              value: {{ .Values.supertokens.google.clientId }}
-            - name: SUPERTOKENS_GOOGLE_CLIENT_SECRET
-              value: {{ .Values.supertokens.google.clientSecret }}
             - name: DEFAULT_AGENTS
               value: {{ .Values.defaultAgents | quote }}
             - name: API_LANGCHAIN_BASE_URL

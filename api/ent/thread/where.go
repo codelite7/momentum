@@ -8,51 +8,51 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.Thread {
+func ID(id pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.Thread {
+func IDEQ(id pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.Thread {
+func IDNEQ(id pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.Thread {
+func IDIn(ids ...pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.Thread {
+func IDNotIn(ids ...pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.Thread {
+func IDGT(id pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.Thread {
+func IDGTE(id pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.Thread {
+func IDLT(id pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.Thread {
+func IDLTE(id pulid.ID) predicate.Thread {
 	return predicate.Thread(sql.FieldLTE(FieldID, id))
 }
 
@@ -66,9 +66,19 @@ func UpdatedAt(v time.Time) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// TenantID applies equality check predicate on the "tenant_id" field. It's identical to TenantIDEQ.
+func TenantID(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldTenantID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldName, v))
+}
+
+// LastViewedAt applies equality check predicate on the "last_viewed_at" field. It's identical to LastViewedAtEQ.
+func LastViewedAt(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldLastViewedAt, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -151,6 +161,76 @@ func UpdatedAtLTE(v time.Time) predicate.Thread {
 	return predicate.Thread(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
+// TenantIDEQ applies the EQ predicate on the "tenant_id" field.
+func TenantIDEQ(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldTenantID, v))
+}
+
+// TenantIDNEQ applies the NEQ predicate on the "tenant_id" field.
+func TenantIDNEQ(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldNEQ(FieldTenantID, v))
+}
+
+// TenantIDIn applies the In predicate on the "tenant_id" field.
+func TenantIDIn(vs ...pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldIn(FieldTenantID, vs...))
+}
+
+// TenantIDNotIn applies the NotIn predicate on the "tenant_id" field.
+func TenantIDNotIn(vs ...pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldNotIn(FieldTenantID, vs...))
+}
+
+// TenantIDGT applies the GT predicate on the "tenant_id" field.
+func TenantIDGT(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldGT(FieldTenantID, v))
+}
+
+// TenantIDGTE applies the GTE predicate on the "tenant_id" field.
+func TenantIDGTE(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldGTE(FieldTenantID, v))
+}
+
+// TenantIDLT applies the LT predicate on the "tenant_id" field.
+func TenantIDLT(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldLT(FieldTenantID, v))
+}
+
+// TenantIDLTE applies the LTE predicate on the "tenant_id" field.
+func TenantIDLTE(v pulid.ID) predicate.Thread {
+	return predicate.Thread(sql.FieldLTE(FieldTenantID, v))
+}
+
+// TenantIDContains applies the Contains predicate on the "tenant_id" field.
+func TenantIDContains(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldContains(FieldTenantID, vc))
+}
+
+// TenantIDHasPrefix applies the HasPrefix predicate on the "tenant_id" field.
+func TenantIDHasPrefix(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldHasPrefix(FieldTenantID, vc))
+}
+
+// TenantIDHasSuffix applies the HasSuffix predicate on the "tenant_id" field.
+func TenantIDHasSuffix(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldHasSuffix(FieldTenantID, vc))
+}
+
+// TenantIDEqualFold applies the EqualFold predicate on the "tenant_id" field.
+func TenantIDEqualFold(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldEqualFold(FieldTenantID, vc))
+}
+
+// TenantIDContainsFold applies the ContainsFold predicate on the "tenant_id" field.
+func TenantIDContainsFold(v pulid.ID) predicate.Thread {
+	vc := string(v)
+	return predicate.Thread(sql.FieldContainsFold(FieldTenantID, vc))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Thread {
 	return predicate.Thread(sql.FieldEQ(FieldName, v))
@@ -216,6 +296,89 @@ func NameContainsFold(v string) predicate.Thread {
 	return predicate.Thread(sql.FieldContainsFold(FieldName, v))
 }
 
+// LastViewedAtEQ applies the EQ predicate on the "last_viewed_at" field.
+func LastViewedAtEQ(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldLastViewedAt, v))
+}
+
+// LastViewedAtNEQ applies the NEQ predicate on the "last_viewed_at" field.
+func LastViewedAtNEQ(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldNEQ(FieldLastViewedAt, v))
+}
+
+// LastViewedAtIn applies the In predicate on the "last_viewed_at" field.
+func LastViewedAtIn(vs ...time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldIn(FieldLastViewedAt, vs...))
+}
+
+// LastViewedAtNotIn applies the NotIn predicate on the "last_viewed_at" field.
+func LastViewedAtNotIn(vs ...time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldNotIn(FieldLastViewedAt, vs...))
+}
+
+// LastViewedAtGT applies the GT predicate on the "last_viewed_at" field.
+func LastViewedAtGT(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldGT(FieldLastViewedAt, v))
+}
+
+// LastViewedAtGTE applies the GTE predicate on the "last_viewed_at" field.
+func LastViewedAtGTE(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldGTE(FieldLastViewedAt, v))
+}
+
+// LastViewedAtLT applies the LT predicate on the "last_viewed_at" field.
+func LastViewedAtLT(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldLT(FieldLastViewedAt, v))
+}
+
+// LastViewedAtLTE applies the LTE predicate on the "last_viewed_at" field.
+func LastViewedAtLTE(v time.Time) predicate.Thread {
+	return predicate.Thread(sql.FieldLTE(FieldLastViewedAt, v))
+}
+
+// ProviderEQ applies the EQ predicate on the "provider" field.
+func ProviderEQ(v Provider) predicate.Thread {
+	return predicate.Thread(sql.FieldEQ(FieldProvider, v))
+}
+
+// ProviderNEQ applies the NEQ predicate on the "provider" field.
+func ProviderNEQ(v Provider) predicate.Thread {
+	return predicate.Thread(sql.FieldNEQ(FieldProvider, v))
+}
+
+// ProviderIn applies the In predicate on the "provider" field.
+func ProviderIn(vs ...Provider) predicate.Thread {
+	return predicate.Thread(sql.FieldIn(FieldProvider, vs...))
+}
+
+// ProviderNotIn applies the NotIn predicate on the "provider" field.
+func ProviderNotIn(vs ...Provider) predicate.Thread {
+	return predicate.Thread(sql.FieldNotIn(FieldProvider, vs...))
+}
+
+// HasTenant applies the HasEdge predicate on the "tenant" edge.
+func HasTenant() predicate.Thread {
+	return predicate.Thread(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, TenantTable, TenantColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTenantWith applies the HasEdge predicate on the "tenant" edge with a given conditions (other predicates).
+func HasTenantWith(preds ...predicate.Tenant) predicate.Thread {
+	return predicate.Thread(func(s *sql.Selector) {
+		step := newTenantStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasCreatedBy applies the HasEdge predicate on the "created_by" edge.
 func HasCreatedBy() predicate.Thread {
 	return predicate.Thread(func(s *sql.Selector) {
@@ -262,67 +425,21 @@ func HasMessagesWith(preds ...predicate.Message) predicate.Thread {
 	})
 }
 
-// HasBookmarks applies the HasEdge predicate on the "bookmarks" edge.
-func HasBookmarks() predicate.Thread {
-	return predicate.Thread(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, BookmarksTable, BookmarksColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasBookmarksWith applies the HasEdge predicate on the "bookmarks" edge with a given conditions (other predicates).
-func HasBookmarksWith(preds ...predicate.Bookmark) predicate.Thread {
-	return predicate.Thread(func(s *sql.Selector) {
-		step := newBookmarksStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasParent applies the HasEdge predicate on the "parent" edge.
 func HasParent() predicate.Thread {
 	return predicate.Thread(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+			sqlgraph.Edge(sqlgraph.O2O, true, ParentTable, ParentColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
 // HasParentWith applies the HasEdge predicate on the "parent" edge with a given conditions (other predicates).
-func HasParentWith(preds ...predicate.Thread) predicate.Thread {
+func HasParentWith(preds ...predicate.Message) predicate.Thread {
 	return predicate.Thread(func(s *sql.Selector) {
 		step := newParentStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasChildren applies the HasEdge predicate on the "children" edge.
-func HasChildren() predicate.Thread {
-	return predicate.Thread(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasChildrenWith applies the HasEdge predicate on the "children" edge with a given conditions (other predicates).
-func HasChildrenWith(preds ...predicate.Thread) predicate.Thread {
-	return predicate.Thread(func(s *sql.Selector) {
-		step := newChildrenStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

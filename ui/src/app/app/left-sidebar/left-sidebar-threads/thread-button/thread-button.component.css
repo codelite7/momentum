@@ -1,7 +1,0 @@
-.button-container ::ng-deep .p-button {
-  width: 100%;
-}
-
-.selected ::ng-deep .p-button {
-  border: solid 1px dodgerblue;
-}

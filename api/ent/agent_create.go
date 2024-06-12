@@ -11,8 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
-	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // AgentCreate is the builder for creating a Agent entity.
@@ -69,32 +68,17 @@ func (ac *AgentCreate) SetAPIKey(s string) *AgentCreate {
 }
 
 // SetID sets the "id" field.
-func (ac *AgentCreate) SetID(u uuid.UUID) *AgentCreate {
-	ac.mutation.SetID(u)
+func (ac *AgentCreate) SetID(pu pulid.ID) *AgentCreate {
+	ac.mutation.SetID(pu)
 	return ac
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (ac *AgentCreate) SetNillableID(u *uuid.UUID) *AgentCreate {
-	if u != nil {
-		ac.SetID(*u)
+func (ac *AgentCreate) SetNillableID(pu *pulid.ID) *AgentCreate {
+	if pu != nil {
+		ac.SetID(*pu)
 	}
 	return ac
-}
-
-// AddResponseIDs adds the "responses" edge to the Response entity by IDs.
-func (ac *AgentCreate) AddResponseIDs(ids ...uuid.UUID) *AgentCreate {
-	ac.mutation.AddResponseIDs(ids...)
-	return ac
-}
-
-// AddResponses adds the "responses" edges to the Response entity.
-func (ac *AgentCreate) AddResponses(r ...*Response) *AgentCreate {
-	ids := make([]uuid.UUID, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
-	}
-	return ac.AddResponseIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -178,7 +162,7 @@ func (ac *AgentCreate) sqlSave(ctx context.Context) (*Agent, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*pulid.ID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -192,7 +176,7 @@ func (ac *AgentCreate) sqlSave(ctx context.Context) (*Agent, error) {
 func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Agent{config: ac.config}
-		_spec = sqlgraph.NewCreateSpec(agent.Table, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(agent.Table, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString))
 	)
 	if id, ok := ac.mutation.ID(); ok {
 		_node.ID = id
@@ -217,22 +201,6 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 	if value, ok := ac.mutation.APIKey(); ok {
 		_spec.SetField(agent.FieldAPIKey, field.TypeString, value)
 		_node.APIKey = value
-	}
-	if nodes := ac.mutation.ResponsesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   agent.ResponsesTable,
-			Columns: []string{agent.ResponsesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

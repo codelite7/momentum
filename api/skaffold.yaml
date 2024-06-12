@@ -15,6 +15,10 @@ build:
             path: Dockerfile
 deploy:
   helm:
+    hooks:
+      before:
+        - host:
+            command: [ "kubectl", "apply", "--server-side", "-f", "https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.23/releases/cnpg-1.23.1.yaml" ]
     releases:
       - name: api
         namespace: api
@@ -26,8 +30,8 @@ deploy:
         imageStrategy:
           helm: {}
         valuesFiles:
-#          - skaffold-values.yaml
-           - skaffold-values-local.yaml
+          - skaffold-values.yaml
+          - skaffold-values-local.yaml
         wait: false
 profiles:
   - name: actions

@@ -6,71 +6,58 @@ package resolvers
 
 import (
 	"context"
-	"strings"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/codelite7/momentum/api/cmd/run/queue"
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
+	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/thread"
-	"github.com/codelite7/momentum/api/river"
+	"github.com/codelite7/momentum/api/ent/user"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
-// CreateMessage is the resolver for the createMessage field.
-func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
-	// if the previous message doesn't have response content, don't allow creation of a new message
-	userUuid, err := getUserUuid(ctx)
+// Bookmarked is the resolver for the bookmarked field.
+func (r *messageResolver) Bookmarked(ctx context.Context, obj *ent.Message) (bool, error) {
+	userInfo := common.GetUserIdFromContext(ctx)
+	_, err := r.client.Bookmark.Query().Where(bookmark.HasMessageWith(message.ID(obj.ID), message.HasSentByWith(user.ID(userInfo.UserId)))).First(ctx)
 	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	input.SentByID = userUuid
-	client := ent.FromContext(ctx)
-	previousMessage, err := client.Message.Query().Where(message.HasThreadWith(thread.ID(input.ThreadID))).Order(message.ByCreatedAt(sql.OrderAsc())).First(ctx)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	if previousMessage != nil {
-		previousResponse, err := previousMessage.Response(ctx)
-		if err != nil {
-			return nil, gqlerror.Errorf(err.Error())
+		if ent.IsNotFound(err) {
+			return false, nil
 		}
-		if previousResponse == nil || previousResponse.Content == "" {
-			return nil, gqlerror.Errorf("previous message response is empty, you must wait for a response before you can send another message")
-		}
+		return false, gqlerror.Wrap(err)
 	}
-
-	message, err := client.Message.Create().SetInput(input).Save(ctx)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	agent, err := common.GetDefaultAgent(ctx, client)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	response, err := client.Response.Create().SetMessage(message).SetSentBy(agent).SetContent("").Save(ctx)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	_, err = river.RiverClient.Insert(ctx, river.MessageArgs{
-		ThreadId:         input.ThreadID,
-		MessageId:        message.ID,
-		ResponseId:       response.ID,
-		MessageContent:   message.Content,
-		MessageCreatedAt: message.CreatedAt,
-	}, nil)
-	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
-	}
-	return client.Message.Get(ctx, message.ID)
+	return true, nil
 }
 
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-type EntTx struct {
-	client *ent.Client
+// CreateMessage is the resolver for the createMessage field.
+func (r *mutationResolver) CreateMessage(ctx context.Context, input ent.CreateMessageInput) (*ent.Message, error) {
+	userInfo := common.GetUserIdFromContext(ctx)
+	client := ent.FromContext(ctx)
+	// if the last message in the thread was sent by a human, return an error, we can't have two human messages in a row
+	previousMessage, err := client.Message.Query().Where(message.HasThreadWith(thread.ID(input.ThreadID))).Order(message.ByCreatedAt(sql.OrderDesc())).First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, gqlerror.Wrap(err)
+	}
+	if previousMessage != nil && previousMessage.MessageType == message.MessageTypeHuman {
+		return nil, gqlerror.Errorf("please wait to get a response before sending another message")
+	}
+	messag, err := client.Message.Create().SetInput(input).SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetMessageType(message.MessageTypeHuman).Save(ctx)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
+	}
+	// lock the message row since we can't pass a tx to neoq, we need it to wait until this tx is committed so that if it
+	// encounters a not found error it means this commit failed and the job should be ignored
+	_, err = client.Message.Query().ForUpdate().Where(message.ID(messag.ID)).FirstID(ctx)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
+	}
+	// enqueue message
+	err = queue.EnqueueMessageEvent(messag.ID)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
+	}
+
+	return messag, nil
 }

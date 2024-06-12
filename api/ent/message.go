@@ -10,48 +10,65 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // Message is the model entity for the Message schema.
 type Message struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID pulid.ID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Content holds the value of the "content" field.
 	Content string `json:"content,omitempty"`
+	// MessageType holds the value of the "message_type" field.
+	MessageType message.MessageType `json:"message_type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MessageQuery when eager-loading is set.
 	Edges           MessageEdges `json:"edges"`
-	thread_messages *uuid.UUID
-	user_messages   *uuid.UUID
+	thread_messages *pulid.ID
+	user_messages   *pulid.ID
 	selectValues    sql.SelectValues
 }
 
 // MessageEdges holds the relations/edges for other nodes in the graph.
 type MessageEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// SentBy holds the value of the sent_by edge.
 	SentBy *User `json:"sent_by,omitempty"`
 	// Thread holds the value of the thread edge.
 	Thread *Thread `json:"thread,omitempty"`
 	// Bookmarks holds the value of the bookmarks edge.
 	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
-	// Response holds the value of the response edge.
-	Response *Response `json:"response,omitempty"`
+	// Child holds the value of the child edge.
+	Child *Thread `json:"child,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
 	totalCount [4]map[string]int
 
 	namedBookmarks map[string][]*Bookmark
+}
+
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e MessageEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
 }
 
 // SentByOrErr returns the SentBy value or an error if the edge
@@ -59,7 +76,7 @@ type MessageEdges struct {
 func (e MessageEdges) SentByOrErr() (*User, error) {
 	if e.SentBy != nil {
 		return e.SentBy, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "sent_by"}
@@ -70,7 +87,7 @@ func (e MessageEdges) SentByOrErr() (*User, error) {
 func (e MessageEdges) ThreadOrErr() (*Thread, error) {
 	if e.Thread != nil {
 		return e.Thread, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: thread.Label}
 	}
 	return nil, &NotLoadedError{edge: "thread"}
@@ -79,21 +96,21 @@ func (e MessageEdges) ThreadOrErr() (*Thread, error) {
 // BookmarksOrErr returns the Bookmarks value or an error if the edge
 // was not loaded in eager-loading.
 func (e MessageEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Bookmarks, nil
 	}
 	return nil, &NotLoadedError{edge: "bookmarks"}
 }
 
-// ResponseOrErr returns the Response value or an error if the edge
+// ChildOrErr returns the Child value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e MessageEdges) ResponseOrErr() (*Response, error) {
-	if e.Response != nil {
-		return e.Response, nil
-	} else if e.loadedTypes[3] {
-		return nil, &NotFoundError{label: response.Label}
+func (e MessageEdges) ChildOrErr() (*Thread, error) {
+	if e.Child != nil {
+		return e.Child, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: thread.Label}
 	}
-	return nil, &NotLoadedError{edge: "response"}
+	return nil, &NotLoadedError{edge: "child"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -101,16 +118,16 @@ func (*Message) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case message.FieldContent:
+		case message.FieldID, message.FieldTenantID:
+			values[i] = new(pulid.ID)
+		case message.FieldContent, message.FieldMessageType:
 			values[i] = new(sql.NullString)
 		case message.FieldCreatedAt, message.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case message.FieldID:
-			values[i] = new(uuid.UUID)
 		case message.ForeignKeys[0]: // thread_messages
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		case message.ForeignKeys[1]: // user_messages
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -127,7 +144,7 @@ func (m *Message) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case message.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*pulid.ID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				m.ID = *value
@@ -144,25 +161,37 @@ func (m *Message) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				m.UpdatedAt = value.Time
 			}
+		case message.FieldTenantID:
+			if value, ok := values[i].(*pulid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
+			} else if value != nil {
+				m.TenantID = *value
+			}
 		case message.FieldContent:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value.Valid {
 				m.Content = value.String
 			}
+		case message.FieldMessageType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field message_type", values[i])
+			} else if value.Valid {
+				m.MessageType = message.MessageType(value.String)
+			}
 		case message.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field thread_messages", values[i])
 			} else if value.Valid {
-				m.thread_messages = new(uuid.UUID)
-				*m.thread_messages = *value.S.(*uuid.UUID)
+				m.thread_messages = new(pulid.ID)
+				*m.thread_messages = *value.S.(*pulid.ID)
 			}
 		case message.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_messages", values[i])
 			} else if value.Valid {
-				m.user_messages = new(uuid.UUID)
-				*m.user_messages = *value.S.(*uuid.UUID)
+				m.user_messages = new(pulid.ID)
+				*m.user_messages = *value.S.(*pulid.ID)
 			}
 		default:
 			m.selectValues.Set(columns[i], values[i])
@@ -175,6 +204,11 @@ func (m *Message) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (m *Message) Value(name string) (ent.Value, error) {
 	return m.selectValues.Get(name)
+}
+
+// QueryTenant queries the "tenant" edge of the Message entity.
+func (m *Message) QueryTenant() *TenantQuery {
+	return NewMessageClient(m.config).QueryTenant(m)
 }
 
 // QuerySentBy queries the "sent_by" edge of the Message entity.
@@ -192,9 +226,9 @@ func (m *Message) QueryBookmarks() *BookmarkQuery {
 	return NewMessageClient(m.config).QueryBookmarks(m)
 }
 
-// QueryResponse queries the "response" edge of the Message entity.
-func (m *Message) QueryResponse() *ResponseQuery {
-	return NewMessageClient(m.config).QueryResponse(m)
+// QueryChild queries the "child" edge of the Message entity.
+func (m *Message) QueryChild() *ThreadQuery {
+	return NewMessageClient(m.config).QueryChild(m)
 }
 
 // Update returns a builder for updating this Message.
@@ -226,8 +260,14 @@ func (m *Message) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	builder.WriteString("tenant_id=")
+	builder.WriteString(fmt.Sprintf("%v", m.TenantID))
+	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(m.Content)
+	builder.WriteString(", ")
+	builder.WriteString("message_type=")
+	builder.WriteString(fmt.Sprintf("%v", m.MessageType))
 	builder.WriteByte(')')
 	return builder.String()
 }

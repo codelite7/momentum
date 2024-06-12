@@ -11,10 +11,9 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // AgentWhereInput represents a where input for filtering Agent queries.
@@ -25,14 +24,14 @@ type AgentWhereInput struct {
 	And        []*AgentWhereInput `json:"and,omitempty"`
 
 	// "id" field predicates.
-	ID      *uuid.UUID  `json:"id,omitempty"`
-	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
-	IDIn    []uuid.UUID `json:"idIn,omitempty"`
-	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
-	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
-	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
-	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
-	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+	ID      *pulid.ID  `json:"id,omitempty"`
+	IDNEQ   *pulid.ID  `json:"idNEQ,omitempty"`
+	IDIn    []pulid.ID `json:"idIn,omitempty"`
+	IDNotIn []pulid.ID `json:"idNotIn,omitempty"`
+	IDGT    *pulid.ID  `json:"idGT,omitempty"`
+	IDGTE   *pulid.ID  `json:"idGTE,omitempty"`
+	IDLT    *pulid.ID  `json:"idLT,omitempty"`
+	IDLTE   *pulid.ID  `json:"idLTE,omitempty"`
 
 	// "created_at" field predicates.
 	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
@@ -83,25 +82,6 @@ type AgentWhereInput struct {
 	ModelHasSuffix    *string  `json:"modelHasSuffix,omitempty"`
 	ModelEqualFold    *string  `json:"modelEqualFold,omitempty"`
 	ModelContainsFold *string  `json:"modelContainsFold,omitempty"`
-
-	// "api_key" field predicates.
-	APIKey             *string  `json:"apiKey,omitempty"`
-	APIKeyNEQ          *string  `json:"apiKeyNEQ,omitempty"`
-	APIKeyIn           []string `json:"apiKeyIn,omitempty"`
-	APIKeyNotIn        []string `json:"apiKeyNotIn,omitempty"`
-	APIKeyGT           *string  `json:"apiKeyGT,omitempty"`
-	APIKeyGTE          *string  `json:"apiKeyGTE,omitempty"`
-	APIKeyLT           *string  `json:"apiKeyLT,omitempty"`
-	APIKeyLTE          *string  `json:"apiKeyLTE,omitempty"`
-	APIKeyContains     *string  `json:"apiKeyContains,omitempty"`
-	APIKeyHasPrefix    *string  `json:"apiKeyHasPrefix,omitempty"`
-	APIKeyHasSuffix    *string  `json:"apiKeyHasSuffix,omitempty"`
-	APIKeyEqualFold    *string  `json:"apiKeyEqualFold,omitempty"`
-	APIKeyContainsFold *string  `json:"apiKeyContainsFold,omitempty"`
-
-	// "responses" edge predicates.
-	HasResponses     *bool                 `json:"hasResponses,omitempty"`
-	HasResponsesWith []*ResponseWhereInput `json:"hasResponsesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -325,64 +305,7 @@ func (i *AgentWhereInput) P() (predicate.Agent, error) {
 	if i.ModelContainsFold != nil {
 		predicates = append(predicates, agent.ModelContainsFold(*i.ModelContainsFold))
 	}
-	if i.APIKey != nil {
-		predicates = append(predicates, agent.APIKeyEQ(*i.APIKey))
-	}
-	if i.APIKeyNEQ != nil {
-		predicates = append(predicates, agent.APIKeyNEQ(*i.APIKeyNEQ))
-	}
-	if len(i.APIKeyIn) > 0 {
-		predicates = append(predicates, agent.APIKeyIn(i.APIKeyIn...))
-	}
-	if len(i.APIKeyNotIn) > 0 {
-		predicates = append(predicates, agent.APIKeyNotIn(i.APIKeyNotIn...))
-	}
-	if i.APIKeyGT != nil {
-		predicates = append(predicates, agent.APIKeyGT(*i.APIKeyGT))
-	}
-	if i.APIKeyGTE != nil {
-		predicates = append(predicates, agent.APIKeyGTE(*i.APIKeyGTE))
-	}
-	if i.APIKeyLT != nil {
-		predicates = append(predicates, agent.APIKeyLT(*i.APIKeyLT))
-	}
-	if i.APIKeyLTE != nil {
-		predicates = append(predicates, agent.APIKeyLTE(*i.APIKeyLTE))
-	}
-	if i.APIKeyContains != nil {
-		predicates = append(predicates, agent.APIKeyContains(*i.APIKeyContains))
-	}
-	if i.APIKeyHasPrefix != nil {
-		predicates = append(predicates, agent.APIKeyHasPrefix(*i.APIKeyHasPrefix))
-	}
-	if i.APIKeyHasSuffix != nil {
-		predicates = append(predicates, agent.APIKeyHasSuffix(*i.APIKeyHasSuffix))
-	}
-	if i.APIKeyEqualFold != nil {
-		predicates = append(predicates, agent.APIKeyEqualFold(*i.APIKeyEqualFold))
-	}
-	if i.APIKeyContainsFold != nil {
-		predicates = append(predicates, agent.APIKeyContainsFold(*i.APIKeyContainsFold))
-	}
 
-	if i.HasResponses != nil {
-		p := agent.HasResponses()
-		if !*i.HasResponses {
-			p = agent.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasResponsesWith) > 0 {
-		with := make([]predicate.Response, 0, len(i.HasResponsesWith))
-		for _, w := range i.HasResponsesWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasResponsesWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, agent.HasResponsesWith(with...))
-	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyAgentWhereInput
@@ -401,14 +324,14 @@ type BookmarkWhereInput struct {
 	And        []*BookmarkWhereInput `json:"and,omitempty"`
 
 	// "id" field predicates.
-	ID      *uuid.UUID  `json:"id,omitempty"`
-	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
-	IDIn    []uuid.UUID `json:"idIn,omitempty"`
-	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
-	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
-	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
-	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
-	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+	ID      *pulid.ID  `json:"id,omitempty"`
+	IDNEQ   *pulid.ID  `json:"idNEQ,omitempty"`
+	IDIn    []pulid.ID `json:"idIn,omitempty"`
+	IDNotIn []pulid.ID `json:"idNotIn,omitempty"`
+	IDGT    *pulid.ID  `json:"idGT,omitempty"`
+	IDGTE   *pulid.ID  `json:"idGTE,omitempty"`
+	IDLT    *pulid.ID  `json:"idLT,omitempty"`
+	IDLTE   *pulid.ID  `json:"idLTE,omitempty"`
 
 	// "created_at" field predicates.
 	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
@@ -434,17 +357,9 @@ type BookmarkWhereInput struct {
 	HasUser     *bool             `json:"hasUser,omitempty"`
 	HasUserWith []*UserWhereInput `json:"hasUserWith,omitempty"`
 
-	// "thread" edge predicates.
-	HasThread     *bool               `json:"hasThread,omitempty"`
-	HasThreadWith []*ThreadWhereInput `json:"hasThreadWith,omitempty"`
-
 	// "message" edge predicates.
 	HasMessage     *bool                `json:"hasMessage,omitempty"`
 	HasMessageWith []*MessageWhereInput `json:"hasMessageWith,omitempty"`
-
-	// "response" edge predicates.
-	HasResponse     *bool                 `json:"hasResponse,omitempty"`
-	HasResponseWith []*ResponseWhereInput `json:"hasResponseWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -609,24 +524,6 @@ func (i *BookmarkWhereInput) P() (predicate.Bookmark, error) {
 		}
 		predicates = append(predicates, bookmark.HasUserWith(with...))
 	}
-	if i.HasThread != nil {
-		p := bookmark.HasThread()
-		if !*i.HasThread {
-			p = bookmark.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasThreadWith) > 0 {
-		with := make([]predicate.Thread, 0, len(i.HasThreadWith))
-		for _, w := range i.HasThreadWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasThreadWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, bookmark.HasThreadWith(with...))
-	}
 	if i.HasMessage != nil {
 		p := bookmark.HasMessage()
 		if !*i.HasMessage {
@@ -644,24 +541,6 @@ func (i *BookmarkWhereInput) P() (predicate.Bookmark, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, bookmark.HasMessageWith(with...))
-	}
-	if i.HasResponse != nil {
-		p := bookmark.HasResponse()
-		if !*i.HasResponse {
-			p = bookmark.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasResponseWith) > 0 {
-		with := make([]predicate.Response, 0, len(i.HasResponseWith))
-		for _, w := range i.HasResponseWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasResponseWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, bookmark.HasResponseWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -681,14 +560,14 @@ type MessageWhereInput struct {
 	And        []*MessageWhereInput `json:"and,omitempty"`
 
 	// "id" field predicates.
-	ID      *uuid.UUID  `json:"id,omitempty"`
-	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
-	IDIn    []uuid.UUID `json:"idIn,omitempty"`
-	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
-	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
-	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
-	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
-	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+	ID      *pulid.ID  `json:"id,omitempty"`
+	IDNEQ   *pulid.ID  `json:"idNEQ,omitempty"`
+	IDIn    []pulid.ID `json:"idIn,omitempty"`
+	IDNotIn []pulid.ID `json:"idNotIn,omitempty"`
+	IDGT    *pulid.ID  `json:"idGT,omitempty"`
+	IDGTE   *pulid.ID  `json:"idGTE,omitempty"`
+	IDLT    *pulid.ID  `json:"idLT,omitempty"`
+	IDLTE   *pulid.ID  `json:"idLTE,omitempty"`
 
 	// "created_at" field predicates.
 	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
@@ -725,6 +604,12 @@ type MessageWhereInput struct {
 	ContentEqualFold    *string  `json:"contentEqualFold,omitempty"`
 	ContentContainsFold *string  `json:"contentContainsFold,omitempty"`
 
+	// "message_type" field predicates.
+	MessageType      *message.MessageType  `json:"messageType,omitempty"`
+	MessageTypeNEQ   *message.MessageType  `json:"messageTypeNEQ,omitempty"`
+	MessageTypeIn    []message.MessageType `json:"messageTypeIn,omitempty"`
+	MessageTypeNotIn []message.MessageType `json:"messageTypeNotIn,omitempty"`
+
 	// "sent_by" edge predicates.
 	HasSentBy     *bool             `json:"hasSentBy,omitempty"`
 	HasSentByWith []*UserWhereInput `json:"hasSentByWith,omitempty"`
@@ -737,9 +622,9 @@ type MessageWhereInput struct {
 	HasBookmarks     *bool                 `json:"hasBookmarks,omitempty"`
 	HasBookmarksWith []*BookmarkWhereInput `json:"hasBookmarksWith,omitempty"`
 
-	// "response" edge predicates.
-	HasResponse     *bool                 `json:"hasResponse,omitempty"`
-	HasResponseWith []*ResponseWhereInput `json:"hasResponseWith,omitempty"`
+	// "child" edge predicates.
+	HasChild     *bool               `json:"hasChild,omitempty"`
+	HasChildWith []*ThreadWhereInput `json:"hasChildWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -924,6 +809,18 @@ func (i *MessageWhereInput) P() (predicate.Message, error) {
 	if i.ContentContainsFold != nil {
 		predicates = append(predicates, message.ContentContainsFold(*i.ContentContainsFold))
 	}
+	if i.MessageType != nil {
+		predicates = append(predicates, message.MessageTypeEQ(*i.MessageType))
+	}
+	if i.MessageTypeNEQ != nil {
+		predicates = append(predicates, message.MessageTypeNEQ(*i.MessageTypeNEQ))
+	}
+	if len(i.MessageTypeIn) > 0 {
+		predicates = append(predicates, message.MessageTypeIn(i.MessageTypeIn...))
+	}
+	if len(i.MessageTypeNotIn) > 0 {
+		predicates = append(predicates, message.MessageTypeNotIn(i.MessageTypeNotIn...))
+	}
 
 	if i.HasSentBy != nil {
 		p := message.HasSentBy()
@@ -979,23 +876,23 @@ func (i *MessageWhereInput) P() (predicate.Message, error) {
 		}
 		predicates = append(predicates, message.HasBookmarksWith(with...))
 	}
-	if i.HasResponse != nil {
-		p := message.HasResponse()
-		if !*i.HasResponse {
+	if i.HasChild != nil {
+		p := message.HasChild()
+		if !*i.HasChild {
 			p = message.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasResponseWith) > 0 {
-		with := make([]predicate.Response, 0, len(i.HasResponseWith))
-		for _, w := range i.HasResponseWith {
+	if len(i.HasChildWith) > 0 {
+		with := make([]predicate.Thread, 0, len(i.HasChildWith))
+		for _, w := range i.HasChildWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasResponseWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasChildWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, message.HasResponseWith(with...))
+		predicates = append(predicates, message.HasChildWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -1007,326 +904,6 @@ func (i *MessageWhereInput) P() (predicate.Message, error) {
 	}
 }
 
-// ResponseWhereInput represents a where input for filtering Response queries.
-type ResponseWhereInput struct {
-	Predicates []predicate.Response  `json:"-"`
-	Not        *ResponseWhereInput   `json:"not,omitempty"`
-	Or         []*ResponseWhereInput `json:"or,omitempty"`
-	And        []*ResponseWhereInput `json:"and,omitempty"`
-
-	// "id" field predicates.
-	ID      *uuid.UUID  `json:"id,omitempty"`
-	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
-	IDIn    []uuid.UUID `json:"idIn,omitempty"`
-	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
-	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
-	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
-	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
-	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
-
-	// "created_at" field predicates.
-	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
-	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
-	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
-	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
-	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
-	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
-	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
-	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
-
-	// "updated_at" field predicates.
-	UpdatedAt      *time.Time  `json:"updatedAt,omitempty"`
-	UpdatedAtNEQ   *time.Time  `json:"updatedAtNEQ,omitempty"`
-	UpdatedAtIn    []time.Time `json:"updatedAtIn,omitempty"`
-	UpdatedAtNotIn []time.Time `json:"updatedAtNotIn,omitempty"`
-	UpdatedAtGT    *time.Time  `json:"updatedAtGT,omitempty"`
-	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
-	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
-	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
-
-	// "content" field predicates.
-	Content             *string  `json:"content,omitempty"`
-	ContentNEQ          *string  `json:"contentNEQ,omitempty"`
-	ContentIn           []string `json:"contentIn,omitempty"`
-	ContentNotIn        []string `json:"contentNotIn,omitempty"`
-	ContentGT           *string  `json:"contentGT,omitempty"`
-	ContentGTE          *string  `json:"contentGTE,omitempty"`
-	ContentLT           *string  `json:"contentLT,omitempty"`
-	ContentLTE          *string  `json:"contentLTE,omitempty"`
-	ContentContains     *string  `json:"contentContains,omitempty"`
-	ContentHasPrefix    *string  `json:"contentHasPrefix,omitempty"`
-	ContentHasSuffix    *string  `json:"contentHasSuffix,omitempty"`
-	ContentIsNil        bool     `json:"contentIsNil,omitempty"`
-	ContentNotNil       bool     `json:"contentNotNil,omitempty"`
-	ContentEqualFold    *string  `json:"contentEqualFold,omitempty"`
-	ContentContainsFold *string  `json:"contentContainsFold,omitempty"`
-
-	// "sent_by" edge predicates.
-	HasSentBy     *bool              `json:"hasSentBy,omitempty"`
-	HasSentByWith []*AgentWhereInput `json:"hasSentByWith,omitempty"`
-
-	// "message" edge predicates.
-	HasMessage     *bool                `json:"hasMessage,omitempty"`
-	HasMessageWith []*MessageWhereInput `json:"hasMessageWith,omitempty"`
-
-	// "bookmarks" edge predicates.
-	HasBookmarks     *bool                 `json:"hasBookmarks,omitempty"`
-	HasBookmarksWith []*BookmarkWhereInput `json:"hasBookmarksWith,omitempty"`
-}
-
-// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
-func (i *ResponseWhereInput) AddPredicates(predicates ...predicate.Response) {
-	i.Predicates = append(i.Predicates, predicates...)
-}
-
-// Filter applies the ResponseWhereInput filter on the ResponseQuery builder.
-func (i *ResponseWhereInput) Filter(q *ResponseQuery) (*ResponseQuery, error) {
-	if i == nil {
-		return q, nil
-	}
-	p, err := i.P()
-	if err != nil {
-		if err == ErrEmptyResponseWhereInput {
-			return q, nil
-		}
-		return nil, err
-	}
-	return q.Where(p), nil
-}
-
-// ErrEmptyResponseWhereInput is returned in case the ResponseWhereInput is empty.
-var ErrEmptyResponseWhereInput = errors.New("ent: empty predicate ResponseWhereInput")
-
-// P returns a predicate for filtering responses.
-// An error is returned if the input is empty or invalid.
-func (i *ResponseWhereInput) P() (predicate.Response, error) {
-	var predicates []predicate.Response
-	if i.Not != nil {
-		p, err := i.Not.P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'not'", err)
-		}
-		predicates = append(predicates, response.Not(p))
-	}
-	switch n := len(i.Or); {
-	case n == 1:
-		p, err := i.Or[0].P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'or'", err)
-		}
-		predicates = append(predicates, p)
-	case n > 1:
-		or := make([]predicate.Response, 0, n)
-		for _, w := range i.Or {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'or'", err)
-			}
-			or = append(or, p)
-		}
-		predicates = append(predicates, response.Or(or...))
-	}
-	switch n := len(i.And); {
-	case n == 1:
-		p, err := i.And[0].P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'and'", err)
-		}
-		predicates = append(predicates, p)
-	case n > 1:
-		and := make([]predicate.Response, 0, n)
-		for _, w := range i.And {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'and'", err)
-			}
-			and = append(and, p)
-		}
-		predicates = append(predicates, response.And(and...))
-	}
-	predicates = append(predicates, i.Predicates...)
-	if i.ID != nil {
-		predicates = append(predicates, response.IDEQ(*i.ID))
-	}
-	if i.IDNEQ != nil {
-		predicates = append(predicates, response.IDNEQ(*i.IDNEQ))
-	}
-	if len(i.IDIn) > 0 {
-		predicates = append(predicates, response.IDIn(i.IDIn...))
-	}
-	if len(i.IDNotIn) > 0 {
-		predicates = append(predicates, response.IDNotIn(i.IDNotIn...))
-	}
-	if i.IDGT != nil {
-		predicates = append(predicates, response.IDGT(*i.IDGT))
-	}
-	if i.IDGTE != nil {
-		predicates = append(predicates, response.IDGTE(*i.IDGTE))
-	}
-	if i.IDLT != nil {
-		predicates = append(predicates, response.IDLT(*i.IDLT))
-	}
-	if i.IDLTE != nil {
-		predicates = append(predicates, response.IDLTE(*i.IDLTE))
-	}
-	if i.CreatedAt != nil {
-		predicates = append(predicates, response.CreatedAtEQ(*i.CreatedAt))
-	}
-	if i.CreatedAtNEQ != nil {
-		predicates = append(predicates, response.CreatedAtNEQ(*i.CreatedAtNEQ))
-	}
-	if len(i.CreatedAtIn) > 0 {
-		predicates = append(predicates, response.CreatedAtIn(i.CreatedAtIn...))
-	}
-	if len(i.CreatedAtNotIn) > 0 {
-		predicates = append(predicates, response.CreatedAtNotIn(i.CreatedAtNotIn...))
-	}
-	if i.CreatedAtGT != nil {
-		predicates = append(predicates, response.CreatedAtGT(*i.CreatedAtGT))
-	}
-	if i.CreatedAtGTE != nil {
-		predicates = append(predicates, response.CreatedAtGTE(*i.CreatedAtGTE))
-	}
-	if i.CreatedAtLT != nil {
-		predicates = append(predicates, response.CreatedAtLT(*i.CreatedAtLT))
-	}
-	if i.CreatedAtLTE != nil {
-		predicates = append(predicates, response.CreatedAtLTE(*i.CreatedAtLTE))
-	}
-	if i.UpdatedAt != nil {
-		predicates = append(predicates, response.UpdatedAtEQ(*i.UpdatedAt))
-	}
-	if i.UpdatedAtNEQ != nil {
-		predicates = append(predicates, response.UpdatedAtNEQ(*i.UpdatedAtNEQ))
-	}
-	if len(i.UpdatedAtIn) > 0 {
-		predicates = append(predicates, response.UpdatedAtIn(i.UpdatedAtIn...))
-	}
-	if len(i.UpdatedAtNotIn) > 0 {
-		predicates = append(predicates, response.UpdatedAtNotIn(i.UpdatedAtNotIn...))
-	}
-	if i.UpdatedAtGT != nil {
-		predicates = append(predicates, response.UpdatedAtGT(*i.UpdatedAtGT))
-	}
-	if i.UpdatedAtGTE != nil {
-		predicates = append(predicates, response.UpdatedAtGTE(*i.UpdatedAtGTE))
-	}
-	if i.UpdatedAtLT != nil {
-		predicates = append(predicates, response.UpdatedAtLT(*i.UpdatedAtLT))
-	}
-	if i.UpdatedAtLTE != nil {
-		predicates = append(predicates, response.UpdatedAtLTE(*i.UpdatedAtLTE))
-	}
-	if i.Content != nil {
-		predicates = append(predicates, response.ContentEQ(*i.Content))
-	}
-	if i.ContentNEQ != nil {
-		predicates = append(predicates, response.ContentNEQ(*i.ContentNEQ))
-	}
-	if len(i.ContentIn) > 0 {
-		predicates = append(predicates, response.ContentIn(i.ContentIn...))
-	}
-	if len(i.ContentNotIn) > 0 {
-		predicates = append(predicates, response.ContentNotIn(i.ContentNotIn...))
-	}
-	if i.ContentGT != nil {
-		predicates = append(predicates, response.ContentGT(*i.ContentGT))
-	}
-	if i.ContentGTE != nil {
-		predicates = append(predicates, response.ContentGTE(*i.ContentGTE))
-	}
-	if i.ContentLT != nil {
-		predicates = append(predicates, response.ContentLT(*i.ContentLT))
-	}
-	if i.ContentLTE != nil {
-		predicates = append(predicates, response.ContentLTE(*i.ContentLTE))
-	}
-	if i.ContentContains != nil {
-		predicates = append(predicates, response.ContentContains(*i.ContentContains))
-	}
-	if i.ContentHasPrefix != nil {
-		predicates = append(predicates, response.ContentHasPrefix(*i.ContentHasPrefix))
-	}
-	if i.ContentHasSuffix != nil {
-		predicates = append(predicates, response.ContentHasSuffix(*i.ContentHasSuffix))
-	}
-	if i.ContentIsNil {
-		predicates = append(predicates, response.ContentIsNil())
-	}
-	if i.ContentNotNil {
-		predicates = append(predicates, response.ContentNotNil())
-	}
-	if i.ContentEqualFold != nil {
-		predicates = append(predicates, response.ContentEqualFold(*i.ContentEqualFold))
-	}
-	if i.ContentContainsFold != nil {
-		predicates = append(predicates, response.ContentContainsFold(*i.ContentContainsFold))
-	}
-
-	if i.HasSentBy != nil {
-		p := response.HasSentBy()
-		if !*i.HasSentBy {
-			p = response.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasSentByWith) > 0 {
-		with := make([]predicate.Agent, 0, len(i.HasSentByWith))
-		for _, w := range i.HasSentByWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasSentByWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, response.HasSentByWith(with...))
-	}
-	if i.HasMessage != nil {
-		p := response.HasMessage()
-		if !*i.HasMessage {
-			p = response.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasMessageWith) > 0 {
-		with := make([]predicate.Message, 0, len(i.HasMessageWith))
-		for _, w := range i.HasMessageWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasMessageWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, response.HasMessageWith(with...))
-	}
-	if i.HasBookmarks != nil {
-		p := response.HasBookmarks()
-		if !*i.HasBookmarks {
-			p = response.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasBookmarksWith) > 0 {
-		with := make([]predicate.Bookmark, 0, len(i.HasBookmarksWith))
-		for _, w := range i.HasBookmarksWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasBookmarksWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, response.HasBookmarksWith(with...))
-	}
-	switch len(predicates) {
-	case 0:
-		return nil, ErrEmptyResponseWhereInput
-	case 1:
-		return predicates[0], nil
-	default:
-		return response.And(predicates...), nil
-	}
-}
-
 // ThreadWhereInput represents a where input for filtering Thread queries.
 type ThreadWhereInput struct {
 	Predicates []predicate.Thread  `json:"-"`
@@ -1335,14 +912,14 @@ type ThreadWhereInput struct {
 	And        []*ThreadWhereInput `json:"and,omitempty"`
 
 	// "id" field predicates.
-	ID      *uuid.UUID  `json:"id,omitempty"`
-	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
-	IDIn    []uuid.UUID `json:"idIn,omitempty"`
-	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
-	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
-	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
-	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
-	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+	ID      *pulid.ID  `json:"id,omitempty"`
+	IDNEQ   *pulid.ID  `json:"idNEQ,omitempty"`
+	IDIn    []pulid.ID `json:"idIn,omitempty"`
+	IDNotIn []pulid.ID `json:"idNotIn,omitempty"`
+	IDGT    *pulid.ID  `json:"idGT,omitempty"`
+	IDGTE   *pulid.ID  `json:"idGTE,omitempty"`
+	IDLT    *pulid.ID  `json:"idLT,omitempty"`
+	IDLTE   *pulid.ID  `json:"idLTE,omitempty"`
 
 	// "created_at" field predicates.
 	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
@@ -1379,6 +956,22 @@ type ThreadWhereInput struct {
 	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
 	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
 
+	// "last_viewed_at" field predicates.
+	LastViewedAt      *time.Time  `json:"lastViewedAt,omitempty"`
+	LastViewedAtNEQ   *time.Time  `json:"lastViewedAtNEQ,omitempty"`
+	LastViewedAtIn    []time.Time `json:"lastViewedAtIn,omitempty"`
+	LastViewedAtNotIn []time.Time `json:"lastViewedAtNotIn,omitempty"`
+	LastViewedAtGT    *time.Time  `json:"lastViewedAtGT,omitempty"`
+	LastViewedAtGTE   *time.Time  `json:"lastViewedAtGTE,omitempty"`
+	LastViewedAtLT    *time.Time  `json:"lastViewedAtLT,omitempty"`
+	LastViewedAtLTE   *time.Time  `json:"lastViewedAtLTE,omitempty"`
+
+	// "provider" field predicates.
+	Provider      *thread.Provider  `json:"provider,omitempty"`
+	ProviderNEQ   *thread.Provider  `json:"providerNEQ,omitempty"`
+	ProviderIn    []thread.Provider `json:"providerIn,omitempty"`
+	ProviderNotIn []thread.Provider `json:"providerNotIn,omitempty"`
+
 	// "created_by" edge predicates.
 	HasCreatedBy     *bool             `json:"hasCreatedBy,omitempty"`
 	HasCreatedByWith []*UserWhereInput `json:"hasCreatedByWith,omitempty"`
@@ -1387,17 +980,9 @@ type ThreadWhereInput struct {
 	HasMessages     *bool                `json:"hasMessages,omitempty"`
 	HasMessagesWith []*MessageWhereInput `json:"hasMessagesWith,omitempty"`
 
-	// "bookmarks" edge predicates.
-	HasBookmarks     *bool                 `json:"hasBookmarks,omitempty"`
-	HasBookmarksWith []*BookmarkWhereInput `json:"hasBookmarksWith,omitempty"`
-
 	// "parent" edge predicates.
-	HasParent     *bool               `json:"hasParent,omitempty"`
-	HasParentWith []*ThreadWhereInput `json:"hasParentWith,omitempty"`
-
-	// "children" edge predicates.
-	HasChildren     *bool               `json:"hasChildren,omitempty"`
-	HasChildrenWith []*ThreadWhereInput `json:"hasChildrenWith,omitempty"`
+	HasParent     *bool                `json:"hasParent,omitempty"`
+	HasParentWith []*MessageWhereInput `json:"hasParentWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1582,6 +1167,42 @@ func (i *ThreadWhereInput) P() (predicate.Thread, error) {
 	if i.NameContainsFold != nil {
 		predicates = append(predicates, thread.NameContainsFold(*i.NameContainsFold))
 	}
+	if i.LastViewedAt != nil {
+		predicates = append(predicates, thread.LastViewedAtEQ(*i.LastViewedAt))
+	}
+	if i.LastViewedAtNEQ != nil {
+		predicates = append(predicates, thread.LastViewedAtNEQ(*i.LastViewedAtNEQ))
+	}
+	if len(i.LastViewedAtIn) > 0 {
+		predicates = append(predicates, thread.LastViewedAtIn(i.LastViewedAtIn...))
+	}
+	if len(i.LastViewedAtNotIn) > 0 {
+		predicates = append(predicates, thread.LastViewedAtNotIn(i.LastViewedAtNotIn...))
+	}
+	if i.LastViewedAtGT != nil {
+		predicates = append(predicates, thread.LastViewedAtGT(*i.LastViewedAtGT))
+	}
+	if i.LastViewedAtGTE != nil {
+		predicates = append(predicates, thread.LastViewedAtGTE(*i.LastViewedAtGTE))
+	}
+	if i.LastViewedAtLT != nil {
+		predicates = append(predicates, thread.LastViewedAtLT(*i.LastViewedAtLT))
+	}
+	if i.LastViewedAtLTE != nil {
+		predicates = append(predicates, thread.LastViewedAtLTE(*i.LastViewedAtLTE))
+	}
+	if i.Provider != nil {
+		predicates = append(predicates, thread.ProviderEQ(*i.Provider))
+	}
+	if i.ProviderNEQ != nil {
+		predicates = append(predicates, thread.ProviderNEQ(*i.ProviderNEQ))
+	}
+	if len(i.ProviderIn) > 0 {
+		predicates = append(predicates, thread.ProviderIn(i.ProviderIn...))
+	}
+	if len(i.ProviderNotIn) > 0 {
+		predicates = append(predicates, thread.ProviderNotIn(i.ProviderNotIn...))
+	}
 
 	if i.HasCreatedBy != nil {
 		p := thread.HasCreatedBy()
@@ -1619,24 +1240,6 @@ func (i *ThreadWhereInput) P() (predicate.Thread, error) {
 		}
 		predicates = append(predicates, thread.HasMessagesWith(with...))
 	}
-	if i.HasBookmarks != nil {
-		p := thread.HasBookmarks()
-		if !*i.HasBookmarks {
-			p = thread.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasBookmarksWith) > 0 {
-		with := make([]predicate.Bookmark, 0, len(i.HasBookmarksWith))
-		for _, w := range i.HasBookmarksWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasBookmarksWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, thread.HasBookmarksWith(with...))
-	}
 	if i.HasParent != nil {
 		p := thread.HasParent()
 		if !*i.HasParent {
@@ -1645,7 +1248,7 @@ func (i *ThreadWhereInput) P() (predicate.Thread, error) {
 		predicates = append(predicates, p)
 	}
 	if len(i.HasParentWith) > 0 {
-		with := make([]predicate.Thread, 0, len(i.HasParentWith))
+		with := make([]predicate.Message, 0, len(i.HasParentWith))
 		for _, w := range i.HasParentWith {
 			p, err := w.P()
 			if err != nil {
@@ -1654,24 +1257,6 @@ func (i *ThreadWhereInput) P() (predicate.Thread, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, thread.HasParentWith(with...))
-	}
-	if i.HasChildren != nil {
-		p := thread.HasChildren()
-		if !*i.HasChildren {
-			p = thread.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasChildrenWith) > 0 {
-		with := make([]predicate.Thread, 0, len(i.HasChildrenWith))
-		for _, w := range i.HasChildrenWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasChildrenWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, thread.HasChildrenWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -1691,14 +1276,14 @@ type UserWhereInput struct {
 	And        []*UserWhereInput `json:"and,omitempty"`
 
 	// "id" field predicates.
-	ID      *uuid.UUID  `json:"id,omitempty"`
-	IDNEQ   *uuid.UUID  `json:"idNEQ,omitempty"`
-	IDIn    []uuid.UUID `json:"idIn,omitempty"`
-	IDNotIn []uuid.UUID `json:"idNotIn,omitempty"`
-	IDGT    *uuid.UUID  `json:"idGT,omitempty"`
-	IDGTE   *uuid.UUID  `json:"idGTE,omitempty"`
-	IDLT    *uuid.UUID  `json:"idLT,omitempty"`
-	IDLTE   *uuid.UUID  `json:"idLTE,omitempty"`
+	ID      *pulid.ID  `json:"id,omitempty"`
+	IDNEQ   *pulid.ID  `json:"idNEQ,omitempty"`
+	IDIn    []pulid.ID `json:"idIn,omitempty"`
+	IDNotIn []pulid.ID `json:"idNotIn,omitempty"`
+	IDGT    *pulid.ID  `json:"idGT,omitempty"`
+	IDGTE   *pulid.ID  `json:"idGTE,omitempty"`
+	IDLT    *pulid.ID  `json:"idLT,omitempty"`
+	IDLTE   *pulid.ID  `json:"idLTE,omitempty"`
 
 	// "created_at" field predicates.
 	CreatedAt      *time.Time  `json:"createdAt,omitempty"`

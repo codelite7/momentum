@@ -12,9 +12,10 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // UserCreate is the builder for creating a User entity.
@@ -58,29 +59,35 @@ func (uc *UserCreate) SetEmail(s string) *UserCreate {
 	return uc
 }
 
+// SetWorkosUserID sets the "workos_user_id" field.
+func (uc *UserCreate) SetWorkosUserID(s string) *UserCreate {
+	uc.mutation.SetWorkosUserID(s)
+	return uc
+}
+
 // SetID sets the "id" field.
-func (uc *UserCreate) SetID(u uuid.UUID) *UserCreate {
-	uc.mutation.SetID(u)
+func (uc *UserCreate) SetID(pu pulid.ID) *UserCreate {
+	uc.mutation.SetID(pu)
 	return uc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
-	if u != nil {
-		uc.SetID(*u)
+func (uc *UserCreate) SetNillableID(pu *pulid.ID) *UserCreate {
+	if pu != nil {
+		uc.SetID(*pu)
 	}
 	return uc
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (uc *UserCreate) AddBookmarkIDs(ids ...uuid.UUID) *UserCreate {
+func (uc *UserCreate) AddBookmarkIDs(ids ...pulid.ID) *UserCreate {
 	uc.mutation.AddBookmarkIDs(ids...)
 	return uc
 }
 
 // AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
 func (uc *UserCreate) AddBookmarks(b ...*Bookmark) *UserCreate {
-	ids := make([]uuid.UUID, len(b))
+	ids := make([]pulid.ID, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
@@ -88,14 +95,14 @@ func (uc *UserCreate) AddBookmarks(b ...*Bookmark) *UserCreate {
 }
 
 // AddThreadIDs adds the "threads" edge to the Thread entity by IDs.
-func (uc *UserCreate) AddThreadIDs(ids ...uuid.UUID) *UserCreate {
+func (uc *UserCreate) AddThreadIDs(ids ...pulid.ID) *UserCreate {
 	uc.mutation.AddThreadIDs(ids...)
 	return uc
 }
 
 // AddThreads adds the "threads" edges to the Thread entity.
 func (uc *UserCreate) AddThreads(t ...*Thread) *UserCreate {
-	ids := make([]uuid.UUID, len(t))
+	ids := make([]pulid.ID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
 	}
@@ -103,18 +110,44 @@ func (uc *UserCreate) AddThreads(t ...*Thread) *UserCreate {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (uc *UserCreate) AddMessageIDs(ids ...uuid.UUID) *UserCreate {
+func (uc *UserCreate) AddMessageIDs(ids ...pulid.ID) *UserCreate {
 	uc.mutation.AddMessageIDs(ids...)
 	return uc
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (uc *UserCreate) AddMessages(m ...*Message) *UserCreate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
 	return uc.AddMessageIDs(ids...)
+}
+
+// AddTenantIDs adds the "tenants" edge to the Tenant entity by IDs.
+func (uc *UserCreate) AddTenantIDs(ids ...pulid.ID) *UserCreate {
+	uc.mutation.AddTenantIDs(ids...)
+	return uc
+}
+
+// AddTenants adds the "tenants" edges to the Tenant entity.
+func (uc *UserCreate) AddTenants(t ...*Tenant) *UserCreate {
+	ids := make([]pulid.ID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uc.AddTenantIDs(ids...)
+}
+
+// SetActiveTenantID sets the "active_tenant" edge to the Tenant entity by ID.
+func (uc *UserCreate) SetActiveTenantID(id pulid.ID) *UserCreate {
+	uc.mutation.SetActiveTenantID(id)
+	return uc
+}
+
+// SetActiveTenant sets the "active_tenant" edge to the Tenant entity.
+func (uc *UserCreate) SetActiveTenant(t *Tenant) *UserCreate {
+	return uc.SetActiveTenantID(t.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -177,6 +210,20 @@ func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "User.email"`)}
 	}
+	if _, ok := uc.mutation.WorkosUserID(); !ok {
+		return &ValidationError{Name: "workos_user_id", err: errors.New(`ent: missing required field "User.workos_user_id"`)}
+	}
+	if v, ok := uc.mutation.WorkosUserID(); ok {
+		if err := user.WorkosUserIDValidator(v); err != nil {
+			return &ValidationError{Name: "workos_user_id", err: fmt.Errorf(`ent: validator failed for field "User.workos_user_id": %w`, err)}
+		}
+	}
+	if len(uc.mutation.TenantsIDs()) == 0 {
+		return &ValidationError{Name: "tenants", err: errors.New(`ent: missing required edge "User.tenants"`)}
+	}
+	if _, ok := uc.mutation.ActiveTenantID(); !ok {
+		return &ValidationError{Name: "active_tenant", err: errors.New(`ent: missing required edge "User.active_tenant"`)}
+	}
 	return nil
 }
 
@@ -192,7 +239,7 @@ func (uc *UserCreate) sqlSave(ctx context.Context) (*User, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*pulid.ID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -206,7 +253,7 @@ func (uc *UserCreate) sqlSave(ctx context.Context) (*User, error) {
 func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	var (
 		_node = &User{config: uc.config}
-		_spec = sqlgraph.NewCreateSpec(user.Table, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(user.Table, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	)
 	if id, ok := uc.mutation.ID(); ok {
 		_node.ID = id
@@ -224,6 +271,10 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 		_node.Email = value
 	}
+	if value, ok := uc.mutation.WorkosUserID(); ok {
+		_spec.SetField(user.FieldWorkosUserID, field.TypeString, value)
+		_node.WorkosUserID = value
+	}
 	if nodes := uc.mutation.BookmarksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -232,7 +283,7 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Columns: []string{user.BookmarksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -248,7 +299,7 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Columns: []string{user.ThreadsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -264,12 +315,45 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Columns: []string{user.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.TenantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.TenantsTable,
+			Columns: user.TenantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ActiveTenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   user.ActiveTenantTable,
+			Columns: []string{user.ActiveTenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_active_tenant = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

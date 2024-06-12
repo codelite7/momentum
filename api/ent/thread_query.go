@@ -8,35 +8,33 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // ThreadQuery is the builder for querying Thread entities.
 type ThreadQuery struct {
 	config
-	ctx                *QueryContext
-	order              []thread.OrderOption
-	inters             []Interceptor
-	predicates         []predicate.Thread
-	withCreatedBy      *UserQuery
-	withMessages       *MessageQuery
-	withBookmarks      *BookmarkQuery
-	withParent         *ThreadQuery
-	withChildren       *ThreadQuery
-	withFKs            bool
-	modifiers          []func(*sql.Selector)
-	loadTotal          []func(context.Context, []*Thread) error
-	withNamedMessages  map[string]*MessageQuery
-	withNamedBookmarks map[string]*BookmarkQuery
-	withNamedChildren  map[string]*ThreadQuery
+	ctx               *QueryContext
+	order             []thread.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.Thread
+	withTenant        *TenantQuery
+	withCreatedBy     *UserQuery
+	withMessages      *MessageQuery
+	withParent        *MessageQuery
+	withFKs           bool
+	loadTotal         []func(context.Context, []*Thread) error
+	modifiers         []func(*sql.Selector)
+	withNamedMessages map[string]*MessageQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -71,6 +69,28 @@ func (tq *ThreadQuery) Unique(unique bool) *ThreadQuery {
 func (tq *ThreadQuery) Order(o ...thread.OrderOption) *ThreadQuery {
 	tq.order = append(tq.order, o...)
 	return tq
+}
+
+// QueryTenant chains the current query on the "tenant" edge.
+func (tq *ThreadQuery) QueryTenant() *TenantQuery {
+	query := (&TenantClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(thread.Table, thread.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, thread.TenantTable, thread.TenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryCreatedBy chains the current query on the "created_by" edge.
@@ -117,31 +137,9 @@ func (tq *ThreadQuery) QueryMessages() *MessageQuery {
 	return query
 }
 
-// QueryBookmarks chains the current query on the "bookmarks" edge.
-func (tq *ThreadQuery) QueryBookmarks() *BookmarkQuery {
-	query := (&BookmarkClient{config: tq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(thread.Table, thread.FieldID, selector),
-			sqlgraph.To(bookmark.Table, bookmark.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, thread.BookmarksTable, thread.BookmarksColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryParent chains the current query on the "parent" edge.
-func (tq *ThreadQuery) QueryParent() *ThreadQuery {
-	query := (&ThreadClient{config: tq.config}).Query()
+func (tq *ThreadQuery) QueryParent() *MessageQuery {
+	query := (&MessageClient{config: tq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -152,30 +150,8 @@ func (tq *ThreadQuery) QueryParent() *ThreadQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(thread.Table, thread.FieldID, selector),
-			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, thread.ParentTable, thread.ParentColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryChildren chains the current query on the "children" edge.
-func (tq *ThreadQuery) QueryChildren() *ThreadQuery {
-	query := (&ThreadClient{config: tq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := tq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := tq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(thread.Table, thread.FieldID, selector),
-			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, thread.ChildrenTable, thread.ChildrenColumn),
+			sqlgraph.To(message.Table, message.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, thread.ParentTable, thread.ParentColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -207,8 +183,8 @@ func (tq *ThreadQuery) FirstX(ctx context.Context) *Thread {
 
 // FirstID returns the first Thread ID from the query.
 // Returns a *NotFoundError when no Thread ID was found.
-func (tq *ThreadQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (tq *ThreadQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = tq.Limit(1).IDs(setContextOp(ctx, tq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -220,7 +196,7 @@ func (tq *ThreadQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (tq *ThreadQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (tq *ThreadQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := tq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -258,8 +234,8 @@ func (tq *ThreadQuery) OnlyX(ctx context.Context) *Thread {
 // OnlyID is like Only, but returns the only Thread ID in the query.
 // Returns a *NotSingularError when more than one Thread ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (tq *ThreadQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (tq *ThreadQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = tq.Limit(2).IDs(setContextOp(ctx, tq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -275,7 +251,7 @@ func (tq *ThreadQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (tq *ThreadQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (tq *ThreadQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := tq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -303,7 +279,7 @@ func (tq *ThreadQuery) AllX(ctx context.Context) []*Thread {
 }
 
 // IDs executes the query and returns a list of Thread IDs.
-func (tq *ThreadQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (tq *ThreadQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if tq.ctx.Unique == nil && tq.path != nil {
 		tq.Unique(true)
 	}
@@ -315,7 +291,7 @@ func (tq *ThreadQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (tq *ThreadQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (tq *ThreadQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := tq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -375,15 +351,25 @@ func (tq *ThreadQuery) Clone() *ThreadQuery {
 		order:         append([]thread.OrderOption{}, tq.order...),
 		inters:        append([]Interceptor{}, tq.inters...),
 		predicates:    append([]predicate.Thread{}, tq.predicates...),
+		withTenant:    tq.withTenant.Clone(),
 		withCreatedBy: tq.withCreatedBy.Clone(),
 		withMessages:  tq.withMessages.Clone(),
-		withBookmarks: tq.withBookmarks.Clone(),
 		withParent:    tq.withParent.Clone(),
-		withChildren:  tq.withChildren.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
 	}
+}
+
+// WithTenant tells the query-builder to eager-load the nodes that are connected to
+// the "tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *ThreadQuery) WithTenant(opts ...func(*TenantQuery)) *ThreadQuery {
+	query := (&TenantClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withTenant = query
+	return tq
 }
 
 // WithCreatedBy tells the query-builder to eager-load the nodes that are connected to
@@ -408,36 +394,14 @@ func (tq *ThreadQuery) WithMessages(opts ...func(*MessageQuery)) *ThreadQuery {
 	return tq
 }
 
-// WithBookmarks tells the query-builder to eager-load the nodes that are connected to
-// the "bookmarks" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *ThreadQuery) WithBookmarks(opts ...func(*BookmarkQuery)) *ThreadQuery {
-	query := (&BookmarkClient{config: tq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withBookmarks = query
-	return tq
-}
-
 // WithParent tells the query-builder to eager-load the nodes that are connected to
 // the "parent" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *ThreadQuery) WithParent(opts ...func(*ThreadQuery)) *ThreadQuery {
-	query := (&ThreadClient{config: tq.config}).Query()
+func (tq *ThreadQuery) WithParent(opts ...func(*MessageQuery)) *ThreadQuery {
+	query := (&MessageClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
 	tq.withParent = query
-	return tq
-}
-
-// WithChildren tells the query-builder to eager-load the nodes that are connected to
-// the "children" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *ThreadQuery) WithChildren(opts ...func(*ThreadQuery)) *ThreadQuery {
-	query := (&ThreadClient{config: tq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	tq.withChildren = query
 	return tq
 }
 
@@ -520,12 +484,11 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 		nodes       = []*Thread{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [4]bool{
+			tq.withTenant != nil,
 			tq.withCreatedBy != nil,
 			tq.withMessages != nil,
-			tq.withBookmarks != nil,
 			tq.withParent != nil,
-			tq.withChildren != nil,
 		}
 	)
 	if tq.withCreatedBy != nil || tq.withParent != nil {
@@ -555,6 +518,12 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := tq.withTenant; query != nil {
+		if err := tq.loadTenant(ctx, query, nodes, nil,
+			func(n *Thread, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := tq.withCreatedBy; query != nil {
 		if err := tq.loadCreatedBy(ctx, query, nodes, nil,
 			func(n *Thread, e *User) { n.Edges.CreatedBy = e }); err != nil {
@@ -568,23 +537,9 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 			return nil, err
 		}
 	}
-	if query := tq.withBookmarks; query != nil {
-		if err := tq.loadBookmarks(ctx, query, nodes,
-			func(n *Thread) { n.Edges.Bookmarks = []*Bookmark{} },
-			func(n *Thread, e *Bookmark) { n.Edges.Bookmarks = append(n.Edges.Bookmarks, e) }); err != nil {
-			return nil, err
-		}
-	}
 	if query := tq.withParent; query != nil {
 		if err := tq.loadParent(ctx, query, nodes, nil,
-			func(n *Thread, e *Thread) { n.Edges.Parent = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := tq.withChildren; query != nil {
-		if err := tq.loadChildren(ctx, query, nodes,
-			func(n *Thread) { n.Edges.Children = []*Thread{} },
-			func(n *Thread, e *Thread) { n.Edges.Children = append(n.Edges.Children, e) }); err != nil {
+			func(n *Thread, e *Message) { n.Edges.Parent = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -592,20 +547,6 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 		if err := tq.loadMessages(ctx, query, nodes,
 			func(n *Thread) { n.appendNamedMessages(name) },
 			func(n *Thread, e *Message) { n.appendNamedMessages(name, e) }); err != nil {
-			return nil, err
-		}
-	}
-	for name, query := range tq.withNamedBookmarks {
-		if err := tq.loadBookmarks(ctx, query, nodes,
-			func(n *Thread) { n.appendNamedBookmarks(name) },
-			func(n *Thread, e *Bookmark) { n.appendNamedBookmarks(name, e) }); err != nil {
-			return nil, err
-		}
-	}
-	for name, query := range tq.withNamedChildren {
-		if err := tq.loadChildren(ctx, query, nodes,
-			func(n *Thread) { n.appendNamedChildren(name) },
-			func(n *Thread, e *Thread) { n.appendNamedChildren(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -617,9 +558,38 @@ func (tq *ThreadQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Threa
 	return nodes, nil
 }
 
+func (tq *ThreadQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Tenant)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Thread)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (tq *ThreadQuery) loadCreatedBy(ctx context.Context, query *UserQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *User)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Thread)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Thread)
 	for i := range nodes {
 		if nodes[i].user_threads == nil {
 			continue
@@ -651,7 +621,7 @@ func (tq *ThreadQuery) loadCreatedBy(ctx context.Context, query *UserQuery, node
 }
 func (tq *ThreadQuery) loadMessages(ctx context.Context, query *MessageQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Message)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Thread)
+	nodeids := make(map[pulid.ID]*Thread)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -680,45 +650,14 @@ func (tq *ThreadQuery) loadMessages(ctx context.Context, query *MessageQuery, no
 	}
 	return nil
 }
-func (tq *ThreadQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Bookmark)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Thread)
+func (tq *ThreadQuery) loadParent(ctx context.Context, query *MessageQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Message)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Thread)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.Bookmark(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(thread.BookmarksColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.thread_bookmarks
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "thread_bookmarks" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "thread_bookmarks" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (tq *ThreadQuery) loadParent(ctx context.Context, query *ThreadQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Thread)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Thread)
-	for i := range nodes {
-		if nodes[i].thread_children == nil {
+		if nodes[i].message_child == nil {
 			continue
 		}
-		fk := *nodes[i].thread_children
+		fk := *nodes[i].message_child
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -727,7 +666,7 @@ func (tq *ThreadQuery) loadParent(ctx context.Context, query *ThreadQuery, nodes
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(thread.IDIn(ids...))
+	query.Where(message.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -735,42 +674,11 @@ func (tq *ThreadQuery) loadParent(ctx context.Context, query *ThreadQuery, nodes
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "thread_children" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "message_child" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
-	}
-	return nil
-}
-func (tq *ThreadQuery) loadChildren(ctx context.Context, query *ThreadQuery, nodes []*Thread, init func(*Thread), assign func(*Thread, *Thread)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Thread)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.Thread(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(thread.ChildrenColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.thread_children
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "thread_children" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "thread_children" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
 	}
 	return nil
 }
@@ -788,7 +696,7 @@ func (tq *ThreadQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (tq *ThreadQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(thread.Table, thread.Columns, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(thread.Table, thread.Columns, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString))
 	_spec.From = tq.sql
 	if unique := tq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -802,6 +710,9 @@ func (tq *ThreadQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != thread.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if tq.withTenant != nil {
+			_spec.Node.AddColumnOnce(thread.FieldTenantID)
 		}
 	}
 	if ps := tq.predicates; len(ps) > 0 {
@@ -842,6 +753,9 @@ func (tq *ThreadQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	if tq.ctx.Unique != nil && *tq.ctx.Unique {
 		selector.Distinct()
 	}
+	for _, m := range tq.modifiers {
+		m(selector)
+	}
 	for _, p := range tq.predicates {
 		p(selector)
 	}
@@ -859,6 +773,32 @@ func (tq *ThreadQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
+// ForUpdate locks the selected rows against concurrent updates, and prevent them from being
+// updated, deleted or "selected ... for update" by other sessions, until the transaction is
+// either committed or rolled-back.
+func (tq *ThreadQuery) ForUpdate(opts ...sql.LockOption) *ThreadQuery {
+	if tq.driver.Dialect() == dialect.Postgres {
+		tq.Unique(false)
+	}
+	tq.modifiers = append(tq.modifiers, func(s *sql.Selector) {
+		s.ForUpdate(opts...)
+	})
+	return tq
+}
+
+// ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
+// on any rows that are read. Other sessions can read the rows, but cannot modify them
+// until your transaction commits.
+func (tq *ThreadQuery) ForShare(opts ...sql.LockOption) *ThreadQuery {
+	if tq.driver.Dialect() == dialect.Postgres {
+		tq.Unique(false)
+	}
+	tq.modifiers = append(tq.modifiers, func(s *sql.Selector) {
+		s.ForShare(opts...)
+	})
+	return tq
+}
+
 // WithNamedMessages tells the query-builder to eager-load the nodes that are connected to the "messages"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
 func (tq *ThreadQuery) WithNamedMessages(name string, opts ...func(*MessageQuery)) *ThreadQuery {
@@ -870,34 +810,6 @@ func (tq *ThreadQuery) WithNamedMessages(name string, opts ...func(*MessageQuery
 		tq.withNamedMessages = make(map[string]*MessageQuery)
 	}
 	tq.withNamedMessages[name] = query
-	return tq
-}
-
-// WithNamedBookmarks tells the query-builder to eager-load the nodes that are connected to the "bookmarks"
-// edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (tq *ThreadQuery) WithNamedBookmarks(name string, opts ...func(*BookmarkQuery)) *ThreadQuery {
-	query := (&BookmarkClient{config: tq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	if tq.withNamedBookmarks == nil {
-		tq.withNamedBookmarks = make(map[string]*BookmarkQuery)
-	}
-	tq.withNamedBookmarks[name] = query
-	return tq
-}
-
-// WithNamedChildren tells the query-builder to eager-load the nodes that are connected to the "children"
-// edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (tq *ThreadQuery) WithNamedChildren(name string, opts ...func(*ThreadQuery)) *ThreadQuery {
-	query := (&ThreadClient{config: tq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	if tq.withNamedChildren == nil {
-		tq.withNamedChildren = make(map[string]*ThreadQuery)
-	}
-	tq.withNamedChildren[name] = query
 	return tq
 }
 

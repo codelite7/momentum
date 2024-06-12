@@ -9,51 +9,66 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // Thread is the model entity for the Thread schema.
 type Thread struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID pulid.ID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID pulid.ID `json:"tenant_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// LastViewedAt holds the value of the "last_viewed_at" field.
+	LastViewedAt time.Time `json:"last_viewed_at,omitempty"`
+	// Provider holds the value of the "provider" field.
+	Provider thread.Provider `json:"provider,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ThreadQuery when eager-loading is set.
-	Edges           ThreadEdges `json:"edges"`
-	thread_children *uuid.UUID
-	user_threads    *uuid.UUID
-	selectValues    sql.SelectValues
+	Edges         ThreadEdges `json:"edges"`
+	message_child *pulid.ID
+	user_threads  *pulid.ID
+	selectValues  sql.SelectValues
 }
 
 // ThreadEdges holds the relations/edges for other nodes in the graph.
 type ThreadEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// CreatedBy holds the value of the created_by edge.
 	CreatedBy *User `json:"created_by,omitempty"`
 	// Messages holds the value of the messages edge.
 	Messages []*Message `json:"messages,omitempty"`
-	// Bookmarks holds the value of the bookmarks edge.
-	Bookmarks []*Bookmark `json:"bookmarks,omitempty"`
 	// Parent holds the value of the parent edge.
-	Parent *Thread `json:"parent,omitempty"`
-	// Children holds the value of the children edge.
-	Children []*Thread `json:"children,omitempty"`
+	Parent *Message `json:"parent,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [3]map[string]int
 
-	namedMessages  map[string][]*Message
-	namedBookmarks map[string][]*Bookmark
-	namedChildren  map[string][]*Thread
+	namedMessages map[string][]*Message
+}
+
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ThreadEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
 }
 
 // CreatedByOrErr returns the CreatedBy value or an error if the edge
@@ -61,7 +76,7 @@ type ThreadEdges struct {
 func (e ThreadEdges) CreatedByOrErr() (*User, error) {
 	if e.CreatedBy != nil {
 		return e.CreatedBy, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "created_by"}
@@ -70,39 +85,21 @@ func (e ThreadEdges) CreatedByOrErr() (*User, error) {
 // MessagesOrErr returns the Messages value or an error if the edge
 // was not loaded in eager-loading.
 func (e ThreadEdges) MessagesOrErr() ([]*Message, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Messages, nil
 	}
 	return nil, &NotLoadedError{edge: "messages"}
 }
 
-// BookmarksOrErr returns the Bookmarks value or an error if the edge
-// was not loaded in eager-loading.
-func (e ThreadEdges) BookmarksOrErr() ([]*Bookmark, error) {
-	if e.loadedTypes[2] {
-		return e.Bookmarks, nil
-	}
-	return nil, &NotLoadedError{edge: "bookmarks"}
-}
-
 // ParentOrErr returns the Parent value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ThreadEdges) ParentOrErr() (*Thread, error) {
+func (e ThreadEdges) ParentOrErr() (*Message, error) {
 	if e.Parent != nil {
 		return e.Parent, nil
 	} else if e.loadedTypes[3] {
-		return nil, &NotFoundError{label: thread.Label}
+		return nil, &NotFoundError{label: message.Label}
 	}
 	return nil, &NotLoadedError{edge: "parent"}
-}
-
-// ChildrenOrErr returns the Children value or an error if the edge
-// was not loaded in eager-loading.
-func (e ThreadEdges) ChildrenOrErr() ([]*Thread, error) {
-	if e.loadedTypes[4] {
-		return e.Children, nil
-	}
-	return nil, &NotLoadedError{edge: "children"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -110,16 +107,16 @@ func (*Thread) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case thread.FieldName:
+		case thread.FieldID, thread.FieldTenantID:
+			values[i] = new(pulid.ID)
+		case thread.FieldName, thread.FieldProvider:
 			values[i] = new(sql.NullString)
-		case thread.FieldCreatedAt, thread.FieldUpdatedAt:
+		case thread.FieldCreatedAt, thread.FieldUpdatedAt, thread.FieldLastViewedAt:
 			values[i] = new(sql.NullTime)
-		case thread.FieldID:
-			values[i] = new(uuid.UUID)
-		case thread.ForeignKeys[0]: // thread_children
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case thread.ForeignKeys[0]: // message_child
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		case thread.ForeignKeys[1]: // user_threads
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+			values[i] = &sql.NullScanner{S: new(pulid.ID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -136,7 +133,7 @@ func (t *Thread) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case thread.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*pulid.ID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				t.ID = *value
@@ -153,25 +150,43 @@ func (t *Thread) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.UpdatedAt = value.Time
 			}
+		case thread.FieldTenantID:
+			if value, ok := values[i].(*pulid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
+			} else if value != nil {
+				t.TenantID = *value
+			}
 		case thread.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				t.Name = value.String
 			}
+		case thread.FieldLastViewedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_viewed_at", values[i])
+			} else if value.Valid {
+				t.LastViewedAt = value.Time
+			}
+		case thread.FieldProvider:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field provider", values[i])
+			} else if value.Valid {
+				t.Provider = thread.Provider(value.String)
+			}
 		case thread.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field thread_children", values[i])
+				return fmt.Errorf("unexpected type %T for field message_child", values[i])
 			} else if value.Valid {
-				t.thread_children = new(uuid.UUID)
-				*t.thread_children = *value.S.(*uuid.UUID)
+				t.message_child = new(pulid.ID)
+				*t.message_child = *value.S.(*pulid.ID)
 			}
 		case thread.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_threads", values[i])
 			} else if value.Valid {
-				t.user_threads = new(uuid.UUID)
-				*t.user_threads = *value.S.(*uuid.UUID)
+				t.user_threads = new(pulid.ID)
+				*t.user_threads = *value.S.(*pulid.ID)
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
@@ -186,6 +201,11 @@ func (t *Thread) Value(name string) (ent.Value, error) {
 	return t.selectValues.Get(name)
 }
 
+// QueryTenant queries the "tenant" edge of the Thread entity.
+func (t *Thread) QueryTenant() *TenantQuery {
+	return NewThreadClient(t.config).QueryTenant(t)
+}
+
 // QueryCreatedBy queries the "created_by" edge of the Thread entity.
 func (t *Thread) QueryCreatedBy() *UserQuery {
 	return NewThreadClient(t.config).QueryCreatedBy(t)
@@ -196,19 +216,9 @@ func (t *Thread) QueryMessages() *MessageQuery {
 	return NewThreadClient(t.config).QueryMessages(t)
 }
 
-// QueryBookmarks queries the "bookmarks" edge of the Thread entity.
-func (t *Thread) QueryBookmarks() *BookmarkQuery {
-	return NewThreadClient(t.config).QueryBookmarks(t)
-}
-
 // QueryParent queries the "parent" edge of the Thread entity.
-func (t *Thread) QueryParent() *ThreadQuery {
+func (t *Thread) QueryParent() *MessageQuery {
 	return NewThreadClient(t.config).QueryParent(t)
-}
-
-// QueryChildren queries the "children" edge of the Thread entity.
-func (t *Thread) QueryChildren() *ThreadQuery {
-	return NewThreadClient(t.config).QueryChildren(t)
 }
 
 // Update returns a builder for updating this Thread.
@@ -240,8 +250,17 @@ func (t *Thread) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(t.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	builder.WriteString("tenant_id=")
+	builder.WriteString(fmt.Sprintf("%v", t.TenantID))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(t.Name)
+	builder.WriteString(", ")
+	builder.WriteString("last_viewed_at=")
+	builder.WriteString(t.LastViewedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("provider=")
+	builder.WriteString(fmt.Sprintf("%v", t.Provider))
 	builder.WriteByte(')')
 	return builder.String()
 }
@@ -267,54 +286,6 @@ func (t *Thread) appendNamedMessages(name string, edges ...*Message) {
 		t.Edges.namedMessages[name] = []*Message{}
 	} else {
 		t.Edges.namedMessages[name] = append(t.Edges.namedMessages[name], edges...)
-	}
-}
-
-// NamedBookmarks returns the Bookmarks named value or an error if the edge was not
-// loaded in eager-loading with this name.
-func (t *Thread) NamedBookmarks(name string) ([]*Bookmark, error) {
-	if t.Edges.namedBookmarks == nil {
-		return nil, &NotLoadedError{edge: name}
-	}
-	nodes, ok := t.Edges.namedBookmarks[name]
-	if !ok {
-		return nil, &NotLoadedError{edge: name}
-	}
-	return nodes, nil
-}
-
-func (t *Thread) appendNamedBookmarks(name string, edges ...*Bookmark) {
-	if t.Edges.namedBookmarks == nil {
-		t.Edges.namedBookmarks = make(map[string][]*Bookmark)
-	}
-	if len(edges) == 0 {
-		t.Edges.namedBookmarks[name] = []*Bookmark{}
-	} else {
-		t.Edges.namedBookmarks[name] = append(t.Edges.namedBookmarks[name], edges...)
-	}
-}
-
-// NamedChildren returns the Children named value or an error if the edge was not
-// loaded in eager-loading with this name.
-func (t *Thread) NamedChildren(name string) ([]*Thread, error) {
-	if t.Edges.namedChildren == nil {
-		return nil, &NotLoadedError{edge: name}
-	}
-	nodes, ok := t.Edges.namedChildren[name]
-	if !ok {
-		return nil, &NotLoadedError{edge: name}
-	}
-	return nodes, nil
-}
-
-func (t *Thread) appendNamedChildren(name string, edges ...*Thread) {
-	if t.Edges.namedChildren == nil {
-		t.Edges.namedChildren = make(map[string][]*Thread)
-	}
-	if len(edges) == 0 {
-		t.Edges.namedChildren[name] = []*Thread{}
-	} else {
-		t.Edges.namedChildren[name] = append(t.Edges.namedChildren[name], edges...)
 	}
 }
 

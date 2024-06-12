@@ -6,38 +6,52 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/codelite7/momentum/api/cmd/run/queue"
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/ent"
-	"github.com/google/uuid"
+	message2 "github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateThread is the resolver for the createThread field.
-func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThreadInput) (*ent.Thread, error) {
-	userUuid, err := getUserUuid(ctx)
+func (r *mutationResolver) CreateThread(ctx context.Context, input ent.CreateThreadInput, messageInput ent.CreateMessageInput) (*ent.Thread, error) {
+	client := ent.FromContext(ctx)
+	userInfo := common.GetUserIdFromContext(ctx)
+	thread, err := client.Thread.Create().SetCreatedByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(input).Save(ctx)
 	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
+		return nil, gqlerror.Wrap(err)
 	}
-	input.CreatedByID = userUuid
-	threadName, err := common.GetThreadName(input.Name)
+	message, err := client.Message.Create().SetSentByID(userInfo.UserId).SetTenantID(userInfo.ActiveTenantId).SetInput(messageInput).SetThread(thread).SetMessageType(message2.MessageTypeHuman).Save(ctx)
 	if err != nil {
-		return nil, gqlerror.Errorf(err.Error())
+		return nil, gqlerror.Wrap(err)
 	}
-	input.Name = threadName
-	return ent.FromContext(ctx).Thread.Create().SetInput(input).Save(ctx)
+	// enqueue message
+	err = queue.EnqueueMessageEvent(message.ID)
+	if err != nil {
+		return nil, gqlerror.Wrap(err)
+	}
+	// get so we get the messages back
+	return client.Thread.Get(ctx, thread.ID)
 }
 
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *mutationResolver) BookmarkThread(ctx context.Context, id uuid.UUID) (*bool, error) {
-	panic(fmt.Errorf("not implemented: BookmarkThread - bookmarkThread"))
+// UpdateThread is the resolver for the updateThread field.
+func (r *mutationResolver) UpdateThread(ctx context.Context, id pulid.ID, input ent.UpdateThreadInput) (*ent.Thread, error) {
+	return ent.FromContext(ctx).Thread.UpdateOneID(id).SetInput(input).Save(ctx)
 }
-func (r *mutationResolver) UnbookmarkThread(ctx context.Context, id uuid.UUID) (*bool, error) {
-	panic(fmt.Errorf("not implemented: UnbookmarkThread - unbookmarkThread"))
+
+// DeleteThread is the resolver for the deleteThread field.
+func (r *mutationResolver) DeleteThread(ctx context.Context, id pulid.ID) (pulid.ID, error) {
+	err := ent.FromContext(ctx).Thread.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Thread is the resolver for the thread field.
+func (r *queryResolver) Thread(ctx context.Context, id pulid.ID) (*ent.Thread, error) {
+	thread, err := r.client.Thread.Get(ctx, id)
+	return thread, err
 }

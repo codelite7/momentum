@@ -3,11 +3,14 @@
 package thread
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 const (
@@ -19,20 +22,31 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldTenantID holds the string denoting the tenant_id field in the database.
+	FieldTenantID = "tenant_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldLastViewedAt holds the string denoting the last_viewed_at field in the database.
+	FieldLastViewedAt = "last_viewed_at"
+	// FieldProvider holds the string denoting the provider field in the database.
+	FieldProvider = "provider"
+	// EdgeTenant holds the string denoting the tenant edge name in mutations.
+	EdgeTenant = "tenant"
 	// EdgeCreatedBy holds the string denoting the created_by edge name in mutations.
 	EdgeCreatedBy = "created_by"
 	// EdgeMessages holds the string denoting the messages edge name in mutations.
 	EdgeMessages = "messages"
-	// EdgeBookmarks holds the string denoting the bookmarks edge name in mutations.
-	EdgeBookmarks = "bookmarks"
 	// EdgeParent holds the string denoting the parent edge name in mutations.
 	EdgeParent = "parent"
-	// EdgeChildren holds the string denoting the children edge name in mutations.
-	EdgeChildren = "children"
 	// Table holds the table name of the thread in the database.
 	Table = "threads"
+	// TenantTable is the table that holds the tenant relation/edge.
+	TenantTable = "threads"
+	// TenantInverseTable is the table name for the Tenant entity.
+	// It exists in this package in order to avoid circular dependency with the "tenant" package.
+	TenantInverseTable = "tenants"
+	// TenantColumn is the table column denoting the tenant relation/edge.
+	TenantColumn = "tenant_id"
 	// CreatedByTable is the table that holds the created_by relation/edge.
 	CreatedByTable = "threads"
 	// CreatedByInverseTable is the table name for the User entity.
@@ -47,21 +61,13 @@ const (
 	MessagesInverseTable = "messages"
 	// MessagesColumn is the table column denoting the messages relation/edge.
 	MessagesColumn = "thread_messages"
-	// BookmarksTable is the table that holds the bookmarks relation/edge.
-	BookmarksTable = "bookmarks"
-	// BookmarksInverseTable is the table name for the Bookmark entity.
-	// It exists in this package in order to avoid circular dependency with the "bookmark" package.
-	BookmarksInverseTable = "bookmarks"
-	// BookmarksColumn is the table column denoting the bookmarks relation/edge.
-	BookmarksColumn = "thread_bookmarks"
 	// ParentTable is the table that holds the parent relation/edge.
 	ParentTable = "threads"
+	// ParentInverseTable is the table name for the Message entity.
+	// It exists in this package in order to avoid circular dependency with the "message" package.
+	ParentInverseTable = "messages"
 	// ParentColumn is the table column denoting the parent relation/edge.
-	ParentColumn = "thread_children"
-	// ChildrenTable is the table that holds the children relation/edge.
-	ChildrenTable = "threads"
-	// ChildrenColumn is the table column denoting the children relation/edge.
-	ChildrenColumn = "thread_children"
+	ParentColumn = "message_child"
 )
 
 // Columns holds all SQL columns for thread fields.
@@ -69,13 +75,16 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldTenantID,
 	FieldName,
+	FieldLastViewedAt,
+	FieldProvider,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "threads"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"thread_children",
+	"message_child",
 	"user_threads",
 }
 
@@ -99,9 +108,35 @@ var (
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
+	// DefaultLastViewedAt holds the default value on creation for the "last_viewed_at" field.
+	DefaultLastViewedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
+	DefaultID func() pulid.ID
 )
+
+// Provider defines the type for the "provider" enum field.
+type Provider string
+
+// Provider values.
+const (
+	ProviderOpenai    Provider = "openai"
+	ProviderGroq      Provider = "groq"
+	ProviderAnthropic Provider = "anthropic"
+)
+
+func (pr Provider) String() string {
+	return string(pr)
+}
+
+// ProviderValidator is a validator for the "provider" field enum values. It is called by the builders before save.
+func ProviderValidator(pr Provider) error {
+	switch pr {
+	case ProviderOpenai, ProviderGroq, ProviderAnthropic:
+		return nil
+	default:
+		return fmt.Errorf("thread: invalid enum value for provider field: %q", pr)
+	}
+}
 
 // OrderOption defines the ordering options for the Thread queries.
 type OrderOption func(*sql.Selector)
@@ -121,9 +156,31 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByTenantID orders the results by the tenant_id field.
+func ByTenantID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantID, opts...).ToFunc()
+}
+
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByLastViewedAt orders the results by the last_viewed_at field.
+func ByLastViewedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastViewedAt, opts...).ToFunc()
+}
+
+// ByProvider orders the results by the provider field.
+func ByProvider(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProvider, opts...).ToFunc()
+}
+
+// ByTenantField orders the results by tenant field.
+func ByTenantField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTenantStep(), sql.OrderByField(field, opts...))
+	}
 }
 
 // ByCreatedByField orders the results by created_by field.
@@ -147,39 +204,18 @@ func ByMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByBookmarksCount orders the results by bookmarks count.
-func ByBookmarksCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newBookmarksStep(), opts...)
-	}
-}
-
-// ByBookmarks orders the results by bookmarks terms.
-func ByBookmarks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newBookmarksStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByParentField orders the results by parent field.
 func ByParentField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newParentStep(), sql.OrderByField(field, opts...))
 	}
 }
-
-// ByChildrenCount orders the results by children count.
-func ByChildrenCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newChildrenStep(), opts...)
-	}
-}
-
-// ByChildren orders the results by children terms.
-func ByChildren(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newChildrenStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
+func newTenantStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TenantInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, TenantTable, TenantColumn),
+	)
 }
 func newCreatedByStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
@@ -195,24 +231,28 @@ func newMessagesStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, MessagesTable, MessagesColumn),
 	)
 }
-func newBookmarksStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(BookmarksInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, BookmarksTable, BookmarksColumn),
-	)
-}
 func newParentStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(Table, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+		sqlgraph.To(ParentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, true, ParentTable, ParentColumn),
 	)
 }
-func newChildrenStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(Table, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
-	)
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e Provider) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *Provider) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = Provider(str)
+	if err := ProviderValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid Provider", str)
+	}
+	return nil
 }

@@ -7,32 +7,31 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/codelite7/momentum/api/ent/thread"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // BookmarkQuery is the builder for querying Bookmark entities.
 type BookmarkQuery struct {
 	config
-	ctx          *QueryContext
-	order        []bookmark.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.Bookmark
-	withUser     *UserQuery
-	withThread   *ThreadQuery
-	withMessage  *MessageQuery
-	withResponse *ResponseQuery
-	withFKs      bool
-	modifiers    []func(*sql.Selector)
-	loadTotal    []func(context.Context, []*Bookmark) error
+	ctx         *QueryContext
+	order       []bookmark.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.Bookmark
+	withTenant  *TenantQuery
+	withUser    *UserQuery
+	withMessage *MessageQuery
+	withFKs     bool
+	loadTotal   []func(context.Context, []*Bookmark) error
+	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -69,6 +68,28 @@ func (bq *BookmarkQuery) Order(o ...bookmark.OrderOption) *BookmarkQuery {
 	return bq
 }
 
+// QueryTenant chains the current query on the "tenant" edge.
+func (bq *BookmarkQuery) QueryTenant() *TenantQuery {
+	query := (&TenantClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(bookmark.Table, bookmark.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, bookmark.TenantTable, bookmark.TenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryUser chains the current query on the "user" edge.
 func (bq *BookmarkQuery) QueryUser() *UserQuery {
 	query := (&UserClient{config: bq.config}).Query()
@@ -91,28 +112,6 @@ func (bq *BookmarkQuery) QueryUser() *UserQuery {
 	return query
 }
 
-// QueryThread chains the current query on the "thread" edge.
-func (bq *BookmarkQuery) QueryThread() *ThreadQuery {
-	query := (&ThreadClient{config: bq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := bq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := bq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(bookmark.Table, bookmark.FieldID, selector),
-			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.ThreadTable, bookmark.ThreadColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryMessage chains the current query on the "message" edge.
 func (bq *BookmarkQuery) QueryMessage() *MessageQuery {
 	query := (&MessageClient{config: bq.config}).Query()
@@ -128,28 +127,6 @@ func (bq *BookmarkQuery) QueryMessage() *MessageQuery {
 			sqlgraph.From(bookmark.Table, bookmark.FieldID, selector),
 			sqlgraph.To(message.Table, message.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.MessageTable, bookmark.MessageColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryResponse chains the current query on the "response" edge.
-func (bq *BookmarkQuery) QueryResponse() *ResponseQuery {
-	query := (&ResponseClient{config: bq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := bq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := bq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(bookmark.Table, bookmark.FieldID, selector),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.ResponseTable, bookmark.ResponseColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
 		return fromU, nil
@@ -181,8 +158,8 @@ func (bq *BookmarkQuery) FirstX(ctx context.Context) *Bookmark {
 
 // FirstID returns the first Bookmark ID from the query.
 // Returns a *NotFoundError when no Bookmark ID was found.
-func (bq *BookmarkQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (bq *BookmarkQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = bq.Limit(1).IDs(setContextOp(ctx, bq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -194,7 +171,7 @@ func (bq *BookmarkQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) 
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (bq *BookmarkQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (bq *BookmarkQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := bq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -232,8 +209,8 @@ func (bq *BookmarkQuery) OnlyX(ctx context.Context) *Bookmark {
 // OnlyID is like Only, but returns the only Bookmark ID in the query.
 // Returns a *NotSingularError when more than one Bookmark ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (bq *BookmarkQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (bq *BookmarkQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = bq.Limit(2).IDs(setContextOp(ctx, bq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -249,7 +226,7 @@ func (bq *BookmarkQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (bq *BookmarkQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (bq *BookmarkQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := bq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -277,7 +254,7 @@ func (bq *BookmarkQuery) AllX(ctx context.Context) []*Bookmark {
 }
 
 // IDs executes the query and returns a list of Bookmark IDs.
-func (bq *BookmarkQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (bq *BookmarkQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if bq.ctx.Unique == nil && bq.path != nil {
 		bq.Unique(true)
 	}
@@ -289,7 +266,7 @@ func (bq *BookmarkQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (bq *BookmarkQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (bq *BookmarkQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := bq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -344,19 +321,29 @@ func (bq *BookmarkQuery) Clone() *BookmarkQuery {
 		return nil
 	}
 	return &BookmarkQuery{
-		config:       bq.config,
-		ctx:          bq.ctx.Clone(),
-		order:        append([]bookmark.OrderOption{}, bq.order...),
-		inters:       append([]Interceptor{}, bq.inters...),
-		predicates:   append([]predicate.Bookmark{}, bq.predicates...),
-		withUser:     bq.withUser.Clone(),
-		withThread:   bq.withThread.Clone(),
-		withMessage:  bq.withMessage.Clone(),
-		withResponse: bq.withResponse.Clone(),
+		config:      bq.config,
+		ctx:         bq.ctx.Clone(),
+		order:       append([]bookmark.OrderOption{}, bq.order...),
+		inters:      append([]Interceptor{}, bq.inters...),
+		predicates:  append([]predicate.Bookmark{}, bq.predicates...),
+		withTenant:  bq.withTenant.Clone(),
+		withUser:    bq.withUser.Clone(),
+		withMessage: bq.withMessage.Clone(),
 		// clone intermediate query.
 		sql:  bq.sql.Clone(),
 		path: bq.path,
 	}
+}
+
+// WithTenant tells the query-builder to eager-load the nodes that are connected to
+// the "tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BookmarkQuery) WithTenant(opts ...func(*TenantQuery)) *BookmarkQuery {
+	query := (&TenantClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withTenant = query
+	return bq
 }
 
 // WithUser tells the query-builder to eager-load the nodes that are connected to
@@ -370,17 +357,6 @@ func (bq *BookmarkQuery) WithUser(opts ...func(*UserQuery)) *BookmarkQuery {
 	return bq
 }
 
-// WithThread tells the query-builder to eager-load the nodes that are connected to
-// the "thread" edge. The optional arguments are used to configure the query builder of the edge.
-func (bq *BookmarkQuery) WithThread(opts ...func(*ThreadQuery)) *BookmarkQuery {
-	query := (&ThreadClient{config: bq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	bq.withThread = query
-	return bq
-}
-
 // WithMessage tells the query-builder to eager-load the nodes that are connected to
 // the "message" edge. The optional arguments are used to configure the query builder of the edge.
 func (bq *BookmarkQuery) WithMessage(opts ...func(*MessageQuery)) *BookmarkQuery {
@@ -389,17 +365,6 @@ func (bq *BookmarkQuery) WithMessage(opts ...func(*MessageQuery)) *BookmarkQuery
 		opt(query)
 	}
 	bq.withMessage = query
-	return bq
-}
-
-// WithResponse tells the query-builder to eager-load the nodes that are connected to
-// the "response" edge. The optional arguments are used to configure the query builder of the edge.
-func (bq *BookmarkQuery) WithResponse(opts ...func(*ResponseQuery)) *BookmarkQuery {
-	query := (&ResponseClient{config: bq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	bq.withResponse = query
 	return bq
 }
 
@@ -482,14 +447,13 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 		nodes       = []*Bookmark{}
 		withFKs     = bq.withFKs
 		_spec       = bq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [3]bool{
+			bq.withTenant != nil,
 			bq.withUser != nil,
-			bq.withThread != nil,
 			bq.withMessage != nil,
-			bq.withResponse != nil,
 		}
 	)
-	if bq.withUser != nil || bq.withThread != nil || bq.withMessage != nil || bq.withResponse != nil {
+	if bq.withUser != nil || bq.withMessage != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -516,27 +480,21 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := bq.withTenant; query != nil {
+		if err := bq.loadTenant(ctx, query, nodes, nil,
+			func(n *Bookmark, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := bq.withUser; query != nil {
 		if err := bq.loadUser(ctx, query, nodes, nil,
 			func(n *Bookmark, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := bq.withThread; query != nil {
-		if err := bq.loadThread(ctx, query, nodes, nil,
-			func(n *Bookmark, e *Thread) { n.Edges.Thread = e }); err != nil {
-			return nil, err
-		}
-	}
 	if query := bq.withMessage; query != nil {
 		if err := bq.loadMessage(ctx, query, nodes, nil,
 			func(n *Bookmark, e *Message) { n.Edges.Message = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := bq.withResponse; query != nil {
-		if err := bq.loadResponse(ctx, query, nodes, nil,
-			func(n *Bookmark, e *Response) { n.Edges.Response = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -548,9 +506,38 @@ func (bq *BookmarkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Boo
 	return nodes, nil
 }
 
+func (bq *BookmarkQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Tenant)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Bookmark)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (bq *BookmarkQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *User)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Bookmark)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Bookmark)
 	for i := range nodes {
 		if nodes[i].user_bookmarks == nil {
 			continue
@@ -580,41 +567,9 @@ func (bq *BookmarkQuery) loadUser(ctx context.Context, query *UserQuery, nodes [
 	}
 	return nil
 }
-func (bq *BookmarkQuery) loadThread(ctx context.Context, query *ThreadQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Thread)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Bookmark)
-	for i := range nodes {
-		if nodes[i].thread_bookmarks == nil {
-			continue
-		}
-		fk := *nodes[i].thread_bookmarks
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(thread.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "thread_bookmarks" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
 func (bq *BookmarkQuery) loadMessage(ctx context.Context, query *MessageQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Message)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Bookmark)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Bookmark)
 	for i := range nodes {
 		if nodes[i].message_bookmarks == nil {
 			continue
@@ -644,38 +599,6 @@ func (bq *BookmarkQuery) loadMessage(ctx context.Context, query *MessageQuery, n
 	}
 	return nil
 }
-func (bq *BookmarkQuery) loadResponse(ctx context.Context, query *ResponseQuery, nodes []*Bookmark, init func(*Bookmark), assign func(*Bookmark, *Response)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Bookmark)
-	for i := range nodes {
-		if nodes[i].response_bookmarks == nil {
-			continue
-		}
-		fk := *nodes[i].response_bookmarks
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(response.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "response_bookmarks" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
 
 func (bq *BookmarkQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := bq.querySpec()
@@ -690,7 +613,7 @@ func (bq *BookmarkQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (bq *BookmarkQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString))
 	_spec.From = bq.sql
 	if unique := bq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -704,6 +627,9 @@ func (bq *BookmarkQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != bookmark.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if bq.withTenant != nil {
+			_spec.Node.AddColumnOnce(bookmark.FieldTenantID)
 		}
 	}
 	if ps := bq.predicates; len(ps) > 0 {
@@ -744,6 +670,9 @@ func (bq *BookmarkQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	if bq.ctx.Unique != nil && *bq.ctx.Unique {
 		selector.Distinct()
 	}
+	for _, m := range bq.modifiers {
+		m(selector)
+	}
 	for _, p := range bq.predicates {
 		p(selector)
 	}
@@ -759,6 +688,32 @@ func (bq *BookmarkQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// ForUpdate locks the selected rows against concurrent updates, and prevent them from being
+// updated, deleted or "selected ... for update" by other sessions, until the transaction is
+// either committed or rolled-back.
+func (bq *BookmarkQuery) ForUpdate(opts ...sql.LockOption) *BookmarkQuery {
+	if bq.driver.Dialect() == dialect.Postgres {
+		bq.Unique(false)
+	}
+	bq.modifiers = append(bq.modifiers, func(s *sql.Selector) {
+		s.ForUpdate(opts...)
+	})
+	return bq
+}
+
+// ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
+// on any rows that are read. Other sessions can read the rows, but cannot modify them
+// until your transaction commits.
+func (bq *BookmarkQuery) ForShare(opts ...sql.LockOption) *BookmarkQuery {
+	if bq.driver.Dialect() == dialect.Postgres {
+		bq.Unique(false)
+	}
+	bq.modifiers = append(bq.modifiers, func(s *sql.Selector) {
+		s.ForShare(opts...)
+	})
+	return bq
 }
 
 // BookmarkGroupBy is the group-by builder for Bookmark entities.

@@ -8,51 +8,51 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.Message {
+func ID(id pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.Message {
+func IDEQ(id pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.Message {
+func IDNEQ(id pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.Message {
+func IDIn(ids ...pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.Message {
+func IDNotIn(ids ...pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.Message {
+func IDGT(id pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.Message {
+func IDGTE(id pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.Message {
+func IDLT(id pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.Message {
+func IDLTE(id pulid.ID) predicate.Message {
 	return predicate.Message(sql.FieldLTE(FieldID, id))
 }
 
@@ -64,6 +64,11 @@ func CreatedAt(v time.Time) predicate.Message {
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// TenantID applies equality check predicate on the "tenant_id" field. It's identical to TenantIDEQ.
+func TenantID(v pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldEQ(FieldTenantID, v))
 }
 
 // Content applies equality check predicate on the "content" field. It's identical to ContentEQ.
@@ -151,6 +156,76 @@ func UpdatedAtLTE(v time.Time) predicate.Message {
 	return predicate.Message(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
+// TenantIDEQ applies the EQ predicate on the "tenant_id" field.
+func TenantIDEQ(v pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldEQ(FieldTenantID, v))
+}
+
+// TenantIDNEQ applies the NEQ predicate on the "tenant_id" field.
+func TenantIDNEQ(v pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldNEQ(FieldTenantID, v))
+}
+
+// TenantIDIn applies the In predicate on the "tenant_id" field.
+func TenantIDIn(vs ...pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldIn(FieldTenantID, vs...))
+}
+
+// TenantIDNotIn applies the NotIn predicate on the "tenant_id" field.
+func TenantIDNotIn(vs ...pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldNotIn(FieldTenantID, vs...))
+}
+
+// TenantIDGT applies the GT predicate on the "tenant_id" field.
+func TenantIDGT(v pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldGT(FieldTenantID, v))
+}
+
+// TenantIDGTE applies the GTE predicate on the "tenant_id" field.
+func TenantIDGTE(v pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldGTE(FieldTenantID, v))
+}
+
+// TenantIDLT applies the LT predicate on the "tenant_id" field.
+func TenantIDLT(v pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldLT(FieldTenantID, v))
+}
+
+// TenantIDLTE applies the LTE predicate on the "tenant_id" field.
+func TenantIDLTE(v pulid.ID) predicate.Message {
+	return predicate.Message(sql.FieldLTE(FieldTenantID, v))
+}
+
+// TenantIDContains applies the Contains predicate on the "tenant_id" field.
+func TenantIDContains(v pulid.ID) predicate.Message {
+	vc := string(v)
+	return predicate.Message(sql.FieldContains(FieldTenantID, vc))
+}
+
+// TenantIDHasPrefix applies the HasPrefix predicate on the "tenant_id" field.
+func TenantIDHasPrefix(v pulid.ID) predicate.Message {
+	vc := string(v)
+	return predicate.Message(sql.FieldHasPrefix(FieldTenantID, vc))
+}
+
+// TenantIDHasSuffix applies the HasSuffix predicate on the "tenant_id" field.
+func TenantIDHasSuffix(v pulid.ID) predicate.Message {
+	vc := string(v)
+	return predicate.Message(sql.FieldHasSuffix(FieldTenantID, vc))
+}
+
+// TenantIDEqualFold applies the EqualFold predicate on the "tenant_id" field.
+func TenantIDEqualFold(v pulid.ID) predicate.Message {
+	vc := string(v)
+	return predicate.Message(sql.FieldEqualFold(FieldTenantID, vc))
+}
+
+// TenantIDContainsFold applies the ContainsFold predicate on the "tenant_id" field.
+func TenantIDContainsFold(v pulid.ID) predicate.Message {
+	vc := string(v)
+	return predicate.Message(sql.FieldContainsFold(FieldTenantID, vc))
+}
+
 // ContentEQ applies the EQ predicate on the "content" field.
 func ContentEQ(v string) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldContent, v))
@@ -214,6 +289,49 @@ func ContentEqualFold(v string) predicate.Message {
 // ContentContainsFold applies the ContainsFold predicate on the "content" field.
 func ContentContainsFold(v string) predicate.Message {
 	return predicate.Message(sql.FieldContainsFold(FieldContent, v))
+}
+
+// MessageTypeEQ applies the EQ predicate on the "message_type" field.
+func MessageTypeEQ(v MessageType) predicate.Message {
+	return predicate.Message(sql.FieldEQ(FieldMessageType, v))
+}
+
+// MessageTypeNEQ applies the NEQ predicate on the "message_type" field.
+func MessageTypeNEQ(v MessageType) predicate.Message {
+	return predicate.Message(sql.FieldNEQ(FieldMessageType, v))
+}
+
+// MessageTypeIn applies the In predicate on the "message_type" field.
+func MessageTypeIn(vs ...MessageType) predicate.Message {
+	return predicate.Message(sql.FieldIn(FieldMessageType, vs...))
+}
+
+// MessageTypeNotIn applies the NotIn predicate on the "message_type" field.
+func MessageTypeNotIn(vs ...MessageType) predicate.Message {
+	return predicate.Message(sql.FieldNotIn(FieldMessageType, vs...))
+}
+
+// HasTenant applies the HasEdge predicate on the "tenant" edge.
+func HasTenant() predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, TenantTable, TenantColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTenantWith applies the HasEdge predicate on the "tenant" edge with a given conditions (other predicates).
+func HasTenantWith(preds ...predicate.Tenant) predicate.Message {
+	return predicate.Message(func(s *sql.Selector) {
+		step := newTenantStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasSentBy applies the HasEdge predicate on the "sent_by" edge.
@@ -285,21 +403,21 @@ func HasBookmarksWith(preds ...predicate.Bookmark) predicate.Message {
 	})
 }
 
-// HasResponse applies the HasEdge predicate on the "response" edge.
-func HasResponse() predicate.Message {
+// HasChild applies the HasEdge predicate on the "child" edge.
+func HasChild() predicate.Message {
 	return predicate.Message(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, ResponseTable, ResponseColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, ChildTable, ChildColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasResponseWith applies the HasEdge predicate on the "response" edge with a given conditions (other predicates).
-func HasResponseWith(preds ...predicate.Response) predicate.Message {
+// HasChildWith applies the HasEdge predicate on the "child" edge with a given conditions (other predicates).
+func HasChildWith(preds ...predicate.Thread) predicate.Message {
 	return predicate.Message(func(s *sql.Selector) {
-		step := newResponseStep()
+		step := newChildStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

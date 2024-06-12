@@ -15,10 +15,11 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/workoseventcursor"
 )
 
 const (
@@ -30,32 +31,30 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAgent    = "Agent"
-	TypeBookmark = "Bookmark"
-	TypeMessage  = "Message"
-	TypeResponse = "Response"
-	TypeThread   = "Thread"
-	TypeUser     = "User"
+	TypeAgent             = "Agent"
+	TypeBookmark          = "Bookmark"
+	TypeMessage           = "Message"
+	TypeTenant            = "Tenant"
+	TypeThread            = "Thread"
+	TypeUser              = "User"
+	TypeWorkosEventCursor = "WorkosEventCursor"
 )
 
 // AgentMutation represents an operation that mutates the Agent nodes in the graph.
 type AgentMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	created_at       *time.Time
-	updated_at       *time.Time
-	provider         *string
-	model            *string
-	api_key          *string
-	clearedFields    map[string]struct{}
-	responses        map[uuid.UUID]struct{}
-	removedresponses map[uuid.UUID]struct{}
-	clearedresponses bool
-	done             bool
-	oldValue         func(context.Context) (*Agent, error)
-	predicates       []predicate.Agent
+	op            Op
+	typ           string
+	id            *pulid.ID
+	created_at    *time.Time
+	updated_at    *time.Time
+	provider      *string
+	model         *string
+	api_key       *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*Agent, error)
+	predicates    []predicate.Agent
 }
 
 var _ ent.Mutation = (*AgentMutation)(nil)
@@ -78,7 +77,7 @@ func newAgentMutation(c config, op Op, opts ...agentOption) *AgentMutation {
 }
 
 // withAgentID sets the ID field of the mutation.
-func withAgentID(id uuid.UUID) agentOption {
+func withAgentID(id pulid.ID) agentOption {
 	return func(m *AgentMutation) {
 		var (
 			err   error
@@ -130,13 +129,13 @@ func (m AgentMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Agent entities.
-func (m *AgentMutation) SetID(id uuid.UUID) {
+func (m *AgentMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *AgentMutation) ID() (id uuid.UUID, exists bool) {
+func (m *AgentMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -147,12 +146,12 @@ func (m *AgentMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *AgentMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *AgentMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -340,60 +339,6 @@ func (m *AgentMutation) OldAPIKey(ctx context.Context) (v string, err error) {
 // ResetAPIKey resets all changes to the "api_key" field.
 func (m *AgentMutation) ResetAPIKey() {
 	m.api_key = nil
-}
-
-// AddResponseIDs adds the "responses" edge to the Response entity by ids.
-func (m *AgentMutation) AddResponseIDs(ids ...uuid.UUID) {
-	if m.responses == nil {
-		m.responses = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.responses[ids[i]] = struct{}{}
-	}
-}
-
-// ClearResponses clears the "responses" edge to the Response entity.
-func (m *AgentMutation) ClearResponses() {
-	m.clearedresponses = true
-}
-
-// ResponsesCleared reports if the "responses" edge to the Response entity was cleared.
-func (m *AgentMutation) ResponsesCleared() bool {
-	return m.clearedresponses
-}
-
-// RemoveResponseIDs removes the "responses" edge to the Response entity by IDs.
-func (m *AgentMutation) RemoveResponseIDs(ids ...uuid.UUID) {
-	if m.removedresponses == nil {
-		m.removedresponses = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.responses, ids[i])
-		m.removedresponses[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedResponses returns the removed IDs of the "responses" edge to the Response entity.
-func (m *AgentMutation) RemovedResponsesIDs() (ids []uuid.UUID) {
-	for id := range m.removedresponses {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResponsesIDs returns the "responses" edge IDs in the mutation.
-func (m *AgentMutation) ResponsesIDs() (ids []uuid.UUID) {
-	for id := range m.responses {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetResponses resets all changes to the "responses" edge.
-func (m *AgentMutation) ResetResponses() {
-	m.responses = nil
-	m.clearedresponses = false
-	m.removedresponses = nil
 }
 
 // Where appends a list predicates to the AgentMutation builder.
@@ -597,108 +542,70 @@ func (m *AgentMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AgentMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.responses != nil {
-		edges = append(edges, agent.EdgeResponses)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *AgentMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case agent.EdgeResponses:
-		ids := make([]ent.Value, 0, len(m.responses))
-		for id := range m.responses {
-			ids = append(ids, id)
-		}
-		return ids
-	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AgentMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.removedresponses != nil {
-		edges = append(edges, agent.EdgeResponses)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *AgentMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case agent.EdgeResponses:
-		ids := make([]ent.Value, 0, len(m.removedresponses))
-		for id := range m.removedresponses {
-			ids = append(ids, id)
-		}
-		return ids
-	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AgentMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedresponses {
-		edges = append(edges, agent.EdgeResponses)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *AgentMutation) EdgeCleared(name string) bool {
-	switch name {
-	case agent.EdgeResponses:
-		return m.clearedresponses
-	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *AgentMutation) ClearEdge(name string) error {
-	switch name {
-	}
 	return fmt.Errorf("unknown Agent unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *AgentMutation) ResetEdge(name string) error {
-	switch name {
-	case agent.EdgeResponses:
-		m.ResetResponses()
-		return nil
-	}
 	return fmt.Errorf("unknown Agent edge %s", name)
 }
 
 // BookmarkMutation represents an operation that mutates the Bookmark nodes in the graph.
 type BookmarkMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	created_at      *time.Time
-	updated_at      *time.Time
-	clearedFields   map[string]struct{}
-	user            *uuid.UUID
-	cleareduser     bool
-	thread          *uuid.UUID
-	clearedthread   bool
-	message         *uuid.UUID
-	clearedmessage  bool
-	response        *uuid.UUID
-	clearedresponse bool
-	done            bool
-	oldValue        func(context.Context) (*Bookmark, error)
-	predicates      []predicate.Bookmark
+	op             Op
+	typ            string
+	id             *pulid.ID
+	created_at     *time.Time
+	updated_at     *time.Time
+	clearedFields  map[string]struct{}
+	tenant         *pulid.ID
+	clearedtenant  bool
+	user           *pulid.ID
+	cleareduser    bool
+	message        *pulid.ID
+	clearedmessage bool
+	done           bool
+	oldValue       func(context.Context) (*Bookmark, error)
+	predicates     []predicate.Bookmark
 }
 
 var _ ent.Mutation = (*BookmarkMutation)(nil)
@@ -721,7 +628,7 @@ func newBookmarkMutation(c config, op Op, opts ...bookmarkOption) *BookmarkMutat
 }
 
 // withBookmarkID sets the ID field of the mutation.
-func withBookmarkID(id uuid.UUID) bookmarkOption {
+func withBookmarkID(id pulid.ID) bookmarkOption {
 	return func(m *BookmarkMutation) {
 		var (
 			err   error
@@ -773,13 +680,13 @@ func (m BookmarkMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Bookmark entities.
-func (m *BookmarkMutation) SetID(id uuid.UUID) {
+func (m *BookmarkMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *BookmarkMutation) ID() (id uuid.UUID, exists bool) {
+func (m *BookmarkMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -790,12 +697,12 @@ func (m *BookmarkMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *BookmarkMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *BookmarkMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -877,8 +784,71 @@ func (m *BookmarkMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (m *BookmarkMutation) SetTenantID(pu pulid.ID) {
+	m.tenant = &pu
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *BookmarkMutation) TenantID() (r pulid.ID, exists bool) {
+	v := m.tenant
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the Bookmark entity.
+// If the Bookmark object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BookmarkMutation) OldTenantID(ctx context.Context) (v pulid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *BookmarkMutation) ResetTenantID() {
+	m.tenant = nil
+}
+
+// ClearTenant clears the "tenant" edge to the Tenant entity.
+func (m *BookmarkMutation) ClearTenant() {
+	m.clearedtenant = true
+	m.clearedFields[bookmark.FieldTenantID] = struct{}{}
+}
+
+// TenantCleared reports if the "tenant" edge to the Tenant entity was cleared.
+func (m *BookmarkMutation) TenantCleared() bool {
+	return m.clearedtenant
+}
+
+// TenantIDs returns the "tenant" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TenantID instead. It exists only for internal usage by the builders.
+func (m *BookmarkMutation) TenantIDs() (ids []pulid.ID) {
+	if id := m.tenant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTenant resets all changes to the "tenant" edge.
+func (m *BookmarkMutation) ResetTenant() {
+	m.tenant = nil
+	m.clearedtenant = false
+}
+
 // SetUserID sets the "user" edge to the User entity by id.
-func (m *BookmarkMutation) SetUserID(id uuid.UUID) {
+func (m *BookmarkMutation) SetUserID(id pulid.ID) {
 	m.user = &id
 }
 
@@ -893,7 +863,7 @@ func (m *BookmarkMutation) UserCleared() bool {
 }
 
 // UserID returns the "user" edge ID in the mutation.
-func (m *BookmarkMutation) UserID() (id uuid.UUID, exists bool) {
+func (m *BookmarkMutation) UserID() (id pulid.ID, exists bool) {
 	if m.user != nil {
 		return *m.user, true
 	}
@@ -903,7 +873,7 @@ func (m *BookmarkMutation) UserID() (id uuid.UUID, exists bool) {
 // UserIDs returns the "user" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // UserID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) UserIDs() (ids []uuid.UUID) {
+func (m *BookmarkMutation) UserIDs() (ids []pulid.ID) {
 	if id := m.user; id != nil {
 		ids = append(ids, *id)
 	}
@@ -916,47 +886,8 @@ func (m *BookmarkMutation) ResetUser() {
 	m.cleareduser = false
 }
 
-// SetThreadID sets the "thread" edge to the Thread entity by id.
-func (m *BookmarkMutation) SetThreadID(id uuid.UUID) {
-	m.thread = &id
-}
-
-// ClearThread clears the "thread" edge to the Thread entity.
-func (m *BookmarkMutation) ClearThread() {
-	m.clearedthread = true
-}
-
-// ThreadCleared reports if the "thread" edge to the Thread entity was cleared.
-func (m *BookmarkMutation) ThreadCleared() bool {
-	return m.clearedthread
-}
-
-// ThreadID returns the "thread" edge ID in the mutation.
-func (m *BookmarkMutation) ThreadID() (id uuid.UUID, exists bool) {
-	if m.thread != nil {
-		return *m.thread, true
-	}
-	return
-}
-
-// ThreadIDs returns the "thread" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ThreadID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) ThreadIDs() (ids []uuid.UUID) {
-	if id := m.thread; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetThread resets all changes to the "thread" edge.
-func (m *BookmarkMutation) ResetThread() {
-	m.thread = nil
-	m.clearedthread = false
-}
-
 // SetMessageID sets the "message" edge to the Message entity by id.
-func (m *BookmarkMutation) SetMessageID(id uuid.UUID) {
+func (m *BookmarkMutation) SetMessageID(id pulid.ID) {
 	m.message = &id
 }
 
@@ -971,7 +902,7 @@ func (m *BookmarkMutation) MessageCleared() bool {
 }
 
 // MessageID returns the "message" edge ID in the mutation.
-func (m *BookmarkMutation) MessageID() (id uuid.UUID, exists bool) {
+func (m *BookmarkMutation) MessageID() (id pulid.ID, exists bool) {
 	if m.message != nil {
 		return *m.message, true
 	}
@@ -981,7 +912,7 @@ func (m *BookmarkMutation) MessageID() (id uuid.UUID, exists bool) {
 // MessageIDs returns the "message" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // MessageID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) MessageIDs() (ids []uuid.UUID) {
+func (m *BookmarkMutation) MessageIDs() (ids []pulid.ID) {
 	if id := m.message; id != nil {
 		ids = append(ids, *id)
 	}
@@ -992,45 +923,6 @@ func (m *BookmarkMutation) MessageIDs() (ids []uuid.UUID) {
 func (m *BookmarkMutation) ResetMessage() {
 	m.message = nil
 	m.clearedmessage = false
-}
-
-// SetResponseID sets the "response" edge to the Response entity by id.
-func (m *BookmarkMutation) SetResponseID(id uuid.UUID) {
-	m.response = &id
-}
-
-// ClearResponse clears the "response" edge to the Response entity.
-func (m *BookmarkMutation) ClearResponse() {
-	m.clearedresponse = true
-}
-
-// ResponseCleared reports if the "response" edge to the Response entity was cleared.
-func (m *BookmarkMutation) ResponseCleared() bool {
-	return m.clearedresponse
-}
-
-// ResponseID returns the "response" edge ID in the mutation.
-func (m *BookmarkMutation) ResponseID() (id uuid.UUID, exists bool) {
-	if m.response != nil {
-		return *m.response, true
-	}
-	return
-}
-
-// ResponseIDs returns the "response" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ResponseID instead. It exists only for internal usage by the builders.
-func (m *BookmarkMutation) ResponseIDs() (ids []uuid.UUID) {
-	if id := m.response; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetResponse resets all changes to the "response" edge.
-func (m *BookmarkMutation) ResetResponse() {
-	m.response = nil
-	m.clearedresponse = false
 }
 
 // Where appends a list predicates to the BookmarkMutation builder.
@@ -1067,12 +959,15 @@ func (m *BookmarkMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BookmarkMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m.created_at != nil {
 		fields = append(fields, bookmark.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, bookmark.FieldUpdatedAt)
+	}
+	if m.tenant != nil {
+		fields = append(fields, bookmark.FieldTenantID)
 	}
 	return fields
 }
@@ -1086,6 +981,8 @@ func (m *BookmarkMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case bookmark.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case bookmark.FieldTenantID:
+		return m.TenantID()
 	}
 	return nil, false
 }
@@ -1099,6 +996,8 @@ func (m *BookmarkMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldCreatedAt(ctx)
 	case bookmark.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case bookmark.FieldTenantID:
+		return m.OldTenantID(ctx)
 	}
 	return nil, fmt.Errorf("unknown Bookmark field %s", name)
 }
@@ -1121,6 +1020,13 @@ func (m *BookmarkMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case bookmark.FieldTenantID:
+		v, ok := value.(pulid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Bookmark field %s", name)
@@ -1177,24 +1083,24 @@ func (m *BookmarkMutation) ResetField(name string) error {
 	case bookmark.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case bookmark.FieldTenantID:
+		m.ResetTenantID()
+		return nil
 	}
 	return fmt.Errorf("unknown Bookmark field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BookmarkMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
+	if m.tenant != nil {
+		edges = append(edges, bookmark.EdgeTenant)
+	}
 	if m.user != nil {
 		edges = append(edges, bookmark.EdgeUser)
 	}
-	if m.thread != nil {
-		edges = append(edges, bookmark.EdgeThread)
-	}
 	if m.message != nil {
 		edges = append(edges, bookmark.EdgeMessage)
-	}
-	if m.response != nil {
-		edges = append(edges, bookmark.EdgeResponse)
 	}
 	return edges
 }
@@ -1203,20 +1109,16 @@ func (m *BookmarkMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *BookmarkMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case bookmark.EdgeTenant:
+		if id := m.tenant; id != nil {
+			return []ent.Value{*id}
+		}
 	case bookmark.EdgeUser:
 		if id := m.user; id != nil {
 			return []ent.Value{*id}
 		}
-	case bookmark.EdgeThread:
-		if id := m.thread; id != nil {
-			return []ent.Value{*id}
-		}
 	case bookmark.EdgeMessage:
 		if id := m.message; id != nil {
-			return []ent.Value{*id}
-		}
-	case bookmark.EdgeResponse:
-		if id := m.response; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -1225,7 +1127,7 @@ func (m *BookmarkMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BookmarkMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -1237,18 +1139,15 @@ func (m *BookmarkMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BookmarkMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
+	if m.clearedtenant {
+		edges = append(edges, bookmark.EdgeTenant)
+	}
 	if m.cleareduser {
 		edges = append(edges, bookmark.EdgeUser)
 	}
-	if m.clearedthread {
-		edges = append(edges, bookmark.EdgeThread)
-	}
 	if m.clearedmessage {
 		edges = append(edges, bookmark.EdgeMessage)
-	}
-	if m.clearedresponse {
-		edges = append(edges, bookmark.EdgeResponse)
 	}
 	return edges
 }
@@ -1257,14 +1156,12 @@ func (m *BookmarkMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *BookmarkMutation) EdgeCleared(name string) bool {
 	switch name {
+	case bookmark.EdgeTenant:
+		return m.clearedtenant
 	case bookmark.EdgeUser:
 		return m.cleareduser
-	case bookmark.EdgeThread:
-		return m.clearedthread
 	case bookmark.EdgeMessage:
 		return m.clearedmessage
-	case bookmark.EdgeResponse:
-		return m.clearedresponse
 	}
 	return false
 }
@@ -1273,17 +1170,14 @@ func (m *BookmarkMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *BookmarkMutation) ClearEdge(name string) error {
 	switch name {
+	case bookmark.EdgeTenant:
+		m.ClearTenant()
+		return nil
 	case bookmark.EdgeUser:
 		m.ClearUser()
 		return nil
-	case bookmark.EdgeThread:
-		m.ClearThread()
-		return nil
 	case bookmark.EdgeMessage:
 		m.ClearMessage()
-		return nil
-	case bookmark.EdgeResponse:
-		m.ClearResponse()
 		return nil
 	}
 	return fmt.Errorf("unknown Bookmark unique edge %s", name)
@@ -1293,17 +1187,14 @@ func (m *BookmarkMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *BookmarkMutation) ResetEdge(name string) error {
 	switch name {
+	case bookmark.EdgeTenant:
+		m.ResetTenant()
+		return nil
 	case bookmark.EdgeUser:
 		m.ResetUser()
 		return nil
-	case bookmark.EdgeThread:
-		m.ResetThread()
-		return nil
 	case bookmark.EdgeMessage:
 		m.ResetMessage()
-		return nil
-	case bookmark.EdgeResponse:
-		m.ResetResponse()
 		return nil
 	}
 	return fmt.Errorf("unknown Bookmark edge %s", name)
@@ -1314,20 +1205,23 @@ type MessageMutation struct {
 	config
 	op               Op
 	typ              string
-	id               *uuid.UUID
+	id               *pulid.ID
 	created_at       *time.Time
 	updated_at       *time.Time
 	content          *string
+	message_type     *message.MessageType
 	clearedFields    map[string]struct{}
-	sent_by          *uuid.UUID
+	tenant           *pulid.ID
+	clearedtenant    bool
+	sent_by          *pulid.ID
 	clearedsent_by   bool
-	thread           *uuid.UUID
+	thread           *pulid.ID
 	clearedthread    bool
-	bookmarks        map[uuid.UUID]struct{}
-	removedbookmarks map[uuid.UUID]struct{}
+	bookmarks        map[pulid.ID]struct{}
+	removedbookmarks map[pulid.ID]struct{}
 	clearedbookmarks bool
-	response         *uuid.UUID
-	clearedresponse  bool
+	child            *pulid.ID
+	clearedchild     bool
 	done             bool
 	oldValue         func(context.Context) (*Message, error)
 	predicates       []predicate.Message
@@ -1353,7 +1247,7 @@ func newMessageMutation(c config, op Op, opts ...messageOption) *MessageMutation
 }
 
 // withMessageID sets the ID field of the mutation.
-func withMessageID(id uuid.UUID) messageOption {
+func withMessageID(id pulid.ID) messageOption {
 	return func(m *MessageMutation) {
 		var (
 			err   error
@@ -1405,13 +1299,13 @@ func (m MessageMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Message entities.
-func (m *MessageMutation) SetID(id uuid.UUID) {
+func (m *MessageMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *MessageMutation) ID() (id uuid.UUID, exists bool) {
+func (m *MessageMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1422,12 +1316,12 @@ func (m *MessageMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *MessageMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *MessageMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1509,6 +1403,42 @@ func (m *MessageMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (m *MessageMutation) SetTenantID(pu pulid.ID) {
+	m.tenant = &pu
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *MessageMutation) TenantID() (r pulid.ID, exists bool) {
+	v := m.tenant
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the Message entity.
+// If the Message object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MessageMutation) OldTenantID(ctx context.Context) (v pulid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *MessageMutation) ResetTenantID() {
+	m.tenant = nil
+}
+
 // SetContent sets the "content" field.
 func (m *MessageMutation) SetContent(s string) {
 	m.content = &s
@@ -1545,8 +1475,71 @@ func (m *MessageMutation) ResetContent() {
 	m.content = nil
 }
 
+// SetMessageType sets the "message_type" field.
+func (m *MessageMutation) SetMessageType(mt message.MessageType) {
+	m.message_type = &mt
+}
+
+// MessageType returns the value of the "message_type" field in the mutation.
+func (m *MessageMutation) MessageType() (r message.MessageType, exists bool) {
+	v := m.message_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMessageType returns the old "message_type" field's value of the Message entity.
+// If the Message object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MessageMutation) OldMessageType(ctx context.Context) (v message.MessageType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMessageType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMessageType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMessageType: %w", err)
+	}
+	return oldValue.MessageType, nil
+}
+
+// ResetMessageType resets all changes to the "message_type" field.
+func (m *MessageMutation) ResetMessageType() {
+	m.message_type = nil
+}
+
+// ClearTenant clears the "tenant" edge to the Tenant entity.
+func (m *MessageMutation) ClearTenant() {
+	m.clearedtenant = true
+	m.clearedFields[message.FieldTenantID] = struct{}{}
+}
+
+// TenantCleared reports if the "tenant" edge to the Tenant entity was cleared.
+func (m *MessageMutation) TenantCleared() bool {
+	return m.clearedtenant
+}
+
+// TenantIDs returns the "tenant" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TenantID instead. It exists only for internal usage by the builders.
+func (m *MessageMutation) TenantIDs() (ids []pulid.ID) {
+	if id := m.tenant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTenant resets all changes to the "tenant" edge.
+func (m *MessageMutation) ResetTenant() {
+	m.tenant = nil
+	m.clearedtenant = false
+}
+
 // SetSentByID sets the "sent_by" edge to the User entity by id.
-func (m *MessageMutation) SetSentByID(id uuid.UUID) {
+func (m *MessageMutation) SetSentByID(id pulid.ID) {
 	m.sent_by = &id
 }
 
@@ -1561,7 +1554,7 @@ func (m *MessageMutation) SentByCleared() bool {
 }
 
 // SentByID returns the "sent_by" edge ID in the mutation.
-func (m *MessageMutation) SentByID() (id uuid.UUID, exists bool) {
+func (m *MessageMutation) SentByID() (id pulid.ID, exists bool) {
 	if m.sent_by != nil {
 		return *m.sent_by, true
 	}
@@ -1571,7 +1564,7 @@ func (m *MessageMutation) SentByID() (id uuid.UUID, exists bool) {
 // SentByIDs returns the "sent_by" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // SentByID instead. It exists only for internal usage by the builders.
-func (m *MessageMutation) SentByIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) SentByIDs() (ids []pulid.ID) {
 	if id := m.sent_by; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1585,7 +1578,7 @@ func (m *MessageMutation) ResetSentBy() {
 }
 
 // SetThreadID sets the "thread" edge to the Thread entity by id.
-func (m *MessageMutation) SetThreadID(id uuid.UUID) {
+func (m *MessageMutation) SetThreadID(id pulid.ID) {
 	m.thread = &id
 }
 
@@ -1600,7 +1593,7 @@ func (m *MessageMutation) ThreadCleared() bool {
 }
 
 // ThreadID returns the "thread" edge ID in the mutation.
-func (m *MessageMutation) ThreadID() (id uuid.UUID, exists bool) {
+func (m *MessageMutation) ThreadID() (id pulid.ID, exists bool) {
 	if m.thread != nil {
 		return *m.thread, true
 	}
@@ -1610,7 +1603,7 @@ func (m *MessageMutation) ThreadID() (id uuid.UUID, exists bool) {
 // ThreadIDs returns the "thread" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // ThreadID instead. It exists only for internal usage by the builders.
-func (m *MessageMutation) ThreadIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) ThreadIDs() (ids []pulid.ID) {
 	if id := m.thread; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1624,9 +1617,9 @@ func (m *MessageMutation) ResetThread() {
 }
 
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *MessageMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+func (m *MessageMutation) AddBookmarkIDs(ids ...pulid.ID) {
 	if m.bookmarks == nil {
-		m.bookmarks = make(map[uuid.UUID]struct{})
+		m.bookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.bookmarks[ids[i]] = struct{}{}
@@ -1644,9 +1637,9 @@ func (m *MessageMutation) BookmarksCleared() bool {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *MessageMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+func (m *MessageMutation) RemoveBookmarkIDs(ids ...pulid.ID) {
 	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[uuid.UUID]struct{})
+		m.removedbookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.bookmarks, ids[i])
@@ -1655,7 +1648,7 @@ func (m *MessageMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
 }
 
 // RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *MessageMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) RemovedBookmarksIDs() (ids []pulid.ID) {
 	for id := range m.removedbookmarks {
 		ids = append(ids, id)
 	}
@@ -1663,7 +1656,7 @@ func (m *MessageMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
 }
 
 // BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *MessageMutation) BookmarksIDs() (ids []uuid.UUID) {
+func (m *MessageMutation) BookmarksIDs() (ids []pulid.ID) {
 	for id := range m.bookmarks {
 		ids = append(ids, id)
 	}
@@ -1677,43 +1670,43 @@ func (m *MessageMutation) ResetBookmarks() {
 	m.removedbookmarks = nil
 }
 
-// SetResponseID sets the "response" edge to the Response entity by id.
-func (m *MessageMutation) SetResponseID(id uuid.UUID) {
-	m.response = &id
+// SetChildID sets the "child" edge to the Thread entity by id.
+func (m *MessageMutation) SetChildID(id pulid.ID) {
+	m.child = &id
 }
 
-// ClearResponse clears the "response" edge to the Response entity.
-func (m *MessageMutation) ClearResponse() {
-	m.clearedresponse = true
+// ClearChild clears the "child" edge to the Thread entity.
+func (m *MessageMutation) ClearChild() {
+	m.clearedchild = true
 }
 
-// ResponseCleared reports if the "response" edge to the Response entity was cleared.
-func (m *MessageMutation) ResponseCleared() bool {
-	return m.clearedresponse
+// ChildCleared reports if the "child" edge to the Thread entity was cleared.
+func (m *MessageMutation) ChildCleared() bool {
+	return m.clearedchild
 }
 
-// ResponseID returns the "response" edge ID in the mutation.
-func (m *MessageMutation) ResponseID() (id uuid.UUID, exists bool) {
-	if m.response != nil {
-		return *m.response, true
+// ChildID returns the "child" edge ID in the mutation.
+func (m *MessageMutation) ChildID() (id pulid.ID, exists bool) {
+	if m.child != nil {
+		return *m.child, true
 	}
 	return
 }
 
-// ResponseIDs returns the "response" edge IDs in the mutation.
+// ChildIDs returns the "child" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ResponseID instead. It exists only for internal usage by the builders.
-func (m *MessageMutation) ResponseIDs() (ids []uuid.UUID) {
-	if id := m.response; id != nil {
+// ChildID instead. It exists only for internal usage by the builders.
+func (m *MessageMutation) ChildIDs() (ids []pulid.ID) {
+	if id := m.child; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetResponse resets all changes to the "response" edge.
-func (m *MessageMutation) ResetResponse() {
-	m.response = nil
-	m.clearedresponse = false
+// ResetChild resets all changes to the "child" edge.
+func (m *MessageMutation) ResetChild() {
+	m.child = nil
+	m.clearedchild = false
 }
 
 // Where appends a list predicates to the MessageMutation builder.
@@ -1750,15 +1743,21 @@ func (m *MessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MessageMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, message.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, message.FieldUpdatedAt)
 	}
+	if m.tenant != nil {
+		fields = append(fields, message.FieldTenantID)
+	}
 	if m.content != nil {
 		fields = append(fields, message.FieldContent)
+	}
+	if m.message_type != nil {
+		fields = append(fields, message.FieldMessageType)
 	}
 	return fields
 }
@@ -1772,8 +1771,12 @@ func (m *MessageMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case message.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case message.FieldTenantID:
+		return m.TenantID()
 	case message.FieldContent:
 		return m.Content()
+	case message.FieldMessageType:
+		return m.MessageType()
 	}
 	return nil, false
 }
@@ -1787,8 +1790,12 @@ func (m *MessageMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCreatedAt(ctx)
 	case message.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case message.FieldTenantID:
+		return m.OldTenantID(ctx)
 	case message.FieldContent:
 		return m.OldContent(ctx)
+	case message.FieldMessageType:
+		return m.OldMessageType(ctx)
 	}
 	return nil, fmt.Errorf("unknown Message field %s", name)
 }
@@ -1812,12 +1819,26 @@ func (m *MessageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
+	case message.FieldTenantID:
+		v, ok := value.(pulid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
 	case message.FieldContent:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetContent(v)
+		return nil
+	case message.FieldMessageType:
+		v, ok := value.(message.MessageType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMessageType(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Message field %s", name)
@@ -1874,8 +1895,14 @@ func (m *MessageMutation) ResetField(name string) error {
 	case message.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case message.FieldTenantID:
+		m.ResetTenantID()
+		return nil
 	case message.FieldContent:
 		m.ResetContent()
+		return nil
+	case message.FieldMessageType:
+		m.ResetMessageType()
 		return nil
 	}
 	return fmt.Errorf("unknown Message field %s", name)
@@ -1883,7 +1910,10 @@ func (m *MessageMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *MessageMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
+	if m.tenant != nil {
+		edges = append(edges, message.EdgeTenant)
+	}
 	if m.sent_by != nil {
 		edges = append(edges, message.EdgeSentBy)
 	}
@@ -1893,8 +1923,8 @@ func (m *MessageMutation) AddedEdges() []string {
 	if m.bookmarks != nil {
 		edges = append(edges, message.EdgeBookmarks)
 	}
-	if m.response != nil {
-		edges = append(edges, message.EdgeResponse)
+	if m.child != nil {
+		edges = append(edges, message.EdgeChild)
 	}
 	return edges
 }
@@ -1903,6 +1933,10 @@ func (m *MessageMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *MessageMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case message.EdgeTenant:
+		if id := m.tenant; id != nil {
+			return []ent.Value{*id}
+		}
 	case message.EdgeSentBy:
 		if id := m.sent_by; id != nil {
 			return []ent.Value{*id}
@@ -1917,8 +1951,8 @@ func (m *MessageMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case message.EdgeResponse:
-		if id := m.response; id != nil {
+	case message.EdgeChild:
+		if id := m.child; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -1927,7 +1961,7 @@ func (m *MessageMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *MessageMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedbookmarks != nil {
 		edges = append(edges, message.EdgeBookmarks)
 	}
@@ -1950,7 +1984,10 @@ func (m *MessageMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *MessageMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
+	if m.clearedtenant {
+		edges = append(edges, message.EdgeTenant)
+	}
 	if m.clearedsent_by {
 		edges = append(edges, message.EdgeSentBy)
 	}
@@ -1960,8 +1997,8 @@ func (m *MessageMutation) ClearedEdges() []string {
 	if m.clearedbookmarks {
 		edges = append(edges, message.EdgeBookmarks)
 	}
-	if m.clearedresponse {
-		edges = append(edges, message.EdgeResponse)
+	if m.clearedchild {
+		edges = append(edges, message.EdgeChild)
 	}
 	return edges
 }
@@ -1970,14 +2007,16 @@ func (m *MessageMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *MessageMutation) EdgeCleared(name string) bool {
 	switch name {
+	case message.EdgeTenant:
+		return m.clearedtenant
 	case message.EdgeSentBy:
 		return m.clearedsent_by
 	case message.EdgeThread:
 		return m.clearedthread
 	case message.EdgeBookmarks:
 		return m.clearedbookmarks
-	case message.EdgeResponse:
-		return m.clearedresponse
+	case message.EdgeChild:
+		return m.clearedchild
 	}
 	return false
 }
@@ -1986,14 +2025,17 @@ func (m *MessageMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *MessageMutation) ClearEdge(name string) error {
 	switch name {
+	case message.EdgeTenant:
+		m.ClearTenant()
+		return nil
 	case message.EdgeSentBy:
 		m.ClearSentBy()
 		return nil
 	case message.EdgeThread:
 		m.ClearThread()
 		return nil
-	case message.EdgeResponse:
-		m.ClearResponse()
+	case message.EdgeChild:
+		m.ClearChild()
 		return nil
 	}
 	return fmt.Errorf("unknown Message unique edge %s", name)
@@ -2003,6 +2045,9 @@ func (m *MessageMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *MessageMutation) ResetEdge(name string) error {
 	switch name {
+	case message.EdgeTenant:
+		m.ResetTenant()
+		return nil
 	case message.EdgeSentBy:
 		m.ResetSentBy()
 		return nil
@@ -2012,46 +2057,42 @@ func (m *MessageMutation) ResetEdge(name string) error {
 	case message.EdgeBookmarks:
 		m.ResetBookmarks()
 		return nil
-	case message.EdgeResponse:
-		m.ResetResponse()
+	case message.EdgeChild:
+		m.ResetChild()
 		return nil
 	}
 	return fmt.Errorf("unknown Message edge %s", name)
 }
 
-// ResponseMutation represents an operation that mutates the Response nodes in the graph.
-type ResponseMutation struct {
+// TenantMutation represents an operation that mutates the Tenant nodes in the graph.
+type TenantMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	created_at       *time.Time
-	updated_at       *time.Time
-	content          *string
-	clearedFields    map[string]struct{}
-	sent_by          *uuid.UUID
-	clearedsent_by   bool
-	message          *uuid.UUID
-	clearedmessage   bool
-	bookmarks        map[uuid.UUID]struct{}
-	removedbookmarks map[uuid.UUID]struct{}
-	clearedbookmarks bool
-	done             bool
-	oldValue         func(context.Context) (*Response, error)
-	predicates       []predicate.Response
+	op            Op
+	typ           string
+	id            *pulid.ID
+	created_at    *time.Time
+	updated_at    *time.Time
+	workos_org_id *string
+	clearedFields map[string]struct{}
+	users         map[pulid.ID]struct{}
+	removedusers  map[pulid.ID]struct{}
+	clearedusers  bool
+	done          bool
+	oldValue      func(context.Context) (*Tenant, error)
+	predicates    []predicate.Tenant
 }
 
-var _ ent.Mutation = (*ResponseMutation)(nil)
+var _ ent.Mutation = (*TenantMutation)(nil)
 
-// responseOption allows management of the mutation configuration using functional options.
-type responseOption func(*ResponseMutation)
+// tenantOption allows management of the mutation configuration using functional options.
+type tenantOption func(*TenantMutation)
 
-// newResponseMutation creates new mutation for the Response entity.
-func newResponseMutation(c config, op Op, opts ...responseOption) *ResponseMutation {
-	m := &ResponseMutation{
+// newTenantMutation creates new mutation for the Tenant entity.
+func newTenantMutation(c config, op Op, opts ...tenantOption) *TenantMutation {
+	m := &TenantMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeResponse,
+		typ:           TypeTenant,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -2060,20 +2101,20 @@ func newResponseMutation(c config, op Op, opts ...responseOption) *ResponseMutat
 	return m
 }
 
-// withResponseID sets the ID field of the mutation.
-func withResponseID(id uuid.UUID) responseOption {
-	return func(m *ResponseMutation) {
+// withTenantID sets the ID field of the mutation.
+func withTenantID(id pulid.ID) tenantOption {
+	return func(m *TenantMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *Response
+			value *Tenant
 		)
-		m.oldValue = func(ctx context.Context) (*Response, error) {
+		m.oldValue = func(ctx context.Context) (*Tenant, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().Response.Get(ctx, id)
+					value, err = m.Client().Tenant.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -2082,10 +2123,10 @@ func withResponseID(id uuid.UUID) responseOption {
 	}
 }
 
-// withResponse sets the old Response of the mutation.
-func withResponse(node *Response) responseOption {
-	return func(m *ResponseMutation) {
-		m.oldValue = func(context.Context) (*Response, error) {
+// withTenant sets the old Tenant of the mutation.
+func withTenant(node *Tenant) tenantOption {
+	return func(m *TenantMutation) {
+		m.oldValue = func(context.Context) (*Tenant, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -2094,7 +2135,7 @@ func withResponse(node *Response) responseOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ResponseMutation) Client() *Client {
+func (m TenantMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -2102,7 +2143,7 @@ func (m ResponseMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m ResponseMutation) Tx() (*Tx, error) {
+func (m TenantMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -2112,14 +2153,14 @@ func (m ResponseMutation) Tx() (*Tx, error) {
 }
 
 // SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of Response entities.
-func (m *ResponseMutation) SetID(id uuid.UUID) {
+// operation is only accepted on creation of Tenant entities.
+func (m *TenantMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *ResponseMutation) ID() (id uuid.UUID, exists bool) {
+func (m *TenantMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2130,28 +2171,28 @@ func (m *ResponseMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *ResponseMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *TenantMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Response.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().Tenant.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (m *ResponseMutation) SetCreatedAt(t time.Time) {
+func (m *TenantMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
 }
 
 // CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *ResponseMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *TenantMutation) CreatedAt() (r time.Time, exists bool) {
 	v := m.created_at
 	if v == nil {
 		return
@@ -2159,10 +2200,10 @@ func (m *ResponseMutation) CreatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the Response entity.
-// If the Response object wasn't provided to the builder, the object is fetched from the database.
+// OldCreatedAt returns the old "created_at" field's value of the Tenant entity.
+// If the Tenant object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ResponseMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *TenantMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
@@ -2177,17 +2218,17 @@ func (m *ResponseMutation) OldCreatedAt(ctx context.Context) (v time.Time, err e
 }
 
 // ResetCreatedAt resets all changes to the "created_at" field.
-func (m *ResponseMutation) ResetCreatedAt() {
+func (m *TenantMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (m *ResponseMutation) SetUpdatedAt(t time.Time) {
+func (m *TenantMutation) SetUpdatedAt(t time.Time) {
 	m.updated_at = &t
 }
 
 // UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *ResponseMutation) UpdatedAt() (r time.Time, exists bool) {
+func (m *TenantMutation) UpdatedAt() (r time.Time, exists bool) {
 	v := m.updated_at
 	if v == nil {
 		return
@@ -2195,10 +2236,10 @@ func (m *ResponseMutation) UpdatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldUpdatedAt returns the old "updated_at" field's value of the Response entity.
-// If the Response object wasn't provided to the builder, the object is fetched from the database.
+// OldUpdatedAt returns the old "updated_at" field's value of the Tenant entity.
+// If the Tenant object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ResponseMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *TenantMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
 	}
@@ -2213,200 +2254,109 @@ func (m *ResponseMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err e
 }
 
 // ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *ResponseMutation) ResetUpdatedAt() {
+func (m *TenantMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// SetContent sets the "content" field.
-func (m *ResponseMutation) SetContent(s string) {
-	m.content = &s
+// SetWorkosOrgID sets the "workos_org_id" field.
+func (m *TenantMutation) SetWorkosOrgID(s string) {
+	m.workos_org_id = &s
 }
 
-// Content returns the value of the "content" field in the mutation.
-func (m *ResponseMutation) Content() (r string, exists bool) {
-	v := m.content
+// WorkosOrgID returns the value of the "workos_org_id" field in the mutation.
+func (m *TenantMutation) WorkosOrgID() (r string, exists bool) {
+	v := m.workos_org_id
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldContent returns the old "content" field's value of the Response entity.
-// If the Response object wasn't provided to the builder, the object is fetched from the database.
+// OldWorkosOrgID returns the old "workos_org_id" field's value of the Tenant entity.
+// If the Tenant object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ResponseMutation) OldContent(ctx context.Context) (v string, err error) {
+func (m *TenantMutation) OldWorkosOrgID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+		return v, errors.New("OldWorkosOrgID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldContent requires an ID field in the mutation")
+		return v, errors.New("OldWorkosOrgID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+		return v, fmt.Errorf("querying old value for OldWorkosOrgID: %w", err)
 	}
-	return oldValue.Content, nil
+	return oldValue.WorkosOrgID, nil
 }
 
-// ClearContent clears the value of the "content" field.
-func (m *ResponseMutation) ClearContent() {
-	m.content = nil
-	m.clearedFields[response.FieldContent] = struct{}{}
+// ResetWorkosOrgID resets all changes to the "workos_org_id" field.
+func (m *TenantMutation) ResetWorkosOrgID() {
+	m.workos_org_id = nil
 }
 
-// ContentCleared returns if the "content" field was cleared in this mutation.
-func (m *ResponseMutation) ContentCleared() bool {
-	_, ok := m.clearedFields[response.FieldContent]
-	return ok
-}
-
-// ResetContent resets all changes to the "content" field.
-func (m *ResponseMutation) ResetContent() {
-	m.content = nil
-	delete(m.clearedFields, response.FieldContent)
-}
-
-// SetSentByID sets the "sent_by" edge to the Agent entity by id.
-func (m *ResponseMutation) SetSentByID(id uuid.UUID) {
-	m.sent_by = &id
-}
-
-// ClearSentBy clears the "sent_by" edge to the Agent entity.
-func (m *ResponseMutation) ClearSentBy() {
-	m.clearedsent_by = true
-}
-
-// SentByCleared reports if the "sent_by" edge to the Agent entity was cleared.
-func (m *ResponseMutation) SentByCleared() bool {
-	return m.clearedsent_by
-}
-
-// SentByID returns the "sent_by" edge ID in the mutation.
-func (m *ResponseMutation) SentByID() (id uuid.UUID, exists bool) {
-	if m.sent_by != nil {
-		return *m.sent_by, true
-	}
-	return
-}
-
-// SentByIDs returns the "sent_by" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// SentByID instead. It exists only for internal usage by the builders.
-func (m *ResponseMutation) SentByIDs() (ids []uuid.UUID) {
-	if id := m.sent_by; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetSentBy resets all changes to the "sent_by" edge.
-func (m *ResponseMutation) ResetSentBy() {
-	m.sent_by = nil
-	m.clearedsent_by = false
-}
-
-// SetMessageID sets the "message" edge to the Message entity by id.
-func (m *ResponseMutation) SetMessageID(id uuid.UUID) {
-	m.message = &id
-}
-
-// ClearMessage clears the "message" edge to the Message entity.
-func (m *ResponseMutation) ClearMessage() {
-	m.clearedmessage = true
-}
-
-// MessageCleared reports if the "message" edge to the Message entity was cleared.
-func (m *ResponseMutation) MessageCleared() bool {
-	return m.clearedmessage
-}
-
-// MessageID returns the "message" edge ID in the mutation.
-func (m *ResponseMutation) MessageID() (id uuid.UUID, exists bool) {
-	if m.message != nil {
-		return *m.message, true
-	}
-	return
-}
-
-// MessageIDs returns the "message" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// MessageID instead. It exists only for internal usage by the builders.
-func (m *ResponseMutation) MessageIDs() (ids []uuid.UUID) {
-	if id := m.message; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetMessage resets all changes to the "message" edge.
-func (m *ResponseMutation) ResetMessage() {
-	m.message = nil
-	m.clearedmessage = false
-}
-
-// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *ResponseMutation) AddBookmarkIDs(ids ...uuid.UUID) {
-	if m.bookmarks == nil {
-		m.bookmarks = make(map[uuid.UUID]struct{})
+// AddUserIDs adds the "users" edge to the User entity by ids.
+func (m *TenantMutation) AddUserIDs(ids ...pulid.ID) {
+	if m.users == nil {
+		m.users = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
-		m.bookmarks[ids[i]] = struct{}{}
+		m.users[ids[i]] = struct{}{}
 	}
 }
 
-// ClearBookmarks clears the "bookmarks" edge to the Bookmark entity.
-func (m *ResponseMutation) ClearBookmarks() {
-	m.clearedbookmarks = true
+// ClearUsers clears the "users" edge to the User entity.
+func (m *TenantMutation) ClearUsers() {
+	m.clearedusers = true
 }
 
-// BookmarksCleared reports if the "bookmarks" edge to the Bookmark entity was cleared.
-func (m *ResponseMutation) BookmarksCleared() bool {
-	return m.clearedbookmarks
+// UsersCleared reports if the "users" edge to the User entity was cleared.
+func (m *TenantMutation) UsersCleared() bool {
+	return m.clearedusers
 }
 
-// RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *ResponseMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
-	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[uuid.UUID]struct{})
+// RemoveUserIDs removes the "users" edge to the User entity by IDs.
+func (m *TenantMutation) RemoveUserIDs(ids ...pulid.ID) {
+	if m.removedusers == nil {
+		m.removedusers = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
-		delete(m.bookmarks, ids[i])
-		m.removedbookmarks[ids[i]] = struct{}{}
+		delete(m.users, ids[i])
+		m.removedusers[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *ResponseMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
-	for id := range m.removedbookmarks {
+// RemovedUsers returns the removed IDs of the "users" edge to the User entity.
+func (m *TenantMutation) RemovedUsersIDs() (ids []pulid.ID) {
+	for id := range m.removedusers {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *ResponseMutation) BookmarksIDs() (ids []uuid.UUID) {
-	for id := range m.bookmarks {
+// UsersIDs returns the "users" edge IDs in the mutation.
+func (m *TenantMutation) UsersIDs() (ids []pulid.ID) {
+	for id := range m.users {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetBookmarks resets all changes to the "bookmarks" edge.
-func (m *ResponseMutation) ResetBookmarks() {
-	m.bookmarks = nil
-	m.clearedbookmarks = false
-	m.removedbookmarks = nil
+// ResetUsers resets all changes to the "users" edge.
+func (m *TenantMutation) ResetUsers() {
+	m.users = nil
+	m.clearedusers = false
+	m.removedusers = nil
 }
 
-// Where appends a list predicates to the ResponseMutation builder.
-func (m *ResponseMutation) Where(ps ...predicate.Response) {
+// Where appends a list predicates to the TenantMutation builder.
+func (m *TenantMutation) Where(ps ...predicate.Tenant) {
 	m.predicates = append(m.predicates, ps...)
 }
 
-// WhereP appends storage-level predicates to the ResponseMutation builder. Using this method,
+// WhereP appends storage-level predicates to the TenantMutation builder. Using this method,
 // users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *ResponseMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.Response, len(ps))
+func (m *TenantMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Tenant, len(ps))
 	for i := range ps {
 		p[i] = ps[i]
 	}
@@ -2414,33 +2364,33 @@ func (m *ResponseMutation) WhereP(ps ...func(*sql.Selector)) {
 }
 
 // Op returns the operation name.
-func (m *ResponseMutation) Op() Op {
+func (m *TenantMutation) Op() Op {
 	return m.op
 }
 
 // SetOp allows setting the mutation operation.
-func (m *ResponseMutation) SetOp(op Op) {
+func (m *TenantMutation) SetOp(op Op) {
 	m.op = op
 }
 
-// Type returns the node type of this mutation (Response).
-func (m *ResponseMutation) Type() string {
+// Type returns the node type of this mutation (Tenant).
+func (m *TenantMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *ResponseMutation) Fields() []string {
+func (m *TenantMutation) Fields() []string {
 	fields := make([]string, 0, 3)
 	if m.created_at != nil {
-		fields = append(fields, response.FieldCreatedAt)
+		fields = append(fields, tenant.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
-		fields = append(fields, response.FieldUpdatedAt)
+		fields = append(fields, tenant.FieldUpdatedAt)
 	}
-	if m.content != nil {
-		fields = append(fields, response.FieldContent)
+	if m.workos_org_id != nil {
+		fields = append(fields, tenant.FieldWorkosOrgID)
 	}
 	return fields
 }
@@ -2448,14 +2398,14 @@ func (m *ResponseMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *ResponseMutation) Field(name string) (ent.Value, bool) {
+func (m *TenantMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case response.FieldCreatedAt:
+	case tenant.FieldCreatedAt:
 		return m.CreatedAt()
-	case response.FieldUpdatedAt:
+	case tenant.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case response.FieldContent:
-		return m.Content()
+	case tenant.FieldWorkosOrgID:
+		return m.WorkosOrgID()
 	}
 	return nil, false
 }
@@ -2463,145 +2413,122 @@ func (m *ResponseMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *ResponseMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *TenantMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case response.FieldCreatedAt:
+	case tenant.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case response.FieldUpdatedAt:
+	case tenant.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case response.FieldContent:
-		return m.OldContent(ctx)
+	case tenant.FieldWorkosOrgID:
+		return m.OldWorkosOrgID(ctx)
 	}
-	return nil, fmt.Errorf("unknown Response field %s", name)
+	return nil, fmt.Errorf("unknown Tenant field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *ResponseMutation) SetField(name string, value ent.Value) error {
+func (m *TenantMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case response.FieldCreatedAt:
+	case tenant.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
 		return nil
-	case response.FieldUpdatedAt:
+	case tenant.FieldUpdatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case response.FieldContent:
+	case tenant.FieldWorkosOrgID:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetContent(v)
+		m.SetWorkosOrgID(v)
 		return nil
 	}
-	return fmt.Errorf("unknown Response field %s", name)
+	return fmt.Errorf("unknown Tenant field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *ResponseMutation) AddedFields() []string {
+func (m *TenantMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *ResponseMutation) AddedField(name string) (ent.Value, bool) {
+func (m *TenantMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *ResponseMutation) AddField(name string, value ent.Value) error {
+func (m *TenantMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown Response numeric field %s", name)
+	return fmt.Errorf("unknown Tenant numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *ResponseMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(response.FieldContent) {
-		fields = append(fields, response.FieldContent)
-	}
-	return fields
+func (m *TenantMutation) ClearedFields() []string {
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *ResponseMutation) FieldCleared(name string) bool {
+func (m *TenantMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *ResponseMutation) ClearField(name string) error {
-	switch name {
-	case response.FieldContent:
-		m.ClearContent()
-		return nil
-	}
-	return fmt.Errorf("unknown Response nullable field %s", name)
+func (m *TenantMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Tenant nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *ResponseMutation) ResetField(name string) error {
+func (m *TenantMutation) ResetField(name string) error {
 	switch name {
-	case response.FieldCreatedAt:
+	case tenant.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
-	case response.FieldUpdatedAt:
+	case tenant.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case response.FieldContent:
-		m.ResetContent()
+	case tenant.FieldWorkosOrgID:
+		m.ResetWorkosOrgID()
 		return nil
 	}
-	return fmt.Errorf("unknown Response field %s", name)
+	return fmt.Errorf("unknown Tenant field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *ResponseMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.sent_by != nil {
-		edges = append(edges, response.EdgeSentBy)
-	}
-	if m.message != nil {
-		edges = append(edges, response.EdgeMessage)
-	}
-	if m.bookmarks != nil {
-		edges = append(edges, response.EdgeBookmarks)
+func (m *TenantMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.users != nil {
+		edges = append(edges, tenant.EdgeUsers)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *ResponseMutation) AddedIDs(name string) []ent.Value {
+func (m *TenantMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case response.EdgeSentBy:
-		if id := m.sent_by; id != nil {
-			return []ent.Value{*id}
-		}
-	case response.EdgeMessage:
-		if id := m.message; id != nil {
-			return []ent.Value{*id}
-		}
-	case response.EdgeBookmarks:
-		ids := make([]ent.Value, 0, len(m.bookmarks))
-		for id := range m.bookmarks {
+	case tenant.EdgeUsers:
+		ids := make([]ent.Value, 0, len(m.users))
+		for id := range m.users {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2610,21 +2537,21 @@ func (m *ResponseMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *ResponseMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.removedbookmarks != nil {
-		edges = append(edges, response.EdgeBookmarks)
+func (m *TenantMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedusers != nil {
+		edges = append(edges, tenant.EdgeUsers)
 	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *ResponseMutation) RemovedIDs(name string) []ent.Value {
+func (m *TenantMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case response.EdgeBookmarks:
-		ids := make([]ent.Value, 0, len(m.removedbookmarks))
-		for id := range m.removedbookmarks {
+	case tenant.EdgeUsers:
+		ids := make([]ent.Value, 0, len(m.removedusers))
+		for id := range m.removedusers {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2633,63 +2560,41 @@ func (m *ResponseMutation) RemovedIDs(name string) []ent.Value {
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *ResponseMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.clearedsent_by {
-		edges = append(edges, response.EdgeSentBy)
-	}
-	if m.clearedmessage {
-		edges = append(edges, response.EdgeMessage)
-	}
-	if m.clearedbookmarks {
-		edges = append(edges, response.EdgeBookmarks)
+func (m *TenantMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedusers {
+		edges = append(edges, tenant.EdgeUsers)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *ResponseMutation) EdgeCleared(name string) bool {
+func (m *TenantMutation) EdgeCleared(name string) bool {
 	switch name {
-	case response.EdgeSentBy:
-		return m.clearedsent_by
-	case response.EdgeMessage:
-		return m.clearedmessage
-	case response.EdgeBookmarks:
-		return m.clearedbookmarks
+	case tenant.EdgeUsers:
+		return m.clearedusers
 	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *ResponseMutation) ClearEdge(name string) error {
+func (m *TenantMutation) ClearEdge(name string) error {
 	switch name {
-	case response.EdgeSentBy:
-		m.ClearSentBy()
-		return nil
-	case response.EdgeMessage:
-		m.ClearMessage()
-		return nil
 	}
-	return fmt.Errorf("unknown Response unique edge %s", name)
+	return fmt.Errorf("unknown Tenant unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *ResponseMutation) ResetEdge(name string) error {
+func (m *TenantMutation) ResetEdge(name string) error {
 	switch name {
-	case response.EdgeSentBy:
-		m.ResetSentBy()
-		return nil
-	case response.EdgeMessage:
-		m.ResetMessage()
-		return nil
-	case response.EdgeBookmarks:
-		m.ResetBookmarks()
+	case tenant.EdgeUsers:
+		m.ResetUsers()
 		return nil
 	}
-	return fmt.Errorf("unknown Response edge %s", name)
+	return fmt.Errorf("unknown Tenant edge %s", name)
 }
 
 // ThreadMutation represents an operation that mutates the Thread nodes in the graph.
@@ -2697,24 +2602,22 @@ type ThreadMutation struct {
 	config
 	op                Op
 	typ               string
-	id                *uuid.UUID
+	id                *pulid.ID
 	created_at        *time.Time
 	updated_at        *time.Time
 	name              *string
+	last_viewed_at    *time.Time
+	provider          *thread.Provider
 	clearedFields     map[string]struct{}
-	created_by        *uuid.UUID
+	tenant            *pulid.ID
+	clearedtenant     bool
+	created_by        *pulid.ID
 	clearedcreated_by bool
-	messages          map[uuid.UUID]struct{}
-	removedmessages   map[uuid.UUID]struct{}
+	messages          map[pulid.ID]struct{}
+	removedmessages   map[pulid.ID]struct{}
 	clearedmessages   bool
-	bookmarks         map[uuid.UUID]struct{}
-	removedbookmarks  map[uuid.UUID]struct{}
-	clearedbookmarks  bool
-	parent            *uuid.UUID
+	parent            *pulid.ID
 	clearedparent     bool
-	children          map[uuid.UUID]struct{}
-	removedchildren   map[uuid.UUID]struct{}
-	clearedchildren   bool
 	done              bool
 	oldValue          func(context.Context) (*Thread, error)
 	predicates        []predicate.Thread
@@ -2740,7 +2643,7 @@ func newThreadMutation(c config, op Op, opts ...threadOption) *ThreadMutation {
 }
 
 // withThreadID sets the ID field of the mutation.
-func withThreadID(id uuid.UUID) threadOption {
+func withThreadID(id pulid.ID) threadOption {
 	return func(m *ThreadMutation) {
 		var (
 			err   error
@@ -2792,13 +2695,13 @@ func (m ThreadMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of Thread entities.
-func (m *ThreadMutation) SetID(id uuid.UUID) {
+func (m *ThreadMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *ThreadMutation) ID() (id uuid.UUID, exists bool) {
+func (m *ThreadMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2809,12 +2712,12 @@ func (m *ThreadMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *ThreadMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *ThreadMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -2896,6 +2799,42 @@ func (m *ThreadMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (m *ThreadMutation) SetTenantID(pu pulid.ID) {
+	m.tenant = &pu
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *ThreadMutation) TenantID() (r pulid.ID, exists bool) {
+	v := m.tenant
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the Thread entity.
+// If the Thread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadMutation) OldTenantID(ctx context.Context) (v pulid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *ThreadMutation) ResetTenantID() {
+	m.tenant = nil
+}
+
 // SetName sets the "name" field.
 func (m *ThreadMutation) SetName(s string) {
 	m.name = &s
@@ -2932,8 +2871,107 @@ func (m *ThreadMutation) ResetName() {
 	m.name = nil
 }
 
+// SetLastViewedAt sets the "last_viewed_at" field.
+func (m *ThreadMutation) SetLastViewedAt(t time.Time) {
+	m.last_viewed_at = &t
+}
+
+// LastViewedAt returns the value of the "last_viewed_at" field in the mutation.
+func (m *ThreadMutation) LastViewedAt() (r time.Time, exists bool) {
+	v := m.last_viewed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastViewedAt returns the old "last_viewed_at" field's value of the Thread entity.
+// If the Thread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadMutation) OldLastViewedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastViewedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastViewedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastViewedAt: %w", err)
+	}
+	return oldValue.LastViewedAt, nil
+}
+
+// ResetLastViewedAt resets all changes to the "last_viewed_at" field.
+func (m *ThreadMutation) ResetLastViewedAt() {
+	m.last_viewed_at = nil
+}
+
+// SetProvider sets the "provider" field.
+func (m *ThreadMutation) SetProvider(t thread.Provider) {
+	m.provider = &t
+}
+
+// Provider returns the value of the "provider" field in the mutation.
+func (m *ThreadMutation) Provider() (r thread.Provider, exists bool) {
+	v := m.provider
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProvider returns the old "provider" field's value of the Thread entity.
+// If the Thread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadMutation) OldProvider(ctx context.Context) (v thread.Provider, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProvider is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProvider requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProvider: %w", err)
+	}
+	return oldValue.Provider, nil
+}
+
+// ResetProvider resets all changes to the "provider" field.
+func (m *ThreadMutation) ResetProvider() {
+	m.provider = nil
+}
+
+// ClearTenant clears the "tenant" edge to the Tenant entity.
+func (m *ThreadMutation) ClearTenant() {
+	m.clearedtenant = true
+	m.clearedFields[thread.FieldTenantID] = struct{}{}
+}
+
+// TenantCleared reports if the "tenant" edge to the Tenant entity was cleared.
+func (m *ThreadMutation) TenantCleared() bool {
+	return m.clearedtenant
+}
+
+// TenantIDs returns the "tenant" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TenantID instead. It exists only for internal usage by the builders.
+func (m *ThreadMutation) TenantIDs() (ids []pulid.ID) {
+	if id := m.tenant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTenant resets all changes to the "tenant" edge.
+func (m *ThreadMutation) ResetTenant() {
+	m.tenant = nil
+	m.clearedtenant = false
+}
+
 // SetCreatedByID sets the "created_by" edge to the User entity by id.
-func (m *ThreadMutation) SetCreatedByID(id uuid.UUID) {
+func (m *ThreadMutation) SetCreatedByID(id pulid.ID) {
 	m.created_by = &id
 }
 
@@ -2948,7 +2986,7 @@ func (m *ThreadMutation) CreatedByCleared() bool {
 }
 
 // CreatedByID returns the "created_by" edge ID in the mutation.
-func (m *ThreadMutation) CreatedByID() (id uuid.UUID, exists bool) {
+func (m *ThreadMutation) CreatedByID() (id pulid.ID, exists bool) {
 	if m.created_by != nil {
 		return *m.created_by, true
 	}
@@ -2958,7 +2996,7 @@ func (m *ThreadMutation) CreatedByID() (id uuid.UUID, exists bool) {
 // CreatedByIDs returns the "created_by" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // CreatedByID instead. It exists only for internal usage by the builders.
-func (m *ThreadMutation) CreatedByIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) CreatedByIDs() (ids []pulid.ID) {
 	if id := m.created_by; id != nil {
 		ids = append(ids, *id)
 	}
@@ -2972,9 +3010,9 @@ func (m *ThreadMutation) ResetCreatedBy() {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by ids.
-func (m *ThreadMutation) AddMessageIDs(ids ...uuid.UUID) {
+func (m *ThreadMutation) AddMessageIDs(ids ...pulid.ID) {
 	if m.messages == nil {
-		m.messages = make(map[uuid.UUID]struct{})
+		m.messages = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.messages[ids[i]] = struct{}{}
@@ -2992,9 +3030,9 @@ func (m *ThreadMutation) MessagesCleared() bool {
 }
 
 // RemoveMessageIDs removes the "messages" edge to the Message entity by IDs.
-func (m *ThreadMutation) RemoveMessageIDs(ids ...uuid.UUID) {
+func (m *ThreadMutation) RemoveMessageIDs(ids ...pulid.ID) {
 	if m.removedmessages == nil {
-		m.removedmessages = make(map[uuid.UUID]struct{})
+		m.removedmessages = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.messages, ids[i])
@@ -3003,7 +3041,7 @@ func (m *ThreadMutation) RemoveMessageIDs(ids ...uuid.UUID) {
 }
 
 // RemovedMessages returns the removed IDs of the "messages" edge to the Message entity.
-func (m *ThreadMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) RemovedMessagesIDs() (ids []pulid.ID) {
 	for id := range m.removedmessages {
 		ids = append(ids, id)
 	}
@@ -3011,7 +3049,7 @@ func (m *ThreadMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
 }
 
 // MessagesIDs returns the "messages" edge IDs in the mutation.
-func (m *ThreadMutation) MessagesIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) MessagesIDs() (ids []pulid.ID) {
 	for id := range m.messages {
 		ids = append(ids, id)
 	}
@@ -3025,77 +3063,23 @@ func (m *ThreadMutation) ResetMessages() {
 	m.removedmessages = nil
 }
 
-// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *ThreadMutation) AddBookmarkIDs(ids ...uuid.UUID) {
-	if m.bookmarks == nil {
-		m.bookmarks = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.bookmarks[ids[i]] = struct{}{}
-	}
-}
-
-// ClearBookmarks clears the "bookmarks" edge to the Bookmark entity.
-func (m *ThreadMutation) ClearBookmarks() {
-	m.clearedbookmarks = true
-}
-
-// BookmarksCleared reports if the "bookmarks" edge to the Bookmark entity was cleared.
-func (m *ThreadMutation) BookmarksCleared() bool {
-	return m.clearedbookmarks
-}
-
-// RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *ThreadMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
-	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.bookmarks, ids[i])
-		m.removedbookmarks[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *ThreadMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
-	for id := range m.removedbookmarks {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *ThreadMutation) BookmarksIDs() (ids []uuid.UUID) {
-	for id := range m.bookmarks {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetBookmarks resets all changes to the "bookmarks" edge.
-func (m *ThreadMutation) ResetBookmarks() {
-	m.bookmarks = nil
-	m.clearedbookmarks = false
-	m.removedbookmarks = nil
-}
-
-// SetParentID sets the "parent" edge to the Thread entity by id.
-func (m *ThreadMutation) SetParentID(id uuid.UUID) {
+// SetParentID sets the "parent" edge to the Message entity by id.
+func (m *ThreadMutation) SetParentID(id pulid.ID) {
 	m.parent = &id
 }
 
-// ClearParent clears the "parent" edge to the Thread entity.
+// ClearParent clears the "parent" edge to the Message entity.
 func (m *ThreadMutation) ClearParent() {
 	m.clearedparent = true
 }
 
-// ParentCleared reports if the "parent" edge to the Thread entity was cleared.
+// ParentCleared reports if the "parent" edge to the Message entity was cleared.
 func (m *ThreadMutation) ParentCleared() bool {
 	return m.clearedparent
 }
 
 // ParentID returns the "parent" edge ID in the mutation.
-func (m *ThreadMutation) ParentID() (id uuid.UUID, exists bool) {
+func (m *ThreadMutation) ParentID() (id pulid.ID, exists bool) {
 	if m.parent != nil {
 		return *m.parent, true
 	}
@@ -3105,7 +3089,7 @@ func (m *ThreadMutation) ParentID() (id uuid.UUID, exists bool) {
 // ParentIDs returns the "parent" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // ParentID instead. It exists only for internal usage by the builders.
-func (m *ThreadMutation) ParentIDs() (ids []uuid.UUID) {
+func (m *ThreadMutation) ParentIDs() (ids []pulid.ID) {
 	if id := m.parent; id != nil {
 		ids = append(ids, *id)
 	}
@@ -3116,60 +3100,6 @@ func (m *ThreadMutation) ParentIDs() (ids []uuid.UUID) {
 func (m *ThreadMutation) ResetParent() {
 	m.parent = nil
 	m.clearedparent = false
-}
-
-// AddChildIDs adds the "children" edge to the Thread entity by ids.
-func (m *ThreadMutation) AddChildIDs(ids ...uuid.UUID) {
-	if m.children == nil {
-		m.children = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.children[ids[i]] = struct{}{}
-	}
-}
-
-// ClearChildren clears the "children" edge to the Thread entity.
-func (m *ThreadMutation) ClearChildren() {
-	m.clearedchildren = true
-}
-
-// ChildrenCleared reports if the "children" edge to the Thread entity was cleared.
-func (m *ThreadMutation) ChildrenCleared() bool {
-	return m.clearedchildren
-}
-
-// RemoveChildIDs removes the "children" edge to the Thread entity by IDs.
-func (m *ThreadMutation) RemoveChildIDs(ids ...uuid.UUID) {
-	if m.removedchildren == nil {
-		m.removedchildren = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.children, ids[i])
-		m.removedchildren[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedChildren returns the removed IDs of the "children" edge to the Thread entity.
-func (m *ThreadMutation) RemovedChildrenIDs() (ids []uuid.UUID) {
-	for id := range m.removedchildren {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ChildrenIDs returns the "children" edge IDs in the mutation.
-func (m *ThreadMutation) ChildrenIDs() (ids []uuid.UUID) {
-	for id := range m.children {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetChildren resets all changes to the "children" edge.
-func (m *ThreadMutation) ResetChildren() {
-	m.children = nil
-	m.clearedchildren = false
-	m.removedchildren = nil
 }
 
 // Where appends a list predicates to the ThreadMutation builder.
@@ -3206,15 +3136,24 @@ func (m *ThreadMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ThreadMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, thread.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, thread.FieldUpdatedAt)
 	}
+	if m.tenant != nil {
+		fields = append(fields, thread.FieldTenantID)
+	}
 	if m.name != nil {
 		fields = append(fields, thread.FieldName)
+	}
+	if m.last_viewed_at != nil {
+		fields = append(fields, thread.FieldLastViewedAt)
+	}
+	if m.provider != nil {
+		fields = append(fields, thread.FieldProvider)
 	}
 	return fields
 }
@@ -3228,8 +3167,14 @@ func (m *ThreadMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case thread.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case thread.FieldTenantID:
+		return m.TenantID()
 	case thread.FieldName:
 		return m.Name()
+	case thread.FieldLastViewedAt:
+		return m.LastViewedAt()
+	case thread.FieldProvider:
+		return m.Provider()
 	}
 	return nil, false
 }
@@ -3243,8 +3188,14 @@ func (m *ThreadMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldCreatedAt(ctx)
 	case thread.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case thread.FieldTenantID:
+		return m.OldTenantID(ctx)
 	case thread.FieldName:
 		return m.OldName(ctx)
+	case thread.FieldLastViewedAt:
+		return m.OldLastViewedAt(ctx)
+	case thread.FieldProvider:
+		return m.OldProvider(ctx)
 	}
 	return nil, fmt.Errorf("unknown Thread field %s", name)
 }
@@ -3268,12 +3219,33 @@ func (m *ThreadMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
+	case thread.FieldTenantID:
+		v, ok := value.(pulid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
 	case thread.FieldName:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case thread.FieldLastViewedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastViewedAt(v)
+		return nil
+	case thread.FieldProvider:
+		v, ok := value.(thread.Provider)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProvider(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Thread field %s", name)
@@ -3330,8 +3302,17 @@ func (m *ThreadMutation) ResetField(name string) error {
 	case thread.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case thread.FieldTenantID:
+		m.ResetTenantID()
+		return nil
 	case thread.FieldName:
 		m.ResetName()
+		return nil
+	case thread.FieldLastViewedAt:
+		m.ResetLastViewedAt()
+		return nil
+	case thread.FieldProvider:
+		m.ResetProvider()
 		return nil
 	}
 	return fmt.Errorf("unknown Thread field %s", name)
@@ -3339,21 +3320,18 @@ func (m *ThreadMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ThreadMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
+	if m.tenant != nil {
+		edges = append(edges, thread.EdgeTenant)
+	}
 	if m.created_by != nil {
 		edges = append(edges, thread.EdgeCreatedBy)
 	}
 	if m.messages != nil {
 		edges = append(edges, thread.EdgeMessages)
 	}
-	if m.bookmarks != nil {
-		edges = append(edges, thread.EdgeBookmarks)
-	}
 	if m.parent != nil {
 		edges = append(edges, thread.EdgeParent)
-	}
-	if m.children != nil {
-		edges = append(edges, thread.EdgeChildren)
 	}
 	return edges
 }
@@ -3362,6 +3340,10 @@ func (m *ThreadMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ThreadMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case thread.EdgeTenant:
+		if id := m.tenant; id != nil {
+			return []ent.Value{*id}
+		}
 	case thread.EdgeCreatedBy:
 		if id := m.created_by; id != nil {
 			return []ent.Value{*id}
@@ -3372,37 +3354,19 @@ func (m *ThreadMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case thread.EdgeBookmarks:
-		ids := make([]ent.Value, 0, len(m.bookmarks))
-		for id := range m.bookmarks {
-			ids = append(ids, id)
-		}
-		return ids
 	case thread.EdgeParent:
 		if id := m.parent; id != nil {
 			return []ent.Value{*id}
 		}
-	case thread.EdgeChildren:
-		ids := make([]ent.Value, 0, len(m.children))
-		for id := range m.children {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ThreadMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.removedmessages != nil {
 		edges = append(edges, thread.EdgeMessages)
-	}
-	if m.removedbookmarks != nil {
-		edges = append(edges, thread.EdgeBookmarks)
-	}
-	if m.removedchildren != nil {
-		edges = append(edges, thread.EdgeChildren)
 	}
 	return edges
 }
@@ -3417,39 +3381,24 @@ func (m *ThreadMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case thread.EdgeBookmarks:
-		ids := make([]ent.Value, 0, len(m.removedbookmarks))
-		for id := range m.removedbookmarks {
-			ids = append(ids, id)
-		}
-		return ids
-	case thread.EdgeChildren:
-		ids := make([]ent.Value, 0, len(m.removedchildren))
-		for id := range m.removedchildren {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ThreadMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
+	if m.clearedtenant {
+		edges = append(edges, thread.EdgeTenant)
+	}
 	if m.clearedcreated_by {
 		edges = append(edges, thread.EdgeCreatedBy)
 	}
 	if m.clearedmessages {
 		edges = append(edges, thread.EdgeMessages)
 	}
-	if m.clearedbookmarks {
-		edges = append(edges, thread.EdgeBookmarks)
-	}
 	if m.clearedparent {
 		edges = append(edges, thread.EdgeParent)
-	}
-	if m.clearedchildren {
-		edges = append(edges, thread.EdgeChildren)
 	}
 	return edges
 }
@@ -3458,16 +3407,14 @@ func (m *ThreadMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ThreadMutation) EdgeCleared(name string) bool {
 	switch name {
+	case thread.EdgeTenant:
+		return m.clearedtenant
 	case thread.EdgeCreatedBy:
 		return m.clearedcreated_by
 	case thread.EdgeMessages:
 		return m.clearedmessages
-	case thread.EdgeBookmarks:
-		return m.clearedbookmarks
 	case thread.EdgeParent:
 		return m.clearedparent
-	case thread.EdgeChildren:
-		return m.clearedchildren
 	}
 	return false
 }
@@ -3476,6 +3423,9 @@ func (m *ThreadMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *ThreadMutation) ClearEdge(name string) error {
 	switch name {
+	case thread.EdgeTenant:
+		m.ClearTenant()
+		return nil
 	case thread.EdgeCreatedBy:
 		m.ClearCreatedBy()
 		return nil
@@ -3490,20 +3440,17 @@ func (m *ThreadMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ThreadMutation) ResetEdge(name string) error {
 	switch name {
+	case thread.EdgeTenant:
+		m.ResetTenant()
+		return nil
 	case thread.EdgeCreatedBy:
 		m.ResetCreatedBy()
 		return nil
 	case thread.EdgeMessages:
 		m.ResetMessages()
 		return nil
-	case thread.EdgeBookmarks:
-		m.ResetBookmarks()
-		return nil
 	case thread.EdgeParent:
 		m.ResetParent()
-		return nil
-	case thread.EdgeChildren:
-		m.ResetChildren()
 		return nil
 	}
 	return fmt.Errorf("unknown Thread edge %s", name)
@@ -3512,25 +3459,31 @@ func (m *ThreadMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	created_at       *time.Time
-	updated_at       *time.Time
-	email            *string
-	clearedFields    map[string]struct{}
-	bookmarks        map[uuid.UUID]struct{}
-	removedbookmarks map[uuid.UUID]struct{}
-	clearedbookmarks bool
-	threads          map[uuid.UUID]struct{}
-	removedthreads   map[uuid.UUID]struct{}
-	clearedthreads   bool
-	messages         map[uuid.UUID]struct{}
-	removedmessages  map[uuid.UUID]struct{}
-	clearedmessages  bool
-	done             bool
-	oldValue         func(context.Context) (*User, error)
-	predicates       []predicate.User
+	op                   Op
+	typ                  string
+	id                   *pulid.ID
+	created_at           *time.Time
+	updated_at           *time.Time
+	email                *string
+	workos_user_id       *string
+	clearedFields        map[string]struct{}
+	bookmarks            map[pulid.ID]struct{}
+	removedbookmarks     map[pulid.ID]struct{}
+	clearedbookmarks     bool
+	threads              map[pulid.ID]struct{}
+	removedthreads       map[pulid.ID]struct{}
+	clearedthreads       bool
+	messages             map[pulid.ID]struct{}
+	removedmessages      map[pulid.ID]struct{}
+	clearedmessages      bool
+	tenants              map[pulid.ID]struct{}
+	removedtenants       map[pulid.ID]struct{}
+	clearedtenants       bool
+	active_tenant        *pulid.ID
+	clearedactive_tenant bool
+	done                 bool
+	oldValue             func(context.Context) (*User, error)
+	predicates           []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -3553,7 +3506,7 @@ func newUserMutation(c config, op Op, opts ...userOption) *UserMutation {
 }
 
 // withUserID sets the ID field of the mutation.
-func withUserID(id uuid.UUID) userOption {
+func withUserID(id pulid.ID) userOption {
 	return func(m *UserMutation) {
 		var (
 			err   error
@@ -3605,13 +3558,13 @@ func (m UserMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of User entities.
-func (m *UserMutation) SetID(id uuid.UUID) {
+func (m *UserMutation) SetID(id pulid.ID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *UserMutation) ID() (id uuid.UUID, exists bool) {
+func (m *UserMutation) ID() (id pulid.ID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -3622,12 +3575,12 @@ func (m *UserMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *UserMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *UserMutation) IDs(ctx context.Context) ([]pulid.ID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []pulid.ID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -3745,10 +3698,46 @@ func (m *UserMutation) ResetEmail() {
 	m.email = nil
 }
 
+// SetWorkosUserID sets the "workos_user_id" field.
+func (m *UserMutation) SetWorkosUserID(s string) {
+	m.workos_user_id = &s
+}
+
+// WorkosUserID returns the value of the "workos_user_id" field in the mutation.
+func (m *UserMutation) WorkosUserID() (r string, exists bool) {
+	v := m.workos_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkosUserID returns the old "workos_user_id" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldWorkosUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkosUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkosUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkosUserID: %w", err)
+	}
+	return oldValue.WorkosUserID, nil
+}
+
+// ResetWorkosUserID resets all changes to the "workos_user_id" field.
+func (m *UserMutation) ResetWorkosUserID() {
+	m.workos_user_id = nil
+}
+
 // AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by ids.
-func (m *UserMutation) AddBookmarkIDs(ids ...uuid.UUID) {
+func (m *UserMutation) AddBookmarkIDs(ids ...pulid.ID) {
 	if m.bookmarks == nil {
-		m.bookmarks = make(map[uuid.UUID]struct{})
+		m.bookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.bookmarks[ids[i]] = struct{}{}
@@ -3766,9 +3755,9 @@ func (m *UserMutation) BookmarksCleared() bool {
 }
 
 // RemoveBookmarkIDs removes the "bookmarks" edge to the Bookmark entity by IDs.
-func (m *UserMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
+func (m *UserMutation) RemoveBookmarkIDs(ids ...pulid.ID) {
 	if m.removedbookmarks == nil {
-		m.removedbookmarks = make(map[uuid.UUID]struct{})
+		m.removedbookmarks = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.bookmarks, ids[i])
@@ -3777,7 +3766,7 @@ func (m *UserMutation) RemoveBookmarkIDs(ids ...uuid.UUID) {
 }
 
 // RemovedBookmarks returns the removed IDs of the "bookmarks" edge to the Bookmark entity.
-func (m *UserMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
+func (m *UserMutation) RemovedBookmarksIDs() (ids []pulid.ID) {
 	for id := range m.removedbookmarks {
 		ids = append(ids, id)
 	}
@@ -3785,7 +3774,7 @@ func (m *UserMutation) RemovedBookmarksIDs() (ids []uuid.UUID) {
 }
 
 // BookmarksIDs returns the "bookmarks" edge IDs in the mutation.
-func (m *UserMutation) BookmarksIDs() (ids []uuid.UUID) {
+func (m *UserMutation) BookmarksIDs() (ids []pulid.ID) {
 	for id := range m.bookmarks {
 		ids = append(ids, id)
 	}
@@ -3800,9 +3789,9 @@ func (m *UserMutation) ResetBookmarks() {
 }
 
 // AddThreadIDs adds the "threads" edge to the Thread entity by ids.
-func (m *UserMutation) AddThreadIDs(ids ...uuid.UUID) {
+func (m *UserMutation) AddThreadIDs(ids ...pulid.ID) {
 	if m.threads == nil {
-		m.threads = make(map[uuid.UUID]struct{})
+		m.threads = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.threads[ids[i]] = struct{}{}
@@ -3820,9 +3809,9 @@ func (m *UserMutation) ThreadsCleared() bool {
 }
 
 // RemoveThreadIDs removes the "threads" edge to the Thread entity by IDs.
-func (m *UserMutation) RemoveThreadIDs(ids ...uuid.UUID) {
+func (m *UserMutation) RemoveThreadIDs(ids ...pulid.ID) {
 	if m.removedthreads == nil {
-		m.removedthreads = make(map[uuid.UUID]struct{})
+		m.removedthreads = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.threads, ids[i])
@@ -3831,7 +3820,7 @@ func (m *UserMutation) RemoveThreadIDs(ids ...uuid.UUID) {
 }
 
 // RemovedThreads returns the removed IDs of the "threads" edge to the Thread entity.
-func (m *UserMutation) RemovedThreadsIDs() (ids []uuid.UUID) {
+func (m *UserMutation) RemovedThreadsIDs() (ids []pulid.ID) {
 	for id := range m.removedthreads {
 		ids = append(ids, id)
 	}
@@ -3839,7 +3828,7 @@ func (m *UserMutation) RemovedThreadsIDs() (ids []uuid.UUID) {
 }
 
 // ThreadsIDs returns the "threads" edge IDs in the mutation.
-func (m *UserMutation) ThreadsIDs() (ids []uuid.UUID) {
+func (m *UserMutation) ThreadsIDs() (ids []pulid.ID) {
 	for id := range m.threads {
 		ids = append(ids, id)
 	}
@@ -3854,9 +3843,9 @@ func (m *UserMutation) ResetThreads() {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by ids.
-func (m *UserMutation) AddMessageIDs(ids ...uuid.UUID) {
+func (m *UserMutation) AddMessageIDs(ids ...pulid.ID) {
 	if m.messages == nil {
-		m.messages = make(map[uuid.UUID]struct{})
+		m.messages = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		m.messages[ids[i]] = struct{}{}
@@ -3874,9 +3863,9 @@ func (m *UserMutation) MessagesCleared() bool {
 }
 
 // RemoveMessageIDs removes the "messages" edge to the Message entity by IDs.
-func (m *UserMutation) RemoveMessageIDs(ids ...uuid.UUID) {
+func (m *UserMutation) RemoveMessageIDs(ids ...pulid.ID) {
 	if m.removedmessages == nil {
-		m.removedmessages = make(map[uuid.UUID]struct{})
+		m.removedmessages = make(map[pulid.ID]struct{})
 	}
 	for i := range ids {
 		delete(m.messages, ids[i])
@@ -3885,7 +3874,7 @@ func (m *UserMutation) RemoveMessageIDs(ids ...uuid.UUID) {
 }
 
 // RemovedMessages returns the removed IDs of the "messages" edge to the Message entity.
-func (m *UserMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
+func (m *UserMutation) RemovedMessagesIDs() (ids []pulid.ID) {
 	for id := range m.removedmessages {
 		ids = append(ids, id)
 	}
@@ -3893,7 +3882,7 @@ func (m *UserMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
 }
 
 // MessagesIDs returns the "messages" edge IDs in the mutation.
-func (m *UserMutation) MessagesIDs() (ids []uuid.UUID) {
+func (m *UserMutation) MessagesIDs() (ids []pulid.ID) {
 	for id := range m.messages {
 		ids = append(ids, id)
 	}
@@ -3905,6 +3894,99 @@ func (m *UserMutation) ResetMessages() {
 	m.messages = nil
 	m.clearedmessages = false
 	m.removedmessages = nil
+}
+
+// AddTenantIDs adds the "tenants" edge to the Tenant entity by ids.
+func (m *UserMutation) AddTenantIDs(ids ...pulid.ID) {
+	if m.tenants == nil {
+		m.tenants = make(map[pulid.ID]struct{})
+	}
+	for i := range ids {
+		m.tenants[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTenants clears the "tenants" edge to the Tenant entity.
+func (m *UserMutation) ClearTenants() {
+	m.clearedtenants = true
+}
+
+// TenantsCleared reports if the "tenants" edge to the Tenant entity was cleared.
+func (m *UserMutation) TenantsCleared() bool {
+	return m.clearedtenants
+}
+
+// RemoveTenantIDs removes the "tenants" edge to the Tenant entity by IDs.
+func (m *UserMutation) RemoveTenantIDs(ids ...pulid.ID) {
+	if m.removedtenants == nil {
+		m.removedtenants = make(map[pulid.ID]struct{})
+	}
+	for i := range ids {
+		delete(m.tenants, ids[i])
+		m.removedtenants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTenants returns the removed IDs of the "tenants" edge to the Tenant entity.
+func (m *UserMutation) RemovedTenantsIDs() (ids []pulid.ID) {
+	for id := range m.removedtenants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TenantsIDs returns the "tenants" edge IDs in the mutation.
+func (m *UserMutation) TenantsIDs() (ids []pulid.ID) {
+	for id := range m.tenants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTenants resets all changes to the "tenants" edge.
+func (m *UserMutation) ResetTenants() {
+	m.tenants = nil
+	m.clearedtenants = false
+	m.removedtenants = nil
+}
+
+// SetActiveTenantID sets the "active_tenant" edge to the Tenant entity by id.
+func (m *UserMutation) SetActiveTenantID(id pulid.ID) {
+	m.active_tenant = &id
+}
+
+// ClearActiveTenant clears the "active_tenant" edge to the Tenant entity.
+func (m *UserMutation) ClearActiveTenant() {
+	m.clearedactive_tenant = true
+}
+
+// ActiveTenantCleared reports if the "active_tenant" edge to the Tenant entity was cleared.
+func (m *UserMutation) ActiveTenantCleared() bool {
+	return m.clearedactive_tenant
+}
+
+// ActiveTenantID returns the "active_tenant" edge ID in the mutation.
+func (m *UserMutation) ActiveTenantID() (id pulid.ID, exists bool) {
+	if m.active_tenant != nil {
+		return *m.active_tenant, true
+	}
+	return
+}
+
+// ActiveTenantIDs returns the "active_tenant" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ActiveTenantID instead. It exists only for internal usage by the builders.
+func (m *UserMutation) ActiveTenantIDs() (ids []pulid.ID) {
+	if id := m.active_tenant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetActiveTenant resets all changes to the "active_tenant" edge.
+func (m *UserMutation) ResetActiveTenant() {
+	m.active_tenant = nil
+	m.clearedactive_tenant = false
 }
 
 // Where appends a list predicates to the UserMutation builder.
@@ -3941,7 +4023,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -3950,6 +4032,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.email != nil {
 		fields = append(fields, user.FieldEmail)
+	}
+	if m.workos_user_id != nil {
+		fields = append(fields, user.FieldWorkosUserID)
 	}
 	return fields
 }
@@ -3965,6 +4050,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case user.FieldEmail:
 		return m.Email()
+	case user.FieldWorkosUserID:
+		return m.WorkosUserID()
 	}
 	return nil, false
 }
@@ -3980,6 +4067,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUpdatedAt(ctx)
 	case user.FieldEmail:
 		return m.OldEmail(ctx)
+	case user.FieldWorkosUserID:
+		return m.OldWorkosUserID(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -4009,6 +4098,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEmail(v)
+		return nil
+	case user.FieldWorkosUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkosUserID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -4068,13 +4164,16 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldEmail:
 		m.ResetEmail()
 		return nil
+	case user.FieldWorkosUserID:
+		m.ResetWorkosUserID()
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 5)
 	if m.bookmarks != nil {
 		edges = append(edges, user.EdgeBookmarks)
 	}
@@ -4083,6 +4182,12 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.messages != nil {
 		edges = append(edges, user.EdgeMessages)
+	}
+	if m.tenants != nil {
+		edges = append(edges, user.EdgeTenants)
+	}
+	if m.active_tenant != nil {
+		edges = append(edges, user.EdgeActiveTenant)
 	}
 	return edges
 }
@@ -4109,13 +4214,23 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeTenants:
+		ids := make([]ent.Value, 0, len(m.tenants))
+		for id := range m.tenants {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeActiveTenant:
+		if id := m.active_tenant; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 5)
 	if m.removedbookmarks != nil {
 		edges = append(edges, user.EdgeBookmarks)
 	}
@@ -4124,6 +4239,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedmessages != nil {
 		edges = append(edges, user.EdgeMessages)
+	}
+	if m.removedtenants != nil {
+		edges = append(edges, user.EdgeTenants)
 	}
 	return edges
 }
@@ -4150,13 +4268,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeTenants:
+		ids := make([]ent.Value, 0, len(m.removedtenants))
+		for id := range m.removedtenants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 5)
 	if m.clearedbookmarks {
 		edges = append(edges, user.EdgeBookmarks)
 	}
@@ -4165,6 +4289,12 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedmessages {
 		edges = append(edges, user.EdgeMessages)
+	}
+	if m.clearedtenants {
+		edges = append(edges, user.EdgeTenants)
+	}
+	if m.clearedactive_tenant {
+		edges = append(edges, user.EdgeActiveTenant)
 	}
 	return edges
 }
@@ -4179,6 +4309,10 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedthreads
 	case user.EdgeMessages:
 		return m.clearedmessages
+	case user.EdgeTenants:
+		return m.clearedtenants
+	case user.EdgeActiveTenant:
+		return m.clearedactive_tenant
 	}
 	return false
 }
@@ -4187,6 +4321,9 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
 	switch name {
+	case user.EdgeActiveTenant:
+		m.ClearActiveTenant()
+		return nil
 	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
@@ -4204,6 +4341,360 @@ func (m *UserMutation) ResetEdge(name string) error {
 	case user.EdgeMessages:
 		m.ResetMessages()
 		return nil
+	case user.EdgeTenants:
+		m.ResetTenants()
+		return nil
+	case user.EdgeActiveTenant:
+		m.ResetActiveTenant()
+		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)
+}
+
+// WorkosEventCursorMutation represents an operation that mutates the WorkosEventCursor nodes in the graph.
+type WorkosEventCursorMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	user_created_cursor *string
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*WorkosEventCursor, error)
+	predicates          []predicate.WorkosEventCursor
+}
+
+var _ ent.Mutation = (*WorkosEventCursorMutation)(nil)
+
+// workoseventcursorOption allows management of the mutation configuration using functional options.
+type workoseventcursorOption func(*WorkosEventCursorMutation)
+
+// newWorkosEventCursorMutation creates new mutation for the WorkosEventCursor entity.
+func newWorkosEventCursorMutation(c config, op Op, opts ...workoseventcursorOption) *WorkosEventCursorMutation {
+	m := &WorkosEventCursorMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeWorkosEventCursor,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withWorkosEventCursorID sets the ID field of the mutation.
+func withWorkosEventCursorID(id int) workoseventcursorOption {
+	return func(m *WorkosEventCursorMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *WorkosEventCursor
+		)
+		m.oldValue = func(ctx context.Context) (*WorkosEventCursor, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().WorkosEventCursor.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withWorkosEventCursor sets the old WorkosEventCursor of the mutation.
+func withWorkosEventCursor(node *WorkosEventCursor) workoseventcursorOption {
+	return func(m *WorkosEventCursorMutation) {
+		m.oldValue = func(context.Context) (*WorkosEventCursor, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m WorkosEventCursorMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m WorkosEventCursorMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *WorkosEventCursorMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *WorkosEventCursorMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().WorkosEventCursor.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetUserCreatedCursor sets the "user_created_cursor" field.
+func (m *WorkosEventCursorMutation) SetUserCreatedCursor(s string) {
+	m.user_created_cursor = &s
+}
+
+// UserCreatedCursor returns the value of the "user_created_cursor" field in the mutation.
+func (m *WorkosEventCursorMutation) UserCreatedCursor() (r string, exists bool) {
+	v := m.user_created_cursor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserCreatedCursor returns the old "user_created_cursor" field's value of the WorkosEventCursor entity.
+// If the WorkosEventCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkosEventCursorMutation) OldUserCreatedCursor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserCreatedCursor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserCreatedCursor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserCreatedCursor: %w", err)
+	}
+	return oldValue.UserCreatedCursor, nil
+}
+
+// ClearUserCreatedCursor clears the value of the "user_created_cursor" field.
+func (m *WorkosEventCursorMutation) ClearUserCreatedCursor() {
+	m.user_created_cursor = nil
+	m.clearedFields[workoseventcursor.FieldUserCreatedCursor] = struct{}{}
+}
+
+// UserCreatedCursorCleared returns if the "user_created_cursor" field was cleared in this mutation.
+func (m *WorkosEventCursorMutation) UserCreatedCursorCleared() bool {
+	_, ok := m.clearedFields[workoseventcursor.FieldUserCreatedCursor]
+	return ok
+}
+
+// ResetUserCreatedCursor resets all changes to the "user_created_cursor" field.
+func (m *WorkosEventCursorMutation) ResetUserCreatedCursor() {
+	m.user_created_cursor = nil
+	delete(m.clearedFields, workoseventcursor.FieldUserCreatedCursor)
+}
+
+// Where appends a list predicates to the WorkosEventCursorMutation builder.
+func (m *WorkosEventCursorMutation) Where(ps ...predicate.WorkosEventCursor) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the WorkosEventCursorMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *WorkosEventCursorMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.WorkosEventCursor, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *WorkosEventCursorMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *WorkosEventCursorMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (WorkosEventCursor).
+func (m *WorkosEventCursorMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *WorkosEventCursorMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.user_created_cursor != nil {
+		fields = append(fields, workoseventcursor.FieldUserCreatedCursor)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *WorkosEventCursorMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case workoseventcursor.FieldUserCreatedCursor:
+		return m.UserCreatedCursor()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *WorkosEventCursorMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case workoseventcursor.FieldUserCreatedCursor:
+		return m.OldUserCreatedCursor(ctx)
+	}
+	return nil, fmt.Errorf("unknown WorkosEventCursor field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WorkosEventCursorMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case workoseventcursor.FieldUserCreatedCursor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserCreatedCursor(v)
+		return nil
+	}
+	return fmt.Errorf("unknown WorkosEventCursor field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *WorkosEventCursorMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *WorkosEventCursorMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WorkosEventCursorMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown WorkosEventCursor numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *WorkosEventCursorMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(workoseventcursor.FieldUserCreatedCursor) {
+		fields = append(fields, workoseventcursor.FieldUserCreatedCursor)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *WorkosEventCursorMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *WorkosEventCursorMutation) ClearField(name string) error {
+	switch name {
+	case workoseventcursor.FieldUserCreatedCursor:
+		m.ClearUserCreatedCursor()
+		return nil
+	}
+	return fmt.Errorf("unknown WorkosEventCursor nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *WorkosEventCursorMutation) ResetField(name string) error {
+	switch name {
+	case workoseventcursor.FieldUserCreatedCursor:
+		m.ResetUserCreatedCursor()
+		return nil
+	}
+	return fmt.Errorf("unknown WorkosEventCursor field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *WorkosEventCursorMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *WorkosEventCursorMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *WorkosEventCursorMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *WorkosEventCursorMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *WorkosEventCursorMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *WorkosEventCursorMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *WorkosEventCursorMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown WorkosEventCursor unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *WorkosEventCursorMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown WorkosEventCursor edge %s", name)
 }

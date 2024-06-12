@@ -1,0 +1,2 @@
+* Refactor apollo link to not get the auth token from the server on each request, it should either do this in an error handler on 401, then retry, or it should store the access token in a cookie and only refresh it if it's expired. I'm punting on this for now because it's a very small performance issue.
+* Figure out if we can pass a tx to neoq, or try river

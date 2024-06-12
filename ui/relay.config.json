@@ -1,0 +1,19 @@
+{
+  "root": ".",
+  "sources": {
+    "components": "my_app",
+    "app": "my_app"
+  },
+  "projects": {
+    "my_app": {
+      "language": "typescript",
+      "schema": "schema.graphql",
+      "output": "__generated__",
+      "useImportTypeSyntax": true,
+      "featureFlags": {
+        "enable_relay_resolver_transform": true
+      },
+      "eagerEsModules": true
+    }
+  }
+}

@@ -1,5 +1,5 @@
 name: UI Pull Request Merged
-run-name: Deploy UI
+run-name: Push ui images
 on:
   pull_request:
     types:
@@ -9,18 +9,31 @@ on:
     paths:
       - "ui/**"
 jobs:
-  image:
-    name: Build image
+  update-chart-app-version:
+    name: Update chart app version
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ github.token }}
-      TF_IN_AUTOMATION: true
-      TF_VERSION: "1.8.3"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
+        with:
+          ref: main
+      - uses: benjlevesque/short-sha@v3.0
+        id: short-sha
+      - name: Chart App Version
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.appVersion = "${{ steps.short-sha.outputs.sha }}"' ui/chart/Chart.yaml
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Updated ui chart appVersion
+          branch: main
+  image:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: us-west-2
@@ -29,47 +42,22 @@ jobs:
           role-to-assume: ${{ secrets.CICD_ROLE_ARN }}
           role-skip-session-tagging: true
           role-duration-seconds: 1200
-
-      - name: Setup kubectl access
-        run: |
-          aws eks update-kubeconfig --name manifold 
-          kubectl config current-context
-
-      - name: Set up terraform
-        uses: hashicorp/setup-terraform@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Terraform Init
-        id: init
-        working-directory: terraform/deployments/demo
-        run: terraform init
-
-      - name: Post TF Init
-        if: ${{ always() && (steps.init.outcome == 'success' || steps.init.outcome == 'failure') }}
-        uses: GetTerminus/terraform-pr-commenter@v3
+          images: |
+            ${{ steps.login-ecr.outputs.registry }}/personal
+          tags: |
+            type=sha,prefix=ui
+      - name: Build and push
+        uses: docker/build-push-action@v5
         with:
-          terraform_version: ${{ env.TF_VERSION }}
-          commenter_type: init
-          commenter_input: ${{ format('{0}{1}', steps.init.outputs.stdout, steps.init.outputs.stderr) }}
-          commenter_exitcode: ${{ steps.init.outputs.exitcode }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: NPM Install
-        uses: bahmutov/npm-install@v1
-        with:
-          working-directory: ui
-
-      - name: NPM Build
-        working-directory: ui
-        run: |
-          npm run build-prod
-
-      - name: Terraform Apply
-        id: apply
-        working-directory: terraform/deployments/demo
-        run: terraform apply -auto-approve
+          context: "{{defaultContext}}:ui"
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}

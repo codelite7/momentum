@@ -14,10 +14,8 @@ import (
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/codelite7/momentum/api/ent/thread"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // BookmarkUpdate is the builder for updating Bookmark entities.
@@ -48,7 +46,7 @@ func (bu *BookmarkUpdate) SetNillableUpdatedAt(t *time.Time) *BookmarkUpdate {
 }
 
 // SetUserID sets the "user" edge to the User entity by ID.
-func (bu *BookmarkUpdate) SetUserID(id uuid.UUID) *BookmarkUpdate {
+func (bu *BookmarkUpdate) SetUserID(id pulid.ID) *BookmarkUpdate {
 	bu.mutation.SetUserID(id)
 	return bu
 }
@@ -58,33 +56,14 @@ func (bu *BookmarkUpdate) SetUser(u *User) *BookmarkUpdate {
 	return bu.SetUserID(u.ID)
 }
 
-// SetThreadID sets the "thread" edge to the Thread entity by ID.
-func (bu *BookmarkUpdate) SetThreadID(id uuid.UUID) *BookmarkUpdate {
-	bu.mutation.SetThreadID(id)
-	return bu
-}
-
-// SetNillableThreadID sets the "thread" edge to the Thread entity by ID if the given value is not nil.
-func (bu *BookmarkUpdate) SetNillableThreadID(id *uuid.UUID) *BookmarkUpdate {
-	if id != nil {
-		bu = bu.SetThreadID(*id)
-	}
-	return bu
-}
-
-// SetThread sets the "thread" edge to the Thread entity.
-func (bu *BookmarkUpdate) SetThread(t *Thread) *BookmarkUpdate {
-	return bu.SetThreadID(t.ID)
-}
-
 // SetMessageID sets the "message" edge to the Message entity by ID.
-func (bu *BookmarkUpdate) SetMessageID(id uuid.UUID) *BookmarkUpdate {
+func (bu *BookmarkUpdate) SetMessageID(id pulid.ID) *BookmarkUpdate {
 	bu.mutation.SetMessageID(id)
 	return bu
 }
 
 // SetNillableMessageID sets the "message" edge to the Message entity by ID if the given value is not nil.
-func (bu *BookmarkUpdate) SetNillableMessageID(id *uuid.UUID) *BookmarkUpdate {
+func (bu *BookmarkUpdate) SetNillableMessageID(id *pulid.ID) *BookmarkUpdate {
 	if id != nil {
 		bu = bu.SetMessageID(*id)
 	}
@@ -94,25 +73,6 @@ func (bu *BookmarkUpdate) SetNillableMessageID(id *uuid.UUID) *BookmarkUpdate {
 // SetMessage sets the "message" edge to the Message entity.
 func (bu *BookmarkUpdate) SetMessage(m *Message) *BookmarkUpdate {
 	return bu.SetMessageID(m.ID)
-}
-
-// SetResponseID sets the "response" edge to the Response entity by ID.
-func (bu *BookmarkUpdate) SetResponseID(id uuid.UUID) *BookmarkUpdate {
-	bu.mutation.SetResponseID(id)
-	return bu
-}
-
-// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
-func (bu *BookmarkUpdate) SetNillableResponseID(id *uuid.UUID) *BookmarkUpdate {
-	if id != nil {
-		bu = bu.SetResponseID(*id)
-	}
-	return bu
-}
-
-// SetResponse sets the "response" edge to the Response entity.
-func (bu *BookmarkUpdate) SetResponse(r *Response) *BookmarkUpdate {
-	return bu.SetResponseID(r.ID)
 }
 
 // Mutation returns the BookmarkMutation object of the builder.
@@ -126,21 +86,9 @@ func (bu *BookmarkUpdate) ClearUser() *BookmarkUpdate {
 	return bu
 }
 
-// ClearThread clears the "thread" edge to the Thread entity.
-func (bu *BookmarkUpdate) ClearThread() *BookmarkUpdate {
-	bu.mutation.ClearThread()
-	return bu
-}
-
 // ClearMessage clears the "message" edge to the Message entity.
 func (bu *BookmarkUpdate) ClearMessage() *BookmarkUpdate {
 	bu.mutation.ClearMessage()
-	return bu
-}
-
-// ClearResponse clears the "response" edge to the Response entity.
-func (bu *BookmarkUpdate) ClearResponse() *BookmarkUpdate {
-	bu.mutation.ClearResponse()
 	return bu
 }
 
@@ -173,6 +121,9 @@ func (bu *BookmarkUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (bu *BookmarkUpdate) check() error {
+	if _, ok := bu.mutation.TenantID(); bu.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Bookmark.tenant"`)
+	}
 	if _, ok := bu.mutation.UserID(); bu.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Bookmark.user"`)
 	}
@@ -183,7 +134,7 @@ func (bu *BookmarkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := bu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString))
 	if ps := bu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -202,7 +153,7 @@ func (bu *BookmarkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{bookmark.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -215,36 +166,7 @@ func (bu *BookmarkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{bookmark.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if bu.mutation.ThreadCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ThreadTable,
-			Columns: []string{bookmark.ThreadColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := bu.mutation.ThreadIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ThreadTable,
-			Columns: []string{bookmark.ThreadColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -260,7 +182,7 @@ func (bu *BookmarkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{bookmark.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -273,36 +195,7 @@ func (bu *BookmarkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{bookmark.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if bu.mutation.ResponseCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ResponseTable,
-			Columns: []string{bookmark.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := bu.mutation.ResponseIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ResponseTable,
-			Columns: []string{bookmark.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -345,7 +238,7 @@ func (buo *BookmarkUpdateOne) SetNillableUpdatedAt(t *time.Time) *BookmarkUpdate
 }
 
 // SetUserID sets the "user" edge to the User entity by ID.
-func (buo *BookmarkUpdateOne) SetUserID(id uuid.UUID) *BookmarkUpdateOne {
+func (buo *BookmarkUpdateOne) SetUserID(id pulid.ID) *BookmarkUpdateOne {
 	buo.mutation.SetUserID(id)
 	return buo
 }
@@ -355,33 +248,14 @@ func (buo *BookmarkUpdateOne) SetUser(u *User) *BookmarkUpdateOne {
 	return buo.SetUserID(u.ID)
 }
 
-// SetThreadID sets the "thread" edge to the Thread entity by ID.
-func (buo *BookmarkUpdateOne) SetThreadID(id uuid.UUID) *BookmarkUpdateOne {
-	buo.mutation.SetThreadID(id)
-	return buo
-}
-
-// SetNillableThreadID sets the "thread" edge to the Thread entity by ID if the given value is not nil.
-func (buo *BookmarkUpdateOne) SetNillableThreadID(id *uuid.UUID) *BookmarkUpdateOne {
-	if id != nil {
-		buo = buo.SetThreadID(*id)
-	}
-	return buo
-}
-
-// SetThread sets the "thread" edge to the Thread entity.
-func (buo *BookmarkUpdateOne) SetThread(t *Thread) *BookmarkUpdateOne {
-	return buo.SetThreadID(t.ID)
-}
-
 // SetMessageID sets the "message" edge to the Message entity by ID.
-func (buo *BookmarkUpdateOne) SetMessageID(id uuid.UUID) *BookmarkUpdateOne {
+func (buo *BookmarkUpdateOne) SetMessageID(id pulid.ID) *BookmarkUpdateOne {
 	buo.mutation.SetMessageID(id)
 	return buo
 }
 
 // SetNillableMessageID sets the "message" edge to the Message entity by ID if the given value is not nil.
-func (buo *BookmarkUpdateOne) SetNillableMessageID(id *uuid.UUID) *BookmarkUpdateOne {
+func (buo *BookmarkUpdateOne) SetNillableMessageID(id *pulid.ID) *BookmarkUpdateOne {
 	if id != nil {
 		buo = buo.SetMessageID(*id)
 	}
@@ -391,25 +265,6 @@ func (buo *BookmarkUpdateOne) SetNillableMessageID(id *uuid.UUID) *BookmarkUpdat
 // SetMessage sets the "message" edge to the Message entity.
 func (buo *BookmarkUpdateOne) SetMessage(m *Message) *BookmarkUpdateOne {
 	return buo.SetMessageID(m.ID)
-}
-
-// SetResponseID sets the "response" edge to the Response entity by ID.
-func (buo *BookmarkUpdateOne) SetResponseID(id uuid.UUID) *BookmarkUpdateOne {
-	buo.mutation.SetResponseID(id)
-	return buo
-}
-
-// SetNillableResponseID sets the "response" edge to the Response entity by ID if the given value is not nil.
-func (buo *BookmarkUpdateOne) SetNillableResponseID(id *uuid.UUID) *BookmarkUpdateOne {
-	if id != nil {
-		buo = buo.SetResponseID(*id)
-	}
-	return buo
-}
-
-// SetResponse sets the "response" edge to the Response entity.
-func (buo *BookmarkUpdateOne) SetResponse(r *Response) *BookmarkUpdateOne {
-	return buo.SetResponseID(r.ID)
 }
 
 // Mutation returns the BookmarkMutation object of the builder.
@@ -423,21 +278,9 @@ func (buo *BookmarkUpdateOne) ClearUser() *BookmarkUpdateOne {
 	return buo
 }
 
-// ClearThread clears the "thread" edge to the Thread entity.
-func (buo *BookmarkUpdateOne) ClearThread() *BookmarkUpdateOne {
-	buo.mutation.ClearThread()
-	return buo
-}
-
 // ClearMessage clears the "message" edge to the Message entity.
 func (buo *BookmarkUpdateOne) ClearMessage() *BookmarkUpdateOne {
 	buo.mutation.ClearMessage()
-	return buo
-}
-
-// ClearResponse clears the "response" edge to the Response entity.
-func (buo *BookmarkUpdateOne) ClearResponse() *BookmarkUpdateOne {
-	buo.mutation.ClearResponse()
 	return buo
 }
 
@@ -483,6 +326,9 @@ func (buo *BookmarkUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (buo *BookmarkUpdateOne) check() error {
+	if _, ok := buo.mutation.TenantID(); buo.mutation.TenantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Bookmark.tenant"`)
+	}
 	if _, ok := buo.mutation.UserID(); buo.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Bookmark.user"`)
 	}
@@ -493,7 +339,7 @@ func (buo *BookmarkUpdateOne) sqlSave(ctx context.Context) (_node *Bookmark, err
 	if err := buo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(bookmark.Table, bookmark.Columns, sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeString))
 	id, ok := buo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Bookmark.id" for update`)}
@@ -529,7 +375,7 @@ func (buo *BookmarkUpdateOne) sqlSave(ctx context.Context) (_node *Bookmark, err
 			Columns: []string{bookmark.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -542,36 +388,7 @@ func (buo *BookmarkUpdateOne) sqlSave(ctx context.Context) (_node *Bookmark, err
 			Columns: []string{bookmark.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if buo.mutation.ThreadCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ThreadTable,
-			Columns: []string{bookmark.ThreadColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := buo.mutation.ThreadIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ThreadTable,
-			Columns: []string{bookmark.ThreadColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -587,7 +404,7 @@ func (buo *BookmarkUpdateOne) sqlSave(ctx context.Context) (_node *Bookmark, err
 			Columns: []string{bookmark.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -600,36 +417,7 @@ func (buo *BookmarkUpdateOne) sqlSave(ctx context.Context) (_node *Bookmark, err
 			Columns: []string{bookmark.MessageColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if buo.mutation.ResponseCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ResponseTable,
-			Columns: []string{bookmark.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := buo.mutation.ResponseIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   bookmark.ResponseTable,
-			Columns: []string{bookmark.ResponseColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(response.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

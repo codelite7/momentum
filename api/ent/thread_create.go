@@ -10,11 +10,11 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // ThreadCreate is the builder for creating a Thread entity.
@@ -52,28 +52,59 @@ func (tc *ThreadCreate) SetNillableUpdatedAt(t *time.Time) *ThreadCreate {
 	return tc
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (tc *ThreadCreate) SetTenantID(pu pulid.ID) *ThreadCreate {
+	tc.mutation.SetTenantID(pu)
+	return tc
+}
+
 // SetName sets the "name" field.
 func (tc *ThreadCreate) SetName(s string) *ThreadCreate {
 	tc.mutation.SetName(s)
 	return tc
 }
 
-// SetID sets the "id" field.
-func (tc *ThreadCreate) SetID(u uuid.UUID) *ThreadCreate {
-	tc.mutation.SetID(u)
+// SetLastViewedAt sets the "last_viewed_at" field.
+func (tc *ThreadCreate) SetLastViewedAt(t time.Time) *ThreadCreate {
+	tc.mutation.SetLastViewedAt(t)
 	return tc
 }
 
-// SetNillableID sets the "id" field if the given value is not nil.
-func (tc *ThreadCreate) SetNillableID(u *uuid.UUID) *ThreadCreate {
-	if u != nil {
-		tc.SetID(*u)
+// SetNillableLastViewedAt sets the "last_viewed_at" field if the given value is not nil.
+func (tc *ThreadCreate) SetNillableLastViewedAt(t *time.Time) *ThreadCreate {
+	if t != nil {
+		tc.SetLastViewedAt(*t)
 	}
 	return tc
 }
 
+// SetProvider sets the "provider" field.
+func (tc *ThreadCreate) SetProvider(t thread.Provider) *ThreadCreate {
+	tc.mutation.SetProvider(t)
+	return tc
+}
+
+// SetID sets the "id" field.
+func (tc *ThreadCreate) SetID(pu pulid.ID) *ThreadCreate {
+	tc.mutation.SetID(pu)
+	return tc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (tc *ThreadCreate) SetNillableID(pu *pulid.ID) *ThreadCreate {
+	if pu != nil {
+		tc.SetID(*pu)
+	}
+	return tc
+}
+
+// SetTenant sets the "tenant" edge to the Tenant entity.
+func (tc *ThreadCreate) SetTenant(t *Tenant) *ThreadCreate {
+	return tc.SetTenantID(t.ID)
+}
+
 // SetCreatedByID sets the "created_by" edge to the User entity by ID.
-func (tc *ThreadCreate) SetCreatedByID(id uuid.UUID) *ThreadCreate {
+func (tc *ThreadCreate) SetCreatedByID(id pulid.ID) *ThreadCreate {
 	tc.mutation.SetCreatedByID(id)
 	return tc
 }
@@ -84,67 +115,37 @@ func (tc *ThreadCreate) SetCreatedBy(u *User) *ThreadCreate {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (tc *ThreadCreate) AddMessageIDs(ids ...uuid.UUID) *ThreadCreate {
+func (tc *ThreadCreate) AddMessageIDs(ids ...pulid.ID) *ThreadCreate {
 	tc.mutation.AddMessageIDs(ids...)
 	return tc
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (tc *ThreadCreate) AddMessages(m ...*Message) *ThreadCreate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]pulid.ID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
 	return tc.AddMessageIDs(ids...)
 }
 
-// AddBookmarkIDs adds the "bookmarks" edge to the Bookmark entity by IDs.
-func (tc *ThreadCreate) AddBookmarkIDs(ids ...uuid.UUID) *ThreadCreate {
-	tc.mutation.AddBookmarkIDs(ids...)
-	return tc
-}
-
-// AddBookmarks adds the "bookmarks" edges to the Bookmark entity.
-func (tc *ThreadCreate) AddBookmarks(b ...*Bookmark) *ThreadCreate {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return tc.AddBookmarkIDs(ids...)
-}
-
-// SetParentID sets the "parent" edge to the Thread entity by ID.
-func (tc *ThreadCreate) SetParentID(id uuid.UUID) *ThreadCreate {
+// SetParentID sets the "parent" edge to the Message entity by ID.
+func (tc *ThreadCreate) SetParentID(id pulid.ID) *ThreadCreate {
 	tc.mutation.SetParentID(id)
 	return tc
 }
 
-// SetNillableParentID sets the "parent" edge to the Thread entity by ID if the given value is not nil.
-func (tc *ThreadCreate) SetNillableParentID(id *uuid.UUID) *ThreadCreate {
+// SetNillableParentID sets the "parent" edge to the Message entity by ID if the given value is not nil.
+func (tc *ThreadCreate) SetNillableParentID(id *pulid.ID) *ThreadCreate {
 	if id != nil {
 		tc = tc.SetParentID(*id)
 	}
 	return tc
 }
 
-// SetParent sets the "parent" edge to the Thread entity.
-func (tc *ThreadCreate) SetParent(t *Thread) *ThreadCreate {
-	return tc.SetParentID(t.ID)
-}
-
-// AddChildIDs adds the "children" edge to the Thread entity by IDs.
-func (tc *ThreadCreate) AddChildIDs(ids ...uuid.UUID) *ThreadCreate {
-	tc.mutation.AddChildIDs(ids...)
-	return tc
-}
-
-// AddChildren adds the "children" edges to the Thread entity.
-func (tc *ThreadCreate) AddChildren(t ...*Thread) *ThreadCreate {
-	ids := make([]uuid.UUID, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
-	}
-	return tc.AddChildIDs(ids...)
+// SetParent sets the "parent" edge to the Message entity.
+func (tc *ThreadCreate) SetParent(m *Message) *ThreadCreate {
+	return tc.SetParentID(m.ID)
 }
 
 // Mutation returns the ThreadMutation object of the builder.
@@ -190,6 +191,10 @@ func (tc *ThreadCreate) defaults() {
 		v := thread.DefaultUpdatedAt()
 		tc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := tc.mutation.LastViewedAt(); !ok {
+		v := thread.DefaultLastViewedAt()
+		tc.mutation.SetLastViewedAt(v)
+	}
 	if _, ok := tc.mutation.ID(); !ok {
 		v := thread.DefaultID()
 		tc.mutation.SetID(v)
@@ -204,8 +209,25 @@ func (tc *ThreadCreate) check() error {
 	if _, ok := tc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Thread.updated_at"`)}
 	}
+	if _, ok := tc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Thread.tenant_id"`)}
+	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Thread.name"`)}
+	}
+	if _, ok := tc.mutation.LastViewedAt(); !ok {
+		return &ValidationError{Name: "last_viewed_at", err: errors.New(`ent: missing required field "Thread.last_viewed_at"`)}
+	}
+	if _, ok := tc.mutation.Provider(); !ok {
+		return &ValidationError{Name: "provider", err: errors.New(`ent: missing required field "Thread.provider"`)}
+	}
+	if v, ok := tc.mutation.Provider(); ok {
+		if err := thread.ProviderValidator(v); err != nil {
+			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "Thread.provider": %w`, err)}
+		}
+	}
+	if _, ok := tc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant", err: errors.New(`ent: missing required edge "Thread.tenant"`)}
 	}
 	if _, ok := tc.mutation.CreatedByID(); !ok {
 		return &ValidationError{Name: "created_by", err: errors.New(`ent: missing required edge "Thread.created_by"`)}
@@ -225,7 +247,7 @@ func (tc *ThreadCreate) sqlSave(ctx context.Context) (*Thread, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*pulid.ID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -239,7 +261,7 @@ func (tc *ThreadCreate) sqlSave(ctx context.Context) (*Thread, error) {
 func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Thread{config: tc.config}
-		_spec = sqlgraph.NewCreateSpec(thread.Table, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID))
+		_spec = sqlgraph.NewCreateSpec(thread.Table, sqlgraph.NewFieldSpec(thread.FieldID, field.TypeString))
 	)
 	if id, ok := tc.mutation.ID(); ok {
 		_node.ID = id
@@ -257,6 +279,31 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 		_spec.SetField(thread.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := tc.mutation.LastViewedAt(); ok {
+		_spec.SetField(thread.FieldLastViewedAt, field.TypeTime, value)
+		_node.LastViewedAt = value
+	}
+	if value, ok := tc.mutation.Provider(); ok {
+		_spec.SetField(thread.FieldProvider, field.TypeEnum, value)
+		_node.Provider = value
+	}
+	if nodes := tc.mutation.TenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   thread.TenantTable,
+			Columns: []string{thread.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.TenantID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := tc.mutation.CreatedByIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -265,7 +312,7 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 			Columns: []string{thread.CreatedByColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -282,23 +329,7 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 			Columns: []string{thread.MessagesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := tc.mutation.BookmarksIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   thread.BookmarksTable,
-			Columns: []string{thread.BookmarksColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(bookmark.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -308,35 +339,19 @@ func (tc *ThreadCreate) createSpec() (*Thread, *sqlgraph.CreateSpec) {
 	}
 	if nodes := tc.mutation.ParentIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
 			Table:   thread.ParentTable,
 			Columns: []string{thread.ParentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(message.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.thread_children = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := tc.mutation.ChildrenIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   thread.ChildrenTable,
-			Columns: []string{thread.ChildrenColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(thread.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
+		_node.message_child = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

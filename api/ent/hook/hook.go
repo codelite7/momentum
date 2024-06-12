@@ -45,16 +45,16 @@ func (f MessageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MessageMutation", m)
 }
 
-// The ResponseFunc type is an adapter to allow the use of ordinary
-// function as Response mutator.
-type ResponseFunc func(context.Context, *ent.ResponseMutation) (ent.Value, error)
+// The TenantFunc type is an adapter to allow the use of ordinary
+// function as Tenant mutator.
+type TenantFunc func(context.Context, *ent.TenantMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f ResponseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.ResponseMutation); ok {
+func (f TenantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TenantMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ResponseMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenantMutation", m)
 }
 
 // The ThreadFunc type is an adapter to allow the use of ordinary
@@ -79,6 +79,18 @@ func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
+}
+
+// The WorkosEventCursorFunc type is an adapter to allow the use of ordinary
+// function as WorkosEventCursor mutator.
+type WorkosEventCursorFunc func(context.Context, *ent.WorkosEventCursorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f WorkosEventCursorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.WorkosEventCursorMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WorkosEventCursorMutation", m)
 }
 
 // Condition is a hook condition function.

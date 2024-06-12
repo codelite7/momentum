@@ -1,15 +1,23 @@
-import type { CodegenConfig } from '@graphql-codegen/cli'
+import { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
-  schema: 'http://localhost:3000/query',
-  documents: './src/gql_queries/*.ts',
+  schema: "http://localhost:3001/query",
+  // this assumes that all your source files are in a top-level `src/` directory - you might need to adjust this to your file structure
+  documents: [
+    "app/**/*.{ts,tsx}",
+    "client/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
+    "graphql-queries/**/*.{ts,tsx}",
+  ],
   generates: {
-    './graphql/generated.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-graphql-request'],
-      // config: {
-      //   rawRequest: true
-      // }
-    }
-  }
-}
-export default config
+    "./__generated__/": {
+      preset: "client",
+      presetConfig: {
+        gqlTagName: "gql",
+      },
+    },
+  },
+  ignoreNoDocuments: true,
+};
+
+export default config;

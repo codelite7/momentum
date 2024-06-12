@@ -6,53 +6,52 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.Agent {
+func ID(id pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.Agent {
+func IDEQ(id pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.Agent {
+func IDNEQ(id pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.Agent {
+func IDIn(ids ...pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.Agent {
+func IDNotIn(ids ...pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.Agent {
+func IDGT(id pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.Agent {
+func IDGTE(id pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.Agent {
+func IDLT(id pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.Agent {
+func IDLTE(id pulid.ID) predicate.Agent {
 	return predicate.Agent(sql.FieldLTE(FieldID, id))
 }
 
@@ -354,29 +353,6 @@ func APIKeyEqualFold(v string) predicate.Agent {
 // APIKeyContainsFold applies the ContainsFold predicate on the "api_key" field.
 func APIKeyContainsFold(v string) predicate.Agent {
 	return predicate.Agent(sql.FieldContainsFold(FieldAPIKey, v))
-}
-
-// HasResponses applies the HasEdge predicate on the "responses" edge.
-func HasResponses() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ResponsesTable, ResponsesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasResponsesWith applies the HasEdge predicate on the "responses" edge with a given conditions (other predicates).
-func HasResponsesWith(preds ...predicate.Response) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		step := newResponsesStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
 }
 
 // And groups predicates with the AND operator between them.

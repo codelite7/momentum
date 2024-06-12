@@ -1,3 +1,7 @@
 extend type Mutation {
     createMessage(input: CreateMessageInput!): Message
 }
+
+extend type Message {
+    bookmarked: Boolean!
+}

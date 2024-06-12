@@ -8,15 +8,17 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // UserQuery is the builder for querying User entities.
@@ -29,11 +31,15 @@ type UserQuery struct {
 	withBookmarks      *BookmarkQuery
 	withThreads        *ThreadQuery
 	withMessages       *MessageQuery
-	modifiers          []func(*sql.Selector)
+	withTenants        *TenantQuery
+	withActiveTenant   *TenantQuery
+	withFKs            bool
 	loadTotal          []func(context.Context, []*User) error
+	modifiers          []func(*sql.Selector)
 	withNamedBookmarks map[string]*BookmarkQuery
 	withNamedThreads   map[string]*ThreadQuery
 	withNamedMessages  map[string]*MessageQuery
+	withNamedTenants   map[string]*TenantQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -136,6 +142,50 @@ func (uq *UserQuery) QueryMessages() *MessageQuery {
 	return query
 }
 
+// QueryTenants chains the current query on the "tenants" edge.
+func (uq *UserQuery) QueryTenants() *TenantQuery {
+	query := (&TenantClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.TenantsTable, user.TenantsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryActiveTenant chains the current query on the "active_tenant" edge.
+func (uq *UserQuery) QueryActiveTenant() *TenantQuery {
+	query := (&TenantClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, user.ActiveTenantTable, user.ActiveTenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first User entity from the query.
 // Returns a *NotFoundError when no User was found.
 func (uq *UserQuery) First(ctx context.Context) (*User, error) {
@@ -160,8 +210,8 @@ func (uq *UserQuery) FirstX(ctx context.Context) *User {
 
 // FirstID returns the first User ID from the query.
 // Returns a *NotFoundError when no User ID was found.
-func (uq *UserQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (uq *UserQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = uq.Limit(1).IDs(setContextOp(ctx, uq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -173,7 +223,7 @@ func (uq *UserQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (uq *UserQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (uq *UserQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := uq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -211,8 +261,8 @@ func (uq *UserQuery) OnlyX(ctx context.Context) *User {
 // OnlyID is like Only, but returns the only User ID in the query.
 // Returns a *NotSingularError when more than one User ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (uq *UserQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (uq *UserQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = uq.Limit(2).IDs(setContextOp(ctx, uq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -228,7 +278,7 @@ func (uq *UserQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (uq *UserQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (uq *UserQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := uq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -256,7 +306,7 @@ func (uq *UserQuery) AllX(ctx context.Context) []*User {
 }
 
 // IDs executes the query and returns a list of User IDs.
-func (uq *UserQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (uq *UserQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if uq.ctx.Unique == nil && uq.path != nil {
 		uq.Unique(true)
 	}
@@ -268,7 +318,7 @@ func (uq *UserQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (uq *UserQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (uq *UserQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := uq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -323,14 +373,16 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:        uq.config,
-		ctx:           uq.ctx.Clone(),
-		order:         append([]user.OrderOption{}, uq.order...),
-		inters:        append([]Interceptor{}, uq.inters...),
-		predicates:    append([]predicate.User{}, uq.predicates...),
-		withBookmarks: uq.withBookmarks.Clone(),
-		withThreads:   uq.withThreads.Clone(),
-		withMessages:  uq.withMessages.Clone(),
+		config:           uq.config,
+		ctx:              uq.ctx.Clone(),
+		order:            append([]user.OrderOption{}, uq.order...),
+		inters:           append([]Interceptor{}, uq.inters...),
+		predicates:       append([]predicate.User{}, uq.predicates...),
+		withBookmarks:    uq.withBookmarks.Clone(),
+		withThreads:      uq.withThreads.Clone(),
+		withMessages:     uq.withMessages.Clone(),
+		withTenants:      uq.withTenants.Clone(),
+		withActiveTenant: uq.withActiveTenant.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -367,6 +419,28 @@ func (uq *UserQuery) WithMessages(opts ...func(*MessageQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withMessages = query
+	return uq
+}
+
+// WithTenants tells the query-builder to eager-load the nodes that are connected to
+// the "tenants" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithTenants(opts ...func(*TenantQuery)) *UserQuery {
+	query := (&TenantClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withTenants = query
+	return uq
+}
+
+// WithActiveTenant tells the query-builder to eager-load the nodes that are connected to
+// the "active_tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithActiveTenant(opts ...func(*TenantQuery)) *UserQuery {
+	query := (&TenantClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withActiveTenant = query
 	return uq
 }
 
@@ -447,13 +521,22 @@ func (uq *UserQuery) prepareQuery(ctx context.Context) error {
 func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, error) {
 	var (
 		nodes       = []*User{}
+		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [5]bool{
 			uq.withBookmarks != nil,
 			uq.withThreads != nil,
 			uq.withMessages != nil,
+			uq.withTenants != nil,
+			uq.withActiveTenant != nil,
 		}
 	)
+	if uq.withActiveTenant != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, user.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*User).scanValues(nil, columns)
 	}
@@ -496,6 +579,19 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withTenants; query != nil {
+		if err := uq.loadTenants(ctx, query, nodes,
+			func(n *User) { n.Edges.Tenants = []*Tenant{} },
+			func(n *User, e *Tenant) { n.Edges.Tenants = append(n.Edges.Tenants, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withActiveTenant; query != nil {
+		if err := uq.loadActiveTenant(ctx, query, nodes, nil,
+			func(n *User, e *Tenant) { n.Edges.ActiveTenant = e }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range uq.withNamedBookmarks {
 		if err := uq.loadBookmarks(ctx, query, nodes,
 			func(n *User) { n.appendNamedBookmarks(name) },
@@ -517,6 +613,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	for name, query := range uq.withNamedTenants {
+		if err := uq.loadTenants(ctx, query, nodes,
+			func(n *User) { n.appendNamedTenants(name) },
+			func(n *User, e *Tenant) { n.appendNamedTenants(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range uq.loadTotal {
 		if err := uq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
@@ -527,7 +630,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 
 func (uq *UserQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*User, init func(*User), assign func(*User, *Bookmark)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*User)
+	nodeids := make(map[pulid.ID]*User)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -558,7 +661,7 @@ func (uq *UserQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, no
 }
 func (uq *UserQuery) loadThreads(ctx context.Context, query *ThreadQuery, nodes []*User, init func(*User), assign func(*User, *Thread)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*User)
+	nodeids := make(map[pulid.ID]*User)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -589,7 +692,7 @@ func (uq *UserQuery) loadThreads(ctx context.Context, query *ThreadQuery, nodes 
 }
 func (uq *UserQuery) loadMessages(ctx context.Context, query *MessageQuery, nodes []*User, init func(*User), assign func(*User, *Message)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*User)
+	nodeids := make(map[pulid.ID]*User)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -618,6 +721,99 @@ func (uq *UserQuery) loadMessages(ctx context.Context, query *MessageQuery, node
 	}
 	return nil
 }
+func (uq *UserQuery) loadTenants(ctx context.Context, query *TenantQuery, nodes []*User, init func(*User), assign func(*User, *Tenant)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[pulid.ID]*User)
+	nids := make(map[pulid.ID]map[*User]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(user.TenantsTable)
+		s.Join(joinT).On(s.C(tenant.FieldID), joinT.C(user.TenantsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(user.TenantsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(user.TenantsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(pulid.ID)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := *values[0].(*pulid.ID)
+				inValue := *values[1].(*pulid.ID)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*User]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Tenant](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "tenants" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (uq *UserQuery) loadActiveTenant(ctx context.Context, query *TenantQuery, nodes []*User, init func(*User), assign func(*User, *Tenant)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*User)
+	for i := range nodes {
+		if nodes[i].user_active_tenant == nil {
+			continue
+		}
+		fk := *nodes[i].user_active_tenant
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_active_tenant" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (uq *UserQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := uq.querySpec()
@@ -632,7 +828,7 @@ func (uq *UserQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (uq *UserQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	_spec.From = uq.sql
 	if unique := uq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -686,6 +882,9 @@ func (uq *UserQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	if uq.ctx.Unique != nil && *uq.ctx.Unique {
 		selector.Distinct()
 	}
+	for _, m := range uq.modifiers {
+		m(selector)
+	}
 	for _, p := range uq.predicates {
 		p(selector)
 	}
@@ -701,6 +900,32 @@ func (uq *UserQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// ForUpdate locks the selected rows against concurrent updates, and prevent them from being
+// updated, deleted or "selected ... for update" by other sessions, until the transaction is
+// either committed or rolled-back.
+func (uq *UserQuery) ForUpdate(opts ...sql.LockOption) *UserQuery {
+	if uq.driver.Dialect() == dialect.Postgres {
+		uq.Unique(false)
+	}
+	uq.modifiers = append(uq.modifiers, func(s *sql.Selector) {
+		s.ForUpdate(opts...)
+	})
+	return uq
+}
+
+// ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
+// on any rows that are read. Other sessions can read the rows, but cannot modify them
+// until your transaction commits.
+func (uq *UserQuery) ForShare(opts ...sql.LockOption) *UserQuery {
+	if uq.driver.Dialect() == dialect.Postgres {
+		uq.Unique(false)
+	}
+	uq.modifiers = append(uq.modifiers, func(s *sql.Selector) {
+		s.ForShare(opts...)
+	})
+	return uq
 }
 
 // WithNamedBookmarks tells the query-builder to eager-load the nodes that are connected to the "bookmarks"
@@ -742,6 +967,20 @@ func (uq *UserQuery) WithNamedMessages(name string, opts ...func(*MessageQuery))
 		uq.withNamedMessages = make(map[string]*MessageQuery)
 	}
 	uq.withNamedMessages[name] = query
+	return uq
+}
+
+// WithNamedTenants tells the query-builder to eager-load the nodes that are connected to the "tenants"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedTenants(name string, opts ...func(*TenantQuery)) *UserQuery {
+	query := (&TenantClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedTenants == nil {
+		uq.withNamedTenants = make(map[string]*TenantQuery)
+	}
+	uq.withNamedTenants[name] = query
 	return uq
 }
 

@@ -21,6 +21,7 @@ func main() {
 		log.Fatalf("creating entgql extension: %v", err)
 	}
 	opts := []entc.Option{
+		entc.FeatureNames("privacy", "schema/snapshot", "entql", "sql/lock"),
 		entc.Extensions(ex),
 	}
 	if err := entc.Generate("./ent/schema", &gen.Config{}, opts...); err != nil {

@@ -8,16 +8,17 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
-	"github.com/google/uuid"
 )
 
 // MessageQuery is the builder for querying Message entities.
@@ -27,13 +28,14 @@ type MessageQuery struct {
 	order              []message.OrderOption
 	inters             []Interceptor
 	predicates         []predicate.Message
+	withTenant         *TenantQuery
 	withSentBy         *UserQuery
 	withThread         *ThreadQuery
 	withBookmarks      *BookmarkQuery
-	withResponse       *ResponseQuery
+	withChild          *ThreadQuery
 	withFKs            bool
-	modifiers          []func(*sql.Selector)
 	loadTotal          []func(context.Context, []*Message) error
+	modifiers          []func(*sql.Selector)
 	withNamedBookmarks map[string]*BookmarkQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -69,6 +71,28 @@ func (mq *MessageQuery) Unique(unique bool) *MessageQuery {
 func (mq *MessageQuery) Order(o ...message.OrderOption) *MessageQuery {
 	mq.order = append(mq.order, o...)
 	return mq
+}
+
+// QueryTenant chains the current query on the "tenant" edge.
+func (mq *MessageQuery) QueryTenant() *TenantQuery {
+	query := (&TenantClient{config: mq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, message.TenantTable, message.TenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QuerySentBy chains the current query on the "sent_by" edge.
@@ -137,9 +161,9 @@ func (mq *MessageQuery) QueryBookmarks() *BookmarkQuery {
 	return query
 }
 
-// QueryResponse chains the current query on the "response" edge.
-func (mq *MessageQuery) QueryResponse() *ResponseQuery {
-	query := (&ResponseClient{config: mq.config}).Query()
+// QueryChild chains the current query on the "child" edge.
+func (mq *MessageQuery) QueryChild() *ThreadQuery {
+	query := (&ThreadClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -150,8 +174,8 @@ func (mq *MessageQuery) QueryResponse() *ResponseQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(message.Table, message.FieldID, selector),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, message.ResponseTable, message.ResponseColumn),
+			sqlgraph.To(thread.Table, thread.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, message.ChildTable, message.ChildColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -183,8 +207,8 @@ func (mq *MessageQuery) FirstX(ctx context.Context) *Message {
 
 // FirstID returns the first Message ID from the query.
 // Returns a *NotFoundError when no Message ID was found.
-func (mq *MessageQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (mq *MessageQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = mq.Limit(1).IDs(setContextOp(ctx, mq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -196,7 +220,7 @@ func (mq *MessageQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (mq *MessageQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (mq *MessageQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := mq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -234,8 +258,8 @@ func (mq *MessageQuery) OnlyX(ctx context.Context) *Message {
 // OnlyID is like Only, but returns the only Message ID in the query.
 // Returns a *NotSingularError when more than one Message ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (mq *MessageQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (mq *MessageQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = mq.Limit(2).IDs(setContextOp(ctx, mq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -251,7 +275,7 @@ func (mq *MessageQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (mq *MessageQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (mq *MessageQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := mq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -279,7 +303,7 @@ func (mq *MessageQuery) AllX(ctx context.Context) []*Message {
 }
 
 // IDs executes the query and returns a list of Message IDs.
-func (mq *MessageQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (mq *MessageQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if mq.ctx.Unique == nil && mq.path != nil {
 		mq.Unique(true)
 	}
@@ -291,7 +315,7 @@ func (mq *MessageQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (mq *MessageQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (mq *MessageQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := mq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -351,14 +375,26 @@ func (mq *MessageQuery) Clone() *MessageQuery {
 		order:         append([]message.OrderOption{}, mq.order...),
 		inters:        append([]Interceptor{}, mq.inters...),
 		predicates:    append([]predicate.Message{}, mq.predicates...),
+		withTenant:    mq.withTenant.Clone(),
 		withSentBy:    mq.withSentBy.Clone(),
 		withThread:    mq.withThread.Clone(),
 		withBookmarks: mq.withBookmarks.Clone(),
-		withResponse:  mq.withResponse.Clone(),
+		withChild:     mq.withChild.Clone(),
 		// clone intermediate query.
 		sql:  mq.sql.Clone(),
 		path: mq.path,
 	}
+}
+
+// WithTenant tells the query-builder to eager-load the nodes that are connected to
+// the "tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithTenant(opts ...func(*TenantQuery)) *MessageQuery {
+	query := (&TenantClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withTenant = query
+	return mq
 }
 
 // WithSentBy tells the query-builder to eager-load the nodes that are connected to
@@ -394,14 +430,14 @@ func (mq *MessageQuery) WithBookmarks(opts ...func(*BookmarkQuery)) *MessageQuer
 	return mq
 }
 
-// WithResponse tells the query-builder to eager-load the nodes that are connected to
-// the "response" edge. The optional arguments are used to configure the query builder of the edge.
-func (mq *MessageQuery) WithResponse(opts ...func(*ResponseQuery)) *MessageQuery {
-	query := (&ResponseClient{config: mq.config}).Query()
+// WithChild tells the query-builder to eager-load the nodes that are connected to
+// the "child" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MessageQuery) WithChild(opts ...func(*ThreadQuery)) *MessageQuery {
+	query := (&ThreadClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	mq.withResponse = query
+	mq.withChild = query
 	return mq
 }
 
@@ -484,11 +520,12 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 		nodes       = []*Message{}
 		withFKs     = mq.withFKs
 		_spec       = mq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
+			mq.withTenant != nil,
 			mq.withSentBy != nil,
 			mq.withThread != nil,
 			mq.withBookmarks != nil,
-			mq.withResponse != nil,
+			mq.withChild != nil,
 		}
 	)
 	if mq.withSentBy != nil || mq.withThread != nil {
@@ -518,6 +555,12 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := mq.withTenant; query != nil {
+		if err := mq.loadTenant(ctx, query, nodes, nil,
+			func(n *Message, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := mq.withSentBy; query != nil {
 		if err := mq.loadSentBy(ctx, query, nodes, nil,
 			func(n *Message, e *User) { n.Edges.SentBy = e }); err != nil {
@@ -537,9 +580,9 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 			return nil, err
 		}
 	}
-	if query := mq.withResponse; query != nil {
-		if err := mq.loadResponse(ctx, query, nodes, nil,
-			func(n *Message, e *Response) { n.Edges.Response = e }); err != nil {
+	if query := mq.withChild; query != nil {
+		if err := mq.loadChild(ctx, query, nodes, nil,
+			func(n *Message, e *Thread) { n.Edges.Child = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -558,9 +601,38 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 	return nodes, nil
 }
 
+func (mq *MessageQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Message, init func(*Message), assign func(*Message, *Tenant)) error {
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Message)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (mq *MessageQuery) loadSentBy(ctx context.Context, query *UserQuery, nodes []*Message, init func(*Message), assign func(*Message, *User)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Message)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Message)
 	for i := range nodes {
 		if nodes[i].user_messages == nil {
 			continue
@@ -591,8 +663,8 @@ func (mq *MessageQuery) loadSentBy(ctx context.Context, query *UserQuery, nodes 
 	return nil
 }
 func (mq *MessageQuery) loadThread(ctx context.Context, query *ThreadQuery, nodes []*Message, init func(*Message), assign func(*Message, *Thread)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Message)
+	ids := make([]pulid.ID, 0, len(nodes))
+	nodeids := make(map[pulid.ID][]*Message)
 	for i := range nodes {
 		if nodes[i].thread_messages == nil {
 			continue
@@ -624,7 +696,7 @@ func (mq *MessageQuery) loadThread(ctx context.Context, query *ThreadQuery, node
 }
 func (mq *MessageQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery, nodes []*Message, init func(*Message), assign func(*Message, *Bookmark)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Message)
+	nodeids := make(map[pulid.ID]*Message)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -653,29 +725,29 @@ func (mq *MessageQuery) loadBookmarks(ctx context.Context, query *BookmarkQuery,
 	}
 	return nil
 }
-func (mq *MessageQuery) loadResponse(ctx context.Context, query *ResponseQuery, nodes []*Message, init func(*Message), assign func(*Message, *Response)) error {
+func (mq *MessageQuery) loadChild(ctx context.Context, query *ThreadQuery, nodes []*Message, init func(*Message), assign func(*Message, *Thread)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Message)
+	nodeids := make(map[pulid.ID]*Message)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
 	}
 	query.withFKs = true
-	query.Where(predicate.Response(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(message.ResponseColumn), fks...))
+	query.Where(predicate.Thread(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(message.ChildColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.message_response
+		fk := n.message_child
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "message_response" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "message_child" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "message_response" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "message_child" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -695,7 +767,7 @@ func (mq *MessageQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (mq *MessageQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(message.Table, message.Columns, sqlgraph.NewFieldSpec(message.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(message.Table, message.Columns, sqlgraph.NewFieldSpec(message.FieldID, field.TypeString))
 	_spec.From = mq.sql
 	if unique := mq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -709,6 +781,9 @@ func (mq *MessageQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != message.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if mq.withTenant != nil {
+			_spec.Node.AddColumnOnce(message.FieldTenantID)
 		}
 	}
 	if ps := mq.predicates; len(ps) > 0 {
@@ -749,6 +824,9 @@ func (mq *MessageQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	if mq.ctx.Unique != nil && *mq.ctx.Unique {
 		selector.Distinct()
 	}
+	for _, m := range mq.modifiers {
+		m(selector)
+	}
 	for _, p := range mq.predicates {
 		p(selector)
 	}
@@ -764,6 +842,32 @@ func (mq *MessageQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// ForUpdate locks the selected rows against concurrent updates, and prevent them from being
+// updated, deleted or "selected ... for update" by other sessions, until the transaction is
+// either committed or rolled-back.
+func (mq *MessageQuery) ForUpdate(opts ...sql.LockOption) *MessageQuery {
+	if mq.driver.Dialect() == dialect.Postgres {
+		mq.Unique(false)
+	}
+	mq.modifiers = append(mq.modifiers, func(s *sql.Selector) {
+		s.ForUpdate(opts...)
+	})
+	return mq
+}
+
+// ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
+// on any rows that are read. Other sessions can read the rows, but cannot modify them
+// until your transaction commits.
+func (mq *MessageQuery) ForShare(opts ...sql.LockOption) *MessageQuery {
+	if mq.driver.Dialect() == dialect.Postgres {
+		mq.Unique(false)
+	}
+	mq.modifiers = append(mq.modifiers, func(s *sql.Selector) {
+		s.ForShare(opts...)
+	})
+	return mq
 }
 
 // WithNamedBookmarks tells the query-builder to eager-load the nodes that are connected to the "bookmarks"

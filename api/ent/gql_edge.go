@@ -8,27 +8,6 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (a *Agent) Responses(
-	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ResponseOrder, where *ResponseWhereInput,
-) (*ResponseConnection, error) {
-	opts := []ResponsePaginateOption{
-		WithResponseOrder(orderBy),
-		WithResponseFilter(where.Filter),
-	}
-	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := a.Edges.totalCount[0][alias]
-	if nodes, err := a.NamedResponses(alias); err == nil || hasTotalCount {
-		pager, err := newResponsePager(opts, last != nil)
-		if err != nil {
-			return nil, err
-		}
-		conn := &ResponseConnection{Edges: []*ResponseEdge{}, TotalCount: totalCount}
-		conn.build(nodes, pager, after, first, before, last)
-		return conn, nil
-	}
-	return a.QueryResponses().Paginate(ctx, after, first, before, last, opts...)
-}
-
 func (b *Bookmark) User(ctx context.Context) (*User, error) {
 	result, err := b.Edges.UserOrErr()
 	if IsNotLoaded(err) {
@@ -37,26 +16,10 @@ func (b *Bookmark) User(ctx context.Context) (*User, error) {
 	return result, err
 }
 
-func (b *Bookmark) Thread(ctx context.Context) (*Thread, error) {
-	result, err := b.Edges.ThreadOrErr()
-	if IsNotLoaded(err) {
-		result, err = b.QueryThread().Only(ctx)
-	}
-	return result, MaskNotFound(err)
-}
-
 func (b *Bookmark) Message(ctx context.Context) (*Message, error) {
 	result, err := b.Edges.MessageOrErr()
 	if IsNotLoaded(err) {
 		result, err = b.QueryMessage().Only(ctx)
-	}
-	return result, MaskNotFound(err)
-}
-
-func (b *Bookmark) Response(ctx context.Context) (*Response, error) {
-	result, err := b.Edges.ResponseOrErr()
-	if IsNotLoaded(err) {
-		result, err = b.QueryResponse().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
@@ -98,49 +61,12 @@ func (m *Message) Bookmarks(
 	return m.QueryBookmarks().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (m *Message) Response(ctx context.Context) (*Response, error) {
-	result, err := m.Edges.ResponseOrErr()
+func (m *Message) Child(ctx context.Context) (*Thread, error) {
+	result, err := m.Edges.ChildOrErr()
 	if IsNotLoaded(err) {
-		result, err = m.QueryResponse().Only(ctx)
+		result, err = m.QueryChild().Only(ctx)
 	}
 	return result, MaskNotFound(err)
-}
-
-func (r *Response) SentBy(ctx context.Context) (*Agent, error) {
-	result, err := r.Edges.SentByOrErr()
-	if IsNotLoaded(err) {
-		result, err = r.QuerySentBy().Only(ctx)
-	}
-	return result, err
-}
-
-func (r *Response) Message(ctx context.Context) (*Message, error) {
-	result, err := r.Edges.MessageOrErr()
-	if IsNotLoaded(err) {
-		result, err = r.QueryMessage().Only(ctx)
-	}
-	return result, err
-}
-
-func (r *Response) Bookmarks(
-	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BookmarkOrder, where *BookmarkWhereInput,
-) (*BookmarkConnection, error) {
-	opts := []BookmarkPaginateOption{
-		WithBookmarkOrder(orderBy),
-		WithBookmarkFilter(where.Filter),
-	}
-	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := r.Edges.totalCount[2][alias]
-	if nodes, err := r.NamedBookmarks(alias); err == nil || hasTotalCount {
-		pager, err := newBookmarkPager(opts, last != nil)
-		if err != nil {
-			return nil, err
-		}
-		conn := &BookmarkConnection{Edges: []*BookmarkEdge{}, TotalCount: totalCount}
-		conn.build(nodes, pager, after, first, before, last)
-		return conn, nil
-	}
-	return r.QueryBookmarks().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (t *Thread) CreatedBy(ctx context.Context) (*User, error) {
@@ -172,54 +98,12 @@ func (t *Thread) Messages(
 	return t.QueryMessages().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (t *Thread) Bookmarks(
-	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BookmarkOrder, where *BookmarkWhereInput,
-) (*BookmarkConnection, error) {
-	opts := []BookmarkPaginateOption{
-		WithBookmarkOrder(orderBy),
-		WithBookmarkFilter(where.Filter),
-	}
-	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := t.Edges.totalCount[2][alias]
-	if nodes, err := t.NamedBookmarks(alias); err == nil || hasTotalCount {
-		pager, err := newBookmarkPager(opts, last != nil)
-		if err != nil {
-			return nil, err
-		}
-		conn := &BookmarkConnection{Edges: []*BookmarkEdge{}, TotalCount: totalCount}
-		conn.build(nodes, pager, after, first, before, last)
-		return conn, nil
-	}
-	return t.QueryBookmarks().Paginate(ctx, after, first, before, last, opts...)
-}
-
-func (t *Thread) Parent(ctx context.Context) (*Thread, error) {
+func (t *Thread) Parent(ctx context.Context) (*Message, error) {
 	result, err := t.Edges.ParentOrErr()
 	if IsNotLoaded(err) {
 		result, err = t.QueryParent().Only(ctx)
 	}
 	return result, MaskNotFound(err)
-}
-
-func (t *Thread) Children(
-	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ThreadOrder, where *ThreadWhereInput,
-) (*ThreadConnection, error) {
-	opts := []ThreadPaginateOption{
-		WithThreadOrder(orderBy),
-		WithThreadFilter(where.Filter),
-	}
-	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := t.Edges.totalCount[4][alias]
-	if nodes, err := t.NamedChildren(alias); err == nil || hasTotalCount {
-		pager, err := newThreadPager(opts, last != nil)
-		if err != nil {
-			return nil, err
-		}
-		conn := &ThreadConnection{Edges: []*ThreadEdge{}, TotalCount: totalCount}
-		conn.build(nodes, pager, after, first, before, last)
-		return conn, nil
-	}
-	return t.QueryChildren().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (u *User) Bookmarks(

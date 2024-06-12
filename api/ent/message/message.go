@@ -3,11 +3,14 @@
 package message
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 const (
@@ -19,18 +22,31 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldTenantID holds the string denoting the tenant_id field in the database.
+	FieldTenantID = "tenant_id"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
+	// FieldMessageType holds the string denoting the message_type field in the database.
+	FieldMessageType = "message_type"
+	// EdgeTenant holds the string denoting the tenant edge name in mutations.
+	EdgeTenant = "tenant"
 	// EdgeSentBy holds the string denoting the sent_by edge name in mutations.
 	EdgeSentBy = "sent_by"
 	// EdgeThread holds the string denoting the thread edge name in mutations.
 	EdgeThread = "thread"
 	// EdgeBookmarks holds the string denoting the bookmarks edge name in mutations.
 	EdgeBookmarks = "bookmarks"
-	// EdgeResponse holds the string denoting the response edge name in mutations.
-	EdgeResponse = "response"
+	// EdgeChild holds the string denoting the child edge name in mutations.
+	EdgeChild = "child"
 	// Table holds the table name of the message in the database.
 	Table = "messages"
+	// TenantTable is the table that holds the tenant relation/edge.
+	TenantTable = "messages"
+	// TenantInverseTable is the table name for the Tenant entity.
+	// It exists in this package in order to avoid circular dependency with the "tenant" package.
+	TenantInverseTable = "tenants"
+	// TenantColumn is the table column denoting the tenant relation/edge.
+	TenantColumn = "tenant_id"
 	// SentByTable is the table that holds the sent_by relation/edge.
 	SentByTable = "messages"
 	// SentByInverseTable is the table name for the User entity.
@@ -52,13 +68,13 @@ const (
 	BookmarksInverseTable = "bookmarks"
 	// BookmarksColumn is the table column denoting the bookmarks relation/edge.
 	BookmarksColumn = "message_bookmarks"
-	// ResponseTable is the table that holds the response relation/edge.
-	ResponseTable = "responses"
-	// ResponseInverseTable is the table name for the Response entity.
-	// It exists in this package in order to avoid circular dependency with the "response" package.
-	ResponseInverseTable = "responses"
-	// ResponseColumn is the table column denoting the response relation/edge.
-	ResponseColumn = "message_response"
+	// ChildTable is the table that holds the child relation/edge.
+	ChildTable = "threads"
+	// ChildInverseTable is the table name for the Thread entity.
+	// It exists in this package in order to avoid circular dependency with the "thread" package.
+	ChildInverseTable = "threads"
+	// ChildColumn is the table column denoting the child relation/edge.
+	ChildColumn = "message_child"
 )
 
 // Columns holds all SQL columns for message fields.
@@ -66,7 +82,9 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldTenantID,
 	FieldContent,
+	FieldMessageType,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "messages"
@@ -97,8 +115,32 @@ var (
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
+	DefaultID func() pulid.ID
 )
+
+// MessageType defines the type for the "message_type" enum field.
+type MessageType string
+
+// MessageType values.
+const (
+	MessageTypeHuman  MessageType = "human"
+	MessageTypeAi     MessageType = "ai"
+	MessageTypeSystem MessageType = "system"
+)
+
+func (mt MessageType) String() string {
+	return string(mt)
+}
+
+// MessageTypeValidator is a validator for the "message_type" field enum values. It is called by the builders before save.
+func MessageTypeValidator(mt MessageType) error {
+	switch mt {
+	case MessageTypeHuman, MessageTypeAi, MessageTypeSystem:
+		return nil
+	default:
+		return fmt.Errorf("message: invalid enum value for message_type field: %q", mt)
+	}
+}
 
 // OrderOption defines the ordering options for the Message queries.
 type OrderOption func(*sql.Selector)
@@ -118,9 +160,26 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByTenantID orders the results by the tenant_id field.
+func ByTenantID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantID, opts...).ToFunc()
+}
+
 // ByContent orders the results by the content field.
 func ByContent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContent, opts...).ToFunc()
+}
+
+// ByMessageType orders the results by the message_type field.
+func ByMessageType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMessageType, opts...).ToFunc()
+}
+
+// ByTenantField orders the results by tenant field.
+func ByTenantField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTenantStep(), sql.OrderByField(field, opts...))
+	}
 }
 
 // BySentByField orders the results by sent_by field.
@@ -151,11 +210,18 @@ func ByBookmarks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByResponseField orders the results by response field.
-func ByResponseField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByChildField orders the results by child field.
+func ByChildField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newResponseStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newChildStep(), sql.OrderByField(field, opts...))
 	}
+}
+func newTenantStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TenantInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, TenantTable, TenantColumn),
+	)
 }
 func newSentByStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
@@ -178,10 +244,28 @@ func newBookmarksStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, BookmarksTable, BookmarksColumn),
 	)
 }
-func newResponseStep() *sqlgraph.Step {
+func newChildStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ResponseInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, false, ResponseTable, ResponseColumn),
+		sqlgraph.To(ChildInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ChildTable, ChildColumn),
 	)
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e MessageType) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *MessageType) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = MessageType(str)
+	if err := MessageTypeValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid MessageType", str)
+	}
+	return nil
 }

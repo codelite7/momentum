@@ -7,29 +7,22 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/codelite7/momentum/api/cmd/run/queue"
 	"github.com/codelite7/momentum/api/common"
 	"github.com/codelite7/momentum/api/config"
 	"github.com/codelite7/momentum/api/ent"
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/resolvers"
-	"github.com/codelite7/momentum/api/river"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
-	"github.com/riverqueue/river/rivermigrate"
-	"github.com/samber/lo"
-	"github.com/supertokens/supertokens-golang/recipe/dashboard"
-	"github.com/supertokens/supertokens-golang/recipe/session"
-	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
-	"github.com/supertokens/supertokens-golang/recipe/thirdparty/tpmodels"
-	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword"
-	"github.com/supertokens/supertokens-golang/recipe/thirdpartyemailpassword/tpepmodels"
-	"github.com/supertokens/supertokens-golang/supertokens"
 	"github.com/urfave/cli/v2"
-	"net/http"
+	"github.com/vektah/gqlparser/v2/gqlerror"
+	"github.com/workos/workos-go/v4/pkg/events"
+	"github.com/workos/workos-go/v4/pkg/organizations"
+	"github.com/workos/workos-go/v4/pkg/usermanagement"
+	"github.com/ztrue/tracerr"
+	"go.uber.org/zap"
 	"strings"
 	"time"
 )
@@ -44,19 +37,16 @@ var RunCommand = &cli.Command{
 }
 
 func run() error {
-	err := common.InitializeEntClient()
+	err := common.InitializeLogging()
+	if err != nil {
+		return err
+	}
+	initializeWorkos()
+	err = common.InitializeEntClient()
 	if err != nil {
 		return err
 	}
 	err = createSchema(common.EntClient)
-	if err != nil {
-		return err
-	}
-	err = runRiverMigrations()
-	if err != nil {
-		return err
-	}
-	err = river.StartRiverClient()
 	if err != nil {
 		return err
 	}
@@ -65,12 +55,12 @@ func run() error {
 		return err
 	}
 	graphqlServer := initGraphqlServer(common.EntClient)
-	err = runHttpServer(graphqlServer)
+	err = queue.Initialize()
 	if err != nil {
 		return err
 	}
-
-	err = river.StopRiverClient()
+	go HandleAuthEvents()
+	err = runHttpServer(graphqlServer)
 	if err != nil {
 		return err
 	}
@@ -131,219 +121,73 @@ func createSchema(client *ent.Client) error {
 func initGraphqlServer(client *ent.Client) *handler.Server {
 	srv := handler.NewDefaultServer(resolvers.NewSchema(client))
 	srv.Use(entgql.Transactioner{TxOpener: client})
+	srv.SetRecoverFunc(func(ctx context.Context, err interface{}) (userMessage error) {
+		if asErr, ok := err.(error); ok {
+			common.Logger.Error("recovered from panic", zap.Error(tracerr.Wrap(asErr)))
+		} else {
+			common.Logger.Error("recovered from panic", zap.Any("error", err))
+		}
+		return gqlerror.Errorf("Internal server error!")
+	})
 
 	return srv
 }
 
+type JwksResponse struct {
+	Keys []Key `json:"keys"`
+}
+type Key struct {
+	Alg     string   `json:"alg"`
+	Kty     string   `json:"kty"`
+	Use     string   `json:"use"`
+	N       string   `json:"n"`
+	E       string   `json:"e"`
+	Kid     string   `json:"kid"`
+	X5C     []string `json:"x5c"`
+	X5TS256 string   `json:"x5t#S256"`
+}
+
 func initHttpServer(graphqlServer *handler.Server) (*echo.Echo, error) {
-	err := initSuperTokens()
-	if err != nil {
-		return nil, err
-	}
 	e := echo.New()
-	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:                             []string{"*"},
-		AllowMethods:                             []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:                             append([]string{"Content-Type"}, supertokens.GetAllCORSHeaders()...),
-		AllowCredentials:                         true,
-		UnsafeWildcardOriginWithAllowCredentials: true,
-	}))
-	e.Use(echo.WrapMiddleware(supertokens.Middleware))
-	e.GET("/health", func(c echo.Context) error {
+	e.Use(middleware.CORS())
+	// health and playground are open
+	health := e.Group("/health")
+	health.GET("", func(c echo.Context) error {
 		return nil
 	})
-	e.GET("/", echo.WrapHandler(playground.Handler("Todo", "/query")), echo.WrapMiddleware(sessionMiddleware))
-	e.POST("/query", echo.WrapHandler(graphqlServer), echo.WrapMiddleware(sessionMiddleware))
+	playgroundd := e.Group("/playground")
+	playgroundd.GET("", echo.WrapHandler(playground.Handler("Api", "/query")))
+	// query is authenticated via middleware
+	query := e.Group("/query")
+	query.Use(AuthMiddleware())
+	query.POST("", echo.WrapHandler(graphqlServer))
 
 	return e, nil
 }
 
-func initSuperTokens() error {
-	return supertokens.Init(supertokens.TypeInput{
-		Supertokens: &supertokens.ConnectionInfo{
-			// These are the connection details of the app you created on supertokens.com
-			ConnectionURI: config.SuperTokensConfig.Uri,
-			APIKey:        config.SuperTokensConfig.ApiKey,
-		},
-		AppInfo: supertokens.AppInfo{
-			AppName:         "momentum",
-			APIDomain:       config.SuperTokensConfig.ApiDomain,
-			WebsiteDomain:   config.SuperTokensConfig.WebsiteDomain,
-			APIBasePath:     &config.SuperTokensConfig.ApiBasePath,
-			WebsiteBasePath: &config.SuperTokensConfig.WebsiteBasePath,
-		},
-		RecipeList: []supertokens.Recipe{
-			thirdpartyemailpassword.Init(&tpepmodels.TypeInput{
-				Providers: []tpmodels.ProviderInput{
-					{
-						Config: tpmodels.ProviderConfig{
-							ThirdPartyId: "google",
-							Clients: []tpmodels.ProviderClientConfig{
-								{
-									ClientID:     config.SuperTokensConfig.GoogleClientID,
-									ClientSecret: config.SuperTokensConfig.GoogleClientSecret,
-								},
-							},
-						},
-					},
-				},
-				Override: &tpepmodels.OverrideStruct{
-					Functions: func(originalImplementation tpepmodels.RecipeInterface) tpepmodels.RecipeInterface {
-						original := *originalImplementation.EmailPasswordSignUp
-						*originalImplementation.EmailPasswordSignUp = func(email string, password string, tenantId string, userContext supertokens.UserContext) (tpepmodels.SignUpResponse, error) {
-							input := ent.CreateUserInput{
-								CreatedAt: lo.ToPtr(time.Now()),
-								UpdatedAt: lo.ToPtr(time.Now()),
-								Email:     email,
-							}
-							var response tpepmodels.SignUpResponse
-							tx, err := common.EntClient.Tx(context.Background())
-							if err != nil {
-								return response, err
-							}
-							defer tx.Rollback()
-							user, err := tx.User.Create().SetInput(input).Save(context.Background())
-							if err != nil {
-								return response, err
-							}
-							response, err = original(email, password, tenantId, userContext)
-							if err != nil {
-								return response, err
-							}
-
-							if response.OK != nil {
-								if response.OK.User.ID != "" {
-									externalUserId := user.ID.String()
-									_, err := supertokens.CreateUserIdMapping(response.OK.User.ID, externalUserId, nil, nil)
-									if err != nil {
-										return response, err
-									}
-									response.OK.User.ID = externalUserId
-								}
-
-							}
-							err = tx.Commit()
-							if err != nil {
-								return response, err
-							}
-							return response, nil
-						}
-						return originalImplementation
-					},
-				},
-			}),
-			session.Init(&sessmodels.TypeInput{
-				Override: &sessmodels.OverrideStruct{
-					Functions: func(originalImplementation sessmodels.RecipeInterface) sessmodels.RecipeInterface {
-						// First we copy the original implementation func
-						originalCreateNewSession := *originalImplementation.CreateNewSession
-
-						// Now we override the CreateNewSession function
-						*originalImplementation.CreateNewSession = func(userID string, accessTokenPayload, sessionDataInDatabase map[string]interface{}, disableAntiCsrf *bool, tenantId string, userContext supertokens.UserContext) (sessmodels.SessionContainer, error) {
-							// This goes in the access token, and is available to read on the frontend.
-							if accessTokenPayload == nil {
-								accessTokenPayload = map[string]interface{}{}
-							}
-							user, err := thirdpartyemailpassword.GetUserById(userID)
-							if err != nil {
-								return &sessmodels.TypeSessionContainer{}, err
-							}
-							accessTokenPayload["email"] = user.Email
-
-							return originalCreateNewSession(userID, accessTokenPayload, sessionDataInDatabase, disableAntiCsrf, tenantId, userContext)
-						}
-
-						return originalImplementation
-					},
-				},
-			}),
-			dashboard.Init(nil),
-		},
-	})
+func initializeWorkos() {
+	events.SetAPIKey(config.WorkosApiKey)
+	usermanagement.SetAPIKey(config.WorkosApiKey)
+	organizations.SetAPIKey(config.WorkosApiKey)
 }
 
 var flags = []cli.Flag{
 	&cli.StringFlag{
-		Name:        "postgres-uri",
+		Name:        "postgresql-uri",
 		Aliases:     []string{"pu"},
-		Value:       "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
+		Value:       "postgres://postgres:NULL@localhost:5432/postgres?sslmode=disable",
 		Usage:       "postgres connection string",
-		EnvVars:     []string{"POSTGRES_URI"},
+		EnvVars:     []string{"POSTGRESQL_URI"},
 		Destination: &config.PostgresUri,
 	},
 	&cli.StringFlag{
 		Name:        "port",
 		Aliases:     []string{"p"},
-		Value:       "3000",
+		Value:       "3001",
 		Usage:       "port to run the server on",
 		EnvVars:     []string{"PORT"},
 		Destination: &config.Port,
-	},
-	&cli.StringFlag{
-		Name:        "supertokens-uri",
-		Aliases:     []string{"su"},
-		Value:       "",
-		Usage:       "uri to supertokens instance",
-		EnvVars:     []string{"SUPERTOKENS_URI"},
-		Destination: &config.SuperTokensConfig.Uri,
-	},
-	&cli.StringFlag{
-		Name:        "supertokens-api-key",
-		Aliases:     []string{"sak"},
-		Value:       "",
-		Usage:       "supertokens api key",
-		EnvVars:     []string{"SUPERTOKENS_API_KEY"},
-		Destination: &config.SuperTokensConfig.ApiKey,
-	},
-	&cli.StringFlag{
-		Name:        "supertokens-api-domain",
-		Aliases:     []string{"sad"},
-		Value:       "http://localhost:3000",
-		Usage:       "api address, this is self referential",
-		EnvVars:     []string{"SUPERTOKENS_API_DOMAIN"},
-		Destination: &config.SuperTokensConfig.ApiDomain,
-	},
-	&cli.StringFlag{
-		Name:        "supertokens-website-domain",
-		Aliases:     []string{"swd"},
-		Value:       "http://localhost:4200",
-		Usage:       "ui address",
-		EnvVars:     []string{"SUPERTOKENS_WEBSITE_DOMAIN"},
-		Destination: &config.SuperTokensConfig.WebsiteDomain,
-	},
-	&cli.StringFlag{
-		Name:        "supertokens-api-base-path",
-		Aliases:     []string{"sabp"},
-		Value:       "/auth",
-		Usage:       "api path where supertokens features are served from",
-		EnvVars:     []string{"SUPERTOKENS_API_BASE_PATH"},
-		Destination: &config.SuperTokensConfig.ApiBasePath,
-	},
-	&cli.StringFlag{
-		Name:        "supertokens-website-base-path",
-		Aliases:     []string{"swbp"},
-		Value:       "/auth",
-		Usage:       "ui path where supertokens features are handled",
-		EnvVars:     []string{"SUPERTOKENS_WEBSITE_BASE_PATH"},
-		Destination: &config.SuperTokensConfig.WebsiteBasePath,
-	},
-	&cli.StringFlag{
-		Name:        "supertokens-google-client-id",
-		Aliases:     []string{"sgci"},
-		Value:       "1060725074195-kmeum4crr01uirfl2op9kd5acmi9jutn.apps.googleusercontent.com",
-		Usage:       "client id for google social login",
-		EnvVars:     []string{"SUPERTOKENS_GOOGLE_CLIENT_ID"},
-		Destination: &config.SuperTokensConfig.GoogleClientID,
-	},
-	&cli.StringFlag{
-		Name:        "supertokens-google-client-secret",
-		Aliases:     []string{"sgcs"},
-		Value:       "",
-		Usage:       "client secret for google social login",
-		EnvVars:     []string{"SUPERTOKENS_GOOGLE_CLIENT_SECRET"},
-		Destination: &config.SuperTokensConfig.GoogleClientSecret,
 	},
 	&cli.StringFlag{
 		Name:        "default-agents",
@@ -369,39 +213,34 @@ var flags = []cli.Flag{
 		EnvVars:     []string{"SESSION_REQUIRED"},
 		Destination: &config.SessionRequired,
 	},
-}
-
-func sessionMiddleware(next http.Handler) http.Handler {
-	return session.VerifySession(&sessmodels.VerifySessionOptions{SessionRequired: lo.ToPtr(config.SessionRequired)}, next.ServeHTTP)
-}
-
-func runRiverMigrations() error {
-	ctx := context.Background()
-
-	dbPool, err := pgxpool.New(context.Background(), config.PostgresUri)
-	if err != nil {
-		return err
-	}
-	defer dbPool.Close()
-
-	tx, err := dbPool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	migrator := rivermigrate.New[pgx.Tx](riverpgxv5.New(dbPool), nil)
-
-	printVersions := func(res *rivermigrate.MigrateResult) {
-		for _, version := range res.Versions {
-			fmt.Printf("Migrated [%s] version %d\n", strings.ToUpper(string(res.Direction)), version.Version)
-		}
-	}
-
-	res, err := migrator.MigrateTx(ctx, tx, rivermigrate.DirectionUp, nil)
-	if err != nil {
-		return err
-	}
-	printVersions(res)
-	return tx.Commit(ctx)
+	&cli.StringFlag{
+		Name:        "workos-client-id",
+		Aliases:     []string{"wci"},
+		Usage:       "workos client id",
+		EnvVars:     []string{"WORKOS_CLIENT_ID"},
+		Destination: &config.WorkosClientId,
+	},
+	&cli.StringFlag{
+		Name:        "workos-api-key",
+		Aliases:     []string{"wak"},
+		Usage:       "workos api key",
+		EnvVars:     []string{"WORKOS_API_KEY"},
+		Destination: &config.WorkosApiKey,
+	},
+	&cli.DurationFlag{
+		Name:        "workos-poll-interval",
+		Aliases:     []string{"wpo"},
+		Value:       10 * time.Second,
+		Usage:       "How often to poll workos for events",
+		EnvVars:     []string{"WORKOS_POLL_INTERVAL"},
+		Destination: &config.WorkosPollInterval,
+	},
+	&cli.BoolFlag{
+		Name:        "disable-jwt-validation",
+		Aliases:     []string{"djv"},
+		Value:       false,
+		Usage:       "When true, jwt tokens are not validated against the workos JWKS",
+		EnvVars:     []string{"DISABLE_JWT_VALIDATION"},
+		Destination: &config.DisableJwtValidation,
+	},
 }

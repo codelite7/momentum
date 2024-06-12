@@ -7,7 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 const (
@@ -19,16 +19,23 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldTenantID holds the string denoting the tenant_id field in the database.
+	FieldTenantID = "tenant_id"
+	// EdgeTenant holds the string denoting the tenant edge name in mutations.
+	EdgeTenant = "tenant"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
-	// EdgeThread holds the string denoting the thread edge name in mutations.
-	EdgeThread = "thread"
 	// EdgeMessage holds the string denoting the message edge name in mutations.
 	EdgeMessage = "message"
-	// EdgeResponse holds the string denoting the response edge name in mutations.
-	EdgeResponse = "response"
 	// Table holds the table name of the bookmark in the database.
 	Table = "bookmarks"
+	// TenantTable is the table that holds the tenant relation/edge.
+	TenantTable = "bookmarks"
+	// TenantInverseTable is the table name for the Tenant entity.
+	// It exists in this package in order to avoid circular dependency with the "tenant" package.
+	TenantInverseTable = "tenants"
+	// TenantColumn is the table column denoting the tenant relation/edge.
+	TenantColumn = "tenant_id"
 	// UserTable is the table that holds the user relation/edge.
 	UserTable = "bookmarks"
 	// UserInverseTable is the table name for the User entity.
@@ -36,13 +43,6 @@ const (
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
 	UserColumn = "user_bookmarks"
-	// ThreadTable is the table that holds the thread relation/edge.
-	ThreadTable = "bookmarks"
-	// ThreadInverseTable is the table name for the Thread entity.
-	// It exists in this package in order to avoid circular dependency with the "thread" package.
-	ThreadInverseTable = "threads"
-	// ThreadColumn is the table column denoting the thread relation/edge.
-	ThreadColumn = "thread_bookmarks"
 	// MessageTable is the table that holds the message relation/edge.
 	MessageTable = "bookmarks"
 	// MessageInverseTable is the table name for the Message entity.
@@ -50,13 +50,6 @@ const (
 	MessageInverseTable = "messages"
 	// MessageColumn is the table column denoting the message relation/edge.
 	MessageColumn = "message_bookmarks"
-	// ResponseTable is the table that holds the response relation/edge.
-	ResponseTable = "bookmarks"
-	// ResponseInverseTable is the table name for the Response entity.
-	// It exists in this package in order to avoid circular dependency with the "response" package.
-	ResponseInverseTable = "responses"
-	// ResponseColumn is the table column denoting the response relation/edge.
-	ResponseColumn = "response_bookmarks"
 )
 
 // Columns holds all SQL columns for bookmark fields.
@@ -64,14 +57,13 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldTenantID,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "bookmarks"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"message_bookmarks",
-	"response_bookmarks",
-	"thread_bookmarks",
 	"user_bookmarks",
 }
 
@@ -96,7 +88,7 @@ var (
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
+	DefaultID func() pulid.ID
 )
 
 // OrderOption defines the ordering options for the Bookmark queries.
@@ -117,17 +109,22 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByTenantID orders the results by the tenant_id field.
+func ByTenantID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantID, opts...).ToFunc()
+}
+
+// ByTenantField orders the results by tenant field.
+func ByTenantField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTenantStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByUserField orders the results by user field.
 func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
-	}
-}
-
-// ByThreadField orders the results by thread field.
-func ByThreadField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newThreadStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -137,12 +134,12 @@ func ByMessageField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMessageStep(), sql.OrderByField(field, opts...))
 	}
 }
-
-// ByResponseField orders the results by response field.
-func ByResponseField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newResponseStep(), sql.OrderByField(field, opts...))
-	}
+func newTenantStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TenantInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, TenantTable, TenantColumn),
+	)
 }
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
@@ -151,24 +148,10 @@ func newUserStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 	)
 }
-func newThreadStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ThreadInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, ThreadTable, ThreadColumn),
-	)
-}
 func newMessageStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MessageInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, MessageTable, MessageColumn),
-	)
-}
-func newResponseStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ResponseInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, ResponseTable, ResponseColumn),
 	)
 }

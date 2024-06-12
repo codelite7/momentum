@@ -4,30 +4,27 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/predicate"
-	"github.com/codelite7/momentum/api/ent/response"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 )
 
 // AgentQuery is the builder for querying Agent entities.
 type AgentQuery struct {
 	config
-	ctx                *QueryContext
-	order              []agent.OrderOption
-	inters             []Interceptor
-	predicates         []predicate.Agent
-	withResponses      *ResponseQuery
-	modifiers          []func(*sql.Selector)
-	loadTotal          []func(context.Context, []*Agent) error
-	withNamedResponses map[string]*ResponseQuery
+	ctx        *QueryContext
+	order      []agent.OrderOption
+	inters     []Interceptor
+	predicates []predicate.Agent
+	loadTotal  []func(context.Context, []*Agent) error
+	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -64,28 +61,6 @@ func (aq *AgentQuery) Order(o ...agent.OrderOption) *AgentQuery {
 	return aq
 }
 
-// QueryResponses chains the current query on the "responses" edge.
-func (aq *AgentQuery) QueryResponses() *ResponseQuery {
-	query := (&ResponseClient{config: aq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := aq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := aq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(agent.Table, agent.FieldID, selector),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, agent.ResponsesTable, agent.ResponsesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // First returns the first Agent entity from the query.
 // Returns a *NotFoundError when no Agent was found.
 func (aq *AgentQuery) First(ctx context.Context) (*Agent, error) {
@@ -110,8 +85,8 @@ func (aq *AgentQuery) FirstX(ctx context.Context) *Agent {
 
 // FirstID returns the first Agent ID from the query.
 // Returns a *NotFoundError when no Agent ID was found.
-func (aq *AgentQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (aq *AgentQuery) FirstID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = aq.Limit(1).IDs(setContextOp(ctx, aq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -123,7 +98,7 @@ func (aq *AgentQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (aq *AgentQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (aq *AgentQuery) FirstIDX(ctx context.Context) pulid.ID {
 	id, err := aq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -161,8 +136,8 @@ func (aq *AgentQuery) OnlyX(ctx context.Context) *Agent {
 // OnlyID is like Only, but returns the only Agent ID in the query.
 // Returns a *NotSingularError when more than one Agent ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (aq *AgentQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (aq *AgentQuery) OnlyID(ctx context.Context) (id pulid.ID, err error) {
+	var ids []pulid.ID
 	if ids, err = aq.Limit(2).IDs(setContextOp(ctx, aq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -178,7 +153,7 @@ func (aq *AgentQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (aq *AgentQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (aq *AgentQuery) OnlyIDX(ctx context.Context) pulid.ID {
 	id, err := aq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -206,7 +181,7 @@ func (aq *AgentQuery) AllX(ctx context.Context) []*Agent {
 }
 
 // IDs executes the query and returns a list of Agent IDs.
-func (aq *AgentQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (aq *AgentQuery) IDs(ctx context.Context) (ids []pulid.ID, err error) {
 	if aq.ctx.Unique == nil && aq.path != nil {
 		aq.Unique(true)
 	}
@@ -218,7 +193,7 @@ func (aq *AgentQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (aq *AgentQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (aq *AgentQuery) IDsX(ctx context.Context) []pulid.ID {
 	ids, err := aq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -273,27 +248,15 @@ func (aq *AgentQuery) Clone() *AgentQuery {
 		return nil
 	}
 	return &AgentQuery{
-		config:        aq.config,
-		ctx:           aq.ctx.Clone(),
-		order:         append([]agent.OrderOption{}, aq.order...),
-		inters:        append([]Interceptor{}, aq.inters...),
-		predicates:    append([]predicate.Agent{}, aq.predicates...),
-		withResponses: aq.withResponses.Clone(),
+		config:     aq.config,
+		ctx:        aq.ctx.Clone(),
+		order:      append([]agent.OrderOption{}, aq.order...),
+		inters:     append([]Interceptor{}, aq.inters...),
+		predicates: append([]predicate.Agent{}, aq.predicates...),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
 	}
-}
-
-// WithResponses tells the query-builder to eager-load the nodes that are connected to
-// the "responses" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *AgentQuery) WithResponses(opts ...func(*ResponseQuery)) *AgentQuery {
-	query := (&ResponseClient{config: aq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	aq.withResponses = query
-	return aq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -372,11 +335,8 @@ func (aq *AgentQuery) prepareQuery(ctx context.Context) error {
 
 func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent, error) {
 	var (
-		nodes       = []*Agent{}
-		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
-			aq.withResponses != nil,
-		}
+		nodes = []*Agent{}
+		_spec = aq.querySpec()
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Agent).scanValues(nil, columns)
@@ -384,7 +344,6 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Agent{config: aq.config}
 		nodes = append(nodes, node)
-		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(aq.modifiers) > 0 {
@@ -399,58 +358,12 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := aq.withResponses; query != nil {
-		if err := aq.loadResponses(ctx, query, nodes,
-			func(n *Agent) { n.Edges.Responses = []*Response{} },
-			func(n *Agent, e *Response) { n.Edges.Responses = append(n.Edges.Responses, e) }); err != nil {
-			return nil, err
-		}
-	}
-	for name, query := range aq.withNamedResponses {
-		if err := aq.loadResponses(ctx, query, nodes,
-			func(n *Agent) { n.appendNamedResponses(name) },
-			func(n *Agent, e *Response) { n.appendNamedResponses(name, e) }); err != nil {
-			return nil, err
-		}
-	}
 	for i := range aq.loadTotal {
 		if err := aq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
-}
-
-func (aq *AgentQuery) loadResponses(ctx context.Context, query *ResponseQuery, nodes []*Agent, init func(*Agent), assign func(*Agent, *Response)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Agent)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.Response(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(agent.ResponsesColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.agent_responses
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "agent_responses" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "agent_responses" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
 }
 
 func (aq *AgentQuery) sqlCount(ctx context.Context) (int, error) {
@@ -466,7 +379,7 @@ func (aq *AgentQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (aq *AgentQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewQuerySpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeString))
 	_spec.From = aq.sql
 	if unique := aq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -520,6 +433,9 @@ func (aq *AgentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	if aq.ctx.Unique != nil && *aq.ctx.Unique {
 		selector.Distinct()
 	}
+	for _, m := range aq.modifiers {
+		m(selector)
+	}
 	for _, p := range aq.predicates {
 		p(selector)
 	}
@@ -537,17 +453,29 @@ func (aq *AgentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// WithNamedResponses tells the query-builder to eager-load the nodes that are connected to the "responses"
-// edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (aq *AgentQuery) WithNamedResponses(name string, opts ...func(*ResponseQuery)) *AgentQuery {
-	query := (&ResponseClient{config: aq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
+// ForUpdate locks the selected rows against concurrent updates, and prevent them from being
+// updated, deleted or "selected ... for update" by other sessions, until the transaction is
+// either committed or rolled-back.
+func (aq *AgentQuery) ForUpdate(opts ...sql.LockOption) *AgentQuery {
+	if aq.driver.Dialect() == dialect.Postgres {
+		aq.Unique(false)
 	}
-	if aq.withNamedResponses == nil {
-		aq.withNamedResponses = make(map[string]*ResponseQuery)
+	aq.modifiers = append(aq.modifiers, func(s *sql.Selector) {
+		s.ForUpdate(opts...)
+	})
+	return aq
+}
+
+// ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
+// on any rows that are read. Other sessions can read the rows, but cannot modify them
+// until your transaction commits.
+func (aq *AgentQuery) ForShare(opts ...sql.LockOption) *AgentQuery {
+	if aq.driver.Dialect() == dialect.Postgres {
+		aq.Unique(false)
 	}
-	aq.withNamedResponses[name] = query
+	aq.modifiers = append(aq.modifiers, func(s *sql.Selector) {
+		s.ForShare(opts...)
+	})
 	return aq
 }
 

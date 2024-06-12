@@ -10,7 +10,7 @@ import (
 	"reflect"
 
 	"github.com/codelite7/momentum/api/ent/migrate"
-	"github.com/google/uuid"
+	"github.com/codelite7/momentum/api/ent/schema/pulid"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -19,9 +19,10 @@ import (
 	"github.com/codelite7/momentum/api/ent/agent"
 	"github.com/codelite7/momentum/api/ent/bookmark"
 	"github.com/codelite7/momentum/api/ent/message"
-	"github.com/codelite7/momentum/api/ent/response"
+	"github.com/codelite7/momentum/api/ent/tenant"
 	"github.com/codelite7/momentum/api/ent/thread"
 	"github.com/codelite7/momentum/api/ent/user"
+	"github.com/codelite7/momentum/api/ent/workoseventcursor"
 )
 
 // Client is the client that holds all ent builders.
@@ -35,12 +36,14 @@ type Client struct {
 	Bookmark *BookmarkClient
 	// Message is the client for interacting with the Message builders.
 	Message *MessageClient
-	// Response is the client for interacting with the Response builders.
-	Response *ResponseClient
+	// Tenant is the client for interacting with the Tenant builders.
+	Tenant *TenantClient
 	// Thread is the client for interacting with the Thread builders.
 	Thread *ThreadClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// WorkosEventCursor is the client for interacting with the WorkosEventCursor builders.
+	WorkosEventCursor *WorkosEventCursorClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -55,9 +58,10 @@ func (c *Client) init() {
 	c.Agent = NewAgentClient(c.config)
 	c.Bookmark = NewBookmarkClient(c.config)
 	c.Message = NewMessageClient(c.config)
-	c.Response = NewResponseClient(c.config)
+	c.Tenant = NewTenantClient(c.config)
 	c.Thread = NewThreadClient(c.config)
 	c.User = NewUserClient(c.config)
+	c.WorkosEventCursor = NewWorkosEventCursorClient(c.config)
 }
 
 type (
@@ -148,14 +152,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Agent:    NewAgentClient(cfg),
-		Bookmark: NewBookmarkClient(cfg),
-		Message:  NewMessageClient(cfg),
-		Response: NewResponseClient(cfg),
-		Thread:   NewThreadClient(cfg),
-		User:     NewUserClient(cfg),
+		ctx:               ctx,
+		config:            cfg,
+		Agent:             NewAgentClient(cfg),
+		Bookmark:          NewBookmarkClient(cfg),
+		Message:           NewMessageClient(cfg),
+		Tenant:            NewTenantClient(cfg),
+		Thread:            NewThreadClient(cfg),
+		User:              NewUserClient(cfg),
+		WorkosEventCursor: NewWorkosEventCursorClient(cfg),
 	}, nil
 }
 
@@ -173,14 +178,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Agent:    NewAgentClient(cfg),
-		Bookmark: NewBookmarkClient(cfg),
-		Message:  NewMessageClient(cfg),
-		Response: NewResponseClient(cfg),
-		Thread:   NewThreadClient(cfg),
-		User:     NewUserClient(cfg),
+		ctx:               ctx,
+		config:            cfg,
+		Agent:             NewAgentClient(cfg),
+		Bookmark:          NewBookmarkClient(cfg),
+		Message:           NewMessageClient(cfg),
+		Tenant:            NewTenantClient(cfg),
+		Thread:            NewThreadClient(cfg),
+		User:              NewUserClient(cfg),
+		WorkosEventCursor: NewWorkosEventCursorClient(cfg),
 	}, nil
 }
 
@@ -210,7 +216,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Agent, c.Bookmark, c.Message, c.Response, c.Thread, c.User,
+		c.Agent, c.Bookmark, c.Message, c.Tenant, c.Thread, c.User, c.WorkosEventCursor,
 	} {
 		n.Use(hooks...)
 	}
@@ -220,7 +226,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Agent, c.Bookmark, c.Message, c.Response, c.Thread, c.User,
+		c.Agent, c.Bookmark, c.Message, c.Tenant, c.Thread, c.User, c.WorkosEventCursor,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -235,12 +241,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Bookmark.mutate(ctx, m)
 	case *MessageMutation:
 		return c.Message.mutate(ctx, m)
-	case *ResponseMutation:
-		return c.Response.mutate(ctx, m)
+	case *TenantMutation:
+		return c.Tenant.mutate(ctx, m)
 	case *ThreadMutation:
 		return c.Thread.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
+	case *WorkosEventCursorMutation:
+		return c.WorkosEventCursor.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -307,7 +315,7 @@ func (c *AgentClient) UpdateOne(a *Agent) *AgentUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *AgentClient) UpdateOneID(id uuid.UUID) *AgentUpdateOne {
+func (c *AgentClient) UpdateOneID(id pulid.ID) *AgentUpdateOne {
 	mutation := newAgentMutation(c.config, OpUpdateOne, withAgentID(id))
 	return &AgentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -324,7 +332,7 @@ func (c *AgentClient) DeleteOne(a *Agent) *AgentDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *AgentClient) DeleteOneID(id uuid.UUID) *AgentDeleteOne {
+func (c *AgentClient) DeleteOneID(id pulid.ID) *AgentDeleteOne {
 	builder := c.Delete().Where(agent.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -341,33 +349,17 @@ func (c *AgentClient) Query() *AgentQuery {
 }
 
 // Get returns a Agent entity by its id.
-func (c *AgentClient) Get(ctx context.Context, id uuid.UUID) (*Agent, error) {
+func (c *AgentClient) Get(ctx context.Context, id pulid.ID) (*Agent, error) {
 	return c.Query().Where(agent.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *AgentClient) GetX(ctx context.Context, id uuid.UUID) *Agent {
+func (c *AgentClient) GetX(ctx context.Context, id pulid.ID) *Agent {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
-}
-
-// QueryResponses queries the responses edge of a Agent.
-func (c *AgentClient) QueryResponses(a *Agent) *ResponseQuery {
-	query := (&ResponseClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(agent.Table, agent.FieldID, id),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, agent.ResponsesTable, agent.ResponsesColumn),
-		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
 }
 
 // Hooks returns the client hooks.
@@ -456,7 +448,7 @@ func (c *BookmarkClient) UpdateOne(b *Bookmark) *BookmarkUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *BookmarkClient) UpdateOneID(id uuid.UUID) *BookmarkUpdateOne {
+func (c *BookmarkClient) UpdateOneID(id pulid.ID) *BookmarkUpdateOne {
 	mutation := newBookmarkMutation(c.config, OpUpdateOne, withBookmarkID(id))
 	return &BookmarkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -473,7 +465,7 @@ func (c *BookmarkClient) DeleteOne(b *Bookmark) *BookmarkDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BookmarkClient) DeleteOneID(id uuid.UUID) *BookmarkDeleteOne {
+func (c *BookmarkClient) DeleteOneID(id pulid.ID) *BookmarkDeleteOne {
 	builder := c.Delete().Where(bookmark.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -490,17 +482,33 @@ func (c *BookmarkClient) Query() *BookmarkQuery {
 }
 
 // Get returns a Bookmark entity by its id.
-func (c *BookmarkClient) Get(ctx context.Context, id uuid.UUID) (*Bookmark, error) {
+func (c *BookmarkClient) Get(ctx context.Context, id pulid.ID) (*Bookmark, error) {
 	return c.Query().Where(bookmark.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *BookmarkClient) GetX(ctx context.Context, id uuid.UUID) *Bookmark {
+func (c *BookmarkClient) GetX(ctx context.Context, id pulid.ID) *Bookmark {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryTenant queries the tenant edge of a Bookmark.
+func (c *BookmarkClient) QueryTenant(b *Bookmark) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(bookmark.Table, bookmark.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, bookmark.TenantTable, bookmark.TenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryUser queries the user edge of a Bookmark.
@@ -519,22 +527,6 @@ func (c *BookmarkClient) QueryUser(b *Bookmark) *UserQuery {
 	return query
 }
 
-// QueryThread queries the thread edge of a Bookmark.
-func (c *BookmarkClient) QueryThread(b *Bookmark) *ThreadQuery {
-	query := (&ThreadClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(bookmark.Table, bookmark.FieldID, id),
-			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.ThreadTable, bookmark.ThreadColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryMessage queries the message edge of a Bookmark.
 func (c *BookmarkClient) QueryMessage(b *Bookmark) *MessageQuery {
 	query := (&MessageClient{config: c.config}).Query()
@@ -544,22 +536,6 @@ func (c *BookmarkClient) QueryMessage(b *Bookmark) *MessageQuery {
 			sqlgraph.From(bookmark.Table, bookmark.FieldID, id),
 			sqlgraph.To(message.Table, message.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.MessageTable, bookmark.MessageColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryResponse queries the response edge of a Bookmark.
-func (c *BookmarkClient) QueryResponse(b *Bookmark) *ResponseQuery {
-	query := (&ResponseClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(bookmark.Table, bookmark.FieldID, id),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, bookmark.ResponseTable, bookmark.ResponseColumn),
 		)
 		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
 		return fromV, nil
@@ -653,7 +629,7 @@ func (c *MessageClient) UpdateOne(m *Message) *MessageUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *MessageClient) UpdateOneID(id uuid.UUID) *MessageUpdateOne {
+func (c *MessageClient) UpdateOneID(id pulid.ID) *MessageUpdateOne {
 	mutation := newMessageMutation(c.config, OpUpdateOne, withMessageID(id))
 	return &MessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -670,7 +646,7 @@ func (c *MessageClient) DeleteOne(m *Message) *MessageDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *MessageClient) DeleteOneID(id uuid.UUID) *MessageDeleteOne {
+func (c *MessageClient) DeleteOneID(id pulid.ID) *MessageDeleteOne {
 	builder := c.Delete().Where(message.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -687,17 +663,33 @@ func (c *MessageClient) Query() *MessageQuery {
 }
 
 // Get returns a Message entity by its id.
-func (c *MessageClient) Get(ctx context.Context, id uuid.UUID) (*Message, error) {
+func (c *MessageClient) Get(ctx context.Context, id pulid.ID) (*Message, error) {
 	return c.Query().Where(message.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *MessageClient) GetX(ctx context.Context, id uuid.UUID) *Message {
+func (c *MessageClient) GetX(ctx context.Context, id pulid.ID) *Message {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryTenant queries the tenant edge of a Message.
+func (c *MessageClient) QueryTenant(m *Message) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(message.Table, message.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, message.TenantTable, message.TenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QuerySentBy queries the sent_by edge of a Message.
@@ -748,15 +740,15 @@ func (c *MessageClient) QueryBookmarks(m *Message) *BookmarkQuery {
 	return query
 }
 
-// QueryResponse queries the response edge of a Message.
-func (c *MessageClient) QueryResponse(m *Message) *ResponseQuery {
-	query := (&ResponseClient{config: c.config}).Query()
+// QueryChild queries the child edge of a Message.
+func (c *MessageClient) QueryChild(m *Message) *ThreadQuery {
+	query := (&ThreadClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(message.Table, message.FieldID, id),
-			sqlgraph.To(response.Table, response.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, message.ResponseTable, message.ResponseColumn),
+			sqlgraph.To(thread.Table, thread.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, message.ChildTable, message.ChildColumn),
 		)
 		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
 		return fromV, nil
@@ -789,107 +781,107 @@ func (c *MessageClient) mutate(ctx context.Context, m *MessageMutation) (Value, 
 	}
 }
 
-// ResponseClient is a client for the Response schema.
-type ResponseClient struct {
+// TenantClient is a client for the Tenant schema.
+type TenantClient struct {
 	config
 }
 
-// NewResponseClient returns a client for the Response from the given config.
-func NewResponseClient(c config) *ResponseClient {
-	return &ResponseClient{config: c}
+// NewTenantClient returns a client for the Tenant from the given config.
+func NewTenantClient(c config) *TenantClient {
+	return &TenantClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `response.Hooks(f(g(h())))`.
-func (c *ResponseClient) Use(hooks ...Hook) {
-	c.hooks.Response = append(c.hooks.Response, hooks...)
+// A call to `Use(f, g, h)` equals to `tenant.Hooks(f(g(h())))`.
+func (c *TenantClient) Use(hooks ...Hook) {
+	c.hooks.Tenant = append(c.hooks.Tenant, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `response.Intercept(f(g(h())))`.
-func (c *ResponseClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Response = append(c.inters.Response, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `tenant.Intercept(f(g(h())))`.
+func (c *TenantClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Tenant = append(c.inters.Tenant, interceptors...)
 }
 
-// Create returns a builder for creating a Response entity.
-func (c *ResponseClient) Create() *ResponseCreate {
-	mutation := newResponseMutation(c.config, OpCreate)
-	return &ResponseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a Tenant entity.
+func (c *TenantClient) Create() *TenantCreate {
+	mutation := newTenantMutation(c.config, OpCreate)
+	return &TenantCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Response entities.
-func (c *ResponseClient) CreateBulk(builders ...*ResponseCreate) *ResponseCreateBulk {
-	return &ResponseCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Tenant entities.
+func (c *TenantClient) CreateBulk(builders ...*TenantCreate) *TenantCreateBulk {
+	return &TenantCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *ResponseClient) MapCreateBulk(slice any, setFunc func(*ResponseCreate, int)) *ResponseCreateBulk {
+func (c *TenantClient) MapCreateBulk(slice any, setFunc func(*TenantCreate, int)) *TenantCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &ResponseCreateBulk{err: fmt.Errorf("calling to ResponseClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &TenantCreateBulk{err: fmt.Errorf("calling to TenantClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*ResponseCreate, rv.Len())
+	builders := make([]*TenantCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &ResponseCreateBulk{config: c.config, builders: builders}
+	return &TenantCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Response.
-func (c *ResponseClient) Update() *ResponseUpdate {
-	mutation := newResponseMutation(c.config, OpUpdate)
-	return &ResponseUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Tenant.
+func (c *TenantClient) Update() *TenantUpdate {
+	mutation := newTenantMutation(c.config, OpUpdate)
+	return &TenantUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *ResponseClient) UpdateOne(r *Response) *ResponseUpdateOne {
-	mutation := newResponseMutation(c.config, OpUpdateOne, withResponse(r))
-	return &ResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *TenantClient) UpdateOne(t *Tenant) *TenantUpdateOne {
+	mutation := newTenantMutation(c.config, OpUpdateOne, withTenant(t))
+	return &TenantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ResponseClient) UpdateOneID(id uuid.UUID) *ResponseUpdateOne {
-	mutation := newResponseMutation(c.config, OpUpdateOne, withResponseID(id))
-	return &ResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *TenantClient) UpdateOneID(id pulid.ID) *TenantUpdateOne {
+	mutation := newTenantMutation(c.config, OpUpdateOne, withTenantID(id))
+	return &TenantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Response.
-func (c *ResponseClient) Delete() *ResponseDelete {
-	mutation := newResponseMutation(c.config, OpDelete)
-	return &ResponseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Tenant.
+func (c *TenantClient) Delete() *TenantDelete {
+	mutation := newTenantMutation(c.config, OpDelete)
+	return &TenantDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *ResponseClient) DeleteOne(r *Response) *ResponseDeleteOne {
-	return c.DeleteOneID(r.ID)
+func (c *TenantClient) DeleteOne(t *Tenant) *TenantDeleteOne {
+	return c.DeleteOneID(t.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ResponseClient) DeleteOneID(id uuid.UUID) *ResponseDeleteOne {
-	builder := c.Delete().Where(response.ID(id))
+func (c *TenantClient) DeleteOneID(id pulid.ID) *TenantDeleteOne {
+	builder := c.Delete().Where(tenant.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &ResponseDeleteOne{builder}
+	return &TenantDeleteOne{builder}
 }
 
-// Query returns a query builder for Response.
-func (c *ResponseClient) Query() *ResponseQuery {
-	return &ResponseQuery{
+// Query returns a query builder for Tenant.
+func (c *TenantClient) Query() *TenantQuery {
+	return &TenantQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeResponse},
+		ctx:    &QueryContext{Type: TypeTenant},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a Response entity by its id.
-func (c *ResponseClient) Get(ctx context.Context, id uuid.UUID) (*Response, error) {
-	return c.Query().Where(response.ID(id)).Only(ctx)
+// Get returns a Tenant entity by its id.
+func (c *TenantClient) Get(ctx context.Context, id pulid.ID) (*Tenant, error) {
+	return c.Query().Where(tenant.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ResponseClient) GetX(ctx context.Context, id uuid.UUID) *Response {
+func (c *TenantClient) GetX(ctx context.Context, id pulid.ID) *Tenant {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -897,76 +889,44 @@ func (c *ResponseClient) GetX(ctx context.Context, id uuid.UUID) *Response {
 	return obj
 }
 
-// QuerySentBy queries the sent_by edge of a Response.
-func (c *ResponseClient) QuerySentBy(r *Response) *AgentQuery {
-	query := (&AgentClient{config: c.config}).Query()
+// QueryUsers queries the users edge of a Tenant.
+func (c *TenantClient) QueryUsers(t *Tenant) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := r.ID
+		id := t.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(response.Table, response.FieldID, id),
-			sqlgraph.To(agent.Table, agent.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, response.SentByTable, response.SentByColumn),
+			sqlgraph.From(tenant.Table, tenant.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tenant.UsersTable, tenant.UsersPrimaryKey...),
 		)
-		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryMessage queries the message edge of a Response.
-func (c *ResponseClient) QueryMessage(r *Response) *MessageQuery {
-	query := (&MessageClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := r.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(response.Table, response.FieldID, id),
-			sqlgraph.To(message.Table, message.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, response.MessageTable, response.MessageColumn),
-		)
-		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryBookmarks queries the bookmarks edge of a Response.
-func (c *ResponseClient) QueryBookmarks(r *Response) *BookmarkQuery {
-	query := (&BookmarkClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := r.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(response.Table, response.FieldID, id),
-			sqlgraph.To(bookmark.Table, bookmark.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, response.BookmarksTable, response.BookmarksColumn),
-		)
-		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *ResponseClient) Hooks() []Hook {
-	return c.hooks.Response
+func (c *TenantClient) Hooks() []Hook {
+	return c.hooks.Tenant
 }
 
 // Interceptors returns the client interceptors.
-func (c *ResponseClient) Interceptors() []Interceptor {
-	return c.inters.Response
+func (c *TenantClient) Interceptors() []Interceptor {
+	return c.inters.Tenant
 }
 
-func (c *ResponseClient) mutate(ctx context.Context, m *ResponseMutation) (Value, error) {
+func (c *TenantClient) mutate(ctx context.Context, m *TenantMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&ResponseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&TenantCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&ResponseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&TenantUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&ResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&TenantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&ResponseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&TenantDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown Response mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown Tenant mutation op: %q", m.Op())
 	}
 }
 
@@ -1031,7 +991,7 @@ func (c *ThreadClient) UpdateOne(t *Thread) *ThreadUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ThreadClient) UpdateOneID(id uuid.UUID) *ThreadUpdateOne {
+func (c *ThreadClient) UpdateOneID(id pulid.ID) *ThreadUpdateOne {
 	mutation := newThreadMutation(c.config, OpUpdateOne, withThreadID(id))
 	return &ThreadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -1048,7 +1008,7 @@ func (c *ThreadClient) DeleteOne(t *Thread) *ThreadDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ThreadClient) DeleteOneID(id uuid.UUID) *ThreadDeleteOne {
+func (c *ThreadClient) DeleteOneID(id pulid.ID) *ThreadDeleteOne {
 	builder := c.Delete().Where(thread.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -1065,17 +1025,33 @@ func (c *ThreadClient) Query() *ThreadQuery {
 }
 
 // Get returns a Thread entity by its id.
-func (c *ThreadClient) Get(ctx context.Context, id uuid.UUID) (*Thread, error) {
+func (c *ThreadClient) Get(ctx context.Context, id pulid.ID) (*Thread, error) {
 	return c.Query().Where(thread.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ThreadClient) GetX(ctx context.Context, id uuid.UUID) *Thread {
+func (c *ThreadClient) GetX(ctx context.Context, id pulid.ID) *Thread {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryTenant queries the tenant edge of a Thread.
+func (c *ThreadClient) QueryTenant(t *Thread) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(thread.Table, thread.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, thread.TenantTable, thread.TenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryCreatedBy queries the created_by edge of a Thread.
@@ -1110,47 +1086,15 @@ func (c *ThreadClient) QueryMessages(t *Thread) *MessageQuery {
 	return query
 }
 
-// QueryBookmarks queries the bookmarks edge of a Thread.
-func (c *ThreadClient) QueryBookmarks(t *Thread) *BookmarkQuery {
-	query := (&BookmarkClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(thread.Table, thread.FieldID, id),
-			sqlgraph.To(bookmark.Table, bookmark.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, thread.BookmarksTable, thread.BookmarksColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryParent queries the parent edge of a Thread.
-func (c *ThreadClient) QueryParent(t *Thread) *ThreadQuery {
-	query := (&ThreadClient{config: c.config}).Query()
+func (c *ThreadClient) QueryParent(t *Thread) *MessageQuery {
+	query := (&MessageClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(thread.Table, thread.FieldID, id),
-			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, thread.ParentTable, thread.ParentColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryChildren queries the children edge of a Thread.
-func (c *ThreadClient) QueryChildren(t *Thread) *ThreadQuery {
-	query := (&ThreadClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(thread.Table, thread.FieldID, id),
-			sqlgraph.To(thread.Table, thread.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, thread.ChildrenTable, thread.ChildrenColumn),
+			sqlgraph.To(message.Table, message.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, thread.ParentTable, thread.ParentColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -1244,7 +1188,7 @@ func (c *UserClient) UpdateOne(u *User) *UserUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *UserClient) UpdateOneID(id uuid.UUID) *UserUpdateOne {
+func (c *UserClient) UpdateOneID(id pulid.ID) *UserUpdateOne {
 	mutation := newUserMutation(c.config, OpUpdateOne, withUserID(id))
 	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -1261,7 +1205,7 @@ func (c *UserClient) DeleteOne(u *User) *UserDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *UserClient) DeleteOneID(id uuid.UUID) *UserDeleteOne {
+func (c *UserClient) DeleteOneID(id pulid.ID) *UserDeleteOne {
 	builder := c.Delete().Where(user.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -1278,12 +1222,12 @@ func (c *UserClient) Query() *UserQuery {
 }
 
 // Get returns a User entity by its id.
-func (c *UserClient) Get(ctx context.Context, id uuid.UUID) (*User, error) {
+func (c *UserClient) Get(ctx context.Context, id pulid.ID) (*User, error) {
 	return c.Query().Where(user.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
+func (c *UserClient) GetX(ctx context.Context, id pulid.ID) *User {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -1339,6 +1283,38 @@ func (c *UserClient) QueryMessages(u *User) *MessageQuery {
 	return query
 }
 
+// QueryTenants queries the tenants edge of a User.
+func (c *UserClient) QueryTenants(u *User) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.TenantsTable, user.TenantsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryActiveTenant queries the active_tenant edge of a User.
+func (c *UserClient) QueryActiveTenant(u *User) *TenantQuery {
+	query := (&TenantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, user.ActiveTenantTable, user.ActiveTenantColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -1364,12 +1340,146 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 	}
 }
 
+// WorkosEventCursorClient is a client for the WorkosEventCursor schema.
+type WorkosEventCursorClient struct {
+	config
+}
+
+// NewWorkosEventCursorClient returns a client for the WorkosEventCursor from the given config.
+func NewWorkosEventCursorClient(c config) *WorkosEventCursorClient {
+	return &WorkosEventCursorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `workoseventcursor.Hooks(f(g(h())))`.
+func (c *WorkosEventCursorClient) Use(hooks ...Hook) {
+	c.hooks.WorkosEventCursor = append(c.hooks.WorkosEventCursor, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `workoseventcursor.Intercept(f(g(h())))`.
+func (c *WorkosEventCursorClient) Intercept(interceptors ...Interceptor) {
+	c.inters.WorkosEventCursor = append(c.inters.WorkosEventCursor, interceptors...)
+}
+
+// Create returns a builder for creating a WorkosEventCursor entity.
+func (c *WorkosEventCursorClient) Create() *WorkosEventCursorCreate {
+	mutation := newWorkosEventCursorMutation(c.config, OpCreate)
+	return &WorkosEventCursorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of WorkosEventCursor entities.
+func (c *WorkosEventCursorClient) CreateBulk(builders ...*WorkosEventCursorCreate) *WorkosEventCursorCreateBulk {
+	return &WorkosEventCursorCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *WorkosEventCursorClient) MapCreateBulk(slice any, setFunc func(*WorkosEventCursorCreate, int)) *WorkosEventCursorCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &WorkosEventCursorCreateBulk{err: fmt.Errorf("calling to WorkosEventCursorClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*WorkosEventCursorCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &WorkosEventCursorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for WorkosEventCursor.
+func (c *WorkosEventCursorClient) Update() *WorkosEventCursorUpdate {
+	mutation := newWorkosEventCursorMutation(c.config, OpUpdate)
+	return &WorkosEventCursorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *WorkosEventCursorClient) UpdateOne(wec *WorkosEventCursor) *WorkosEventCursorUpdateOne {
+	mutation := newWorkosEventCursorMutation(c.config, OpUpdateOne, withWorkosEventCursor(wec))
+	return &WorkosEventCursorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *WorkosEventCursorClient) UpdateOneID(id int) *WorkosEventCursorUpdateOne {
+	mutation := newWorkosEventCursorMutation(c.config, OpUpdateOne, withWorkosEventCursorID(id))
+	return &WorkosEventCursorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for WorkosEventCursor.
+func (c *WorkosEventCursorClient) Delete() *WorkosEventCursorDelete {
+	mutation := newWorkosEventCursorMutation(c.config, OpDelete)
+	return &WorkosEventCursorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *WorkosEventCursorClient) DeleteOne(wec *WorkosEventCursor) *WorkosEventCursorDeleteOne {
+	return c.DeleteOneID(wec.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *WorkosEventCursorClient) DeleteOneID(id int) *WorkosEventCursorDeleteOne {
+	builder := c.Delete().Where(workoseventcursor.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &WorkosEventCursorDeleteOne{builder}
+}
+
+// Query returns a query builder for WorkosEventCursor.
+func (c *WorkosEventCursorClient) Query() *WorkosEventCursorQuery {
+	return &WorkosEventCursorQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeWorkosEventCursor},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a WorkosEventCursor entity by its id.
+func (c *WorkosEventCursorClient) Get(ctx context.Context, id int) (*WorkosEventCursor, error) {
+	return c.Query().Where(workoseventcursor.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *WorkosEventCursorClient) GetX(ctx context.Context, id int) *WorkosEventCursor {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *WorkosEventCursorClient) Hooks() []Hook {
+	return c.hooks.WorkosEventCursor
+}
+
+// Interceptors returns the client interceptors.
+func (c *WorkosEventCursorClient) Interceptors() []Interceptor {
+	return c.inters.WorkosEventCursor
+}
+
+func (c *WorkosEventCursorClient) mutate(ctx context.Context, m *WorkosEventCursorMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WorkosEventCursorCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WorkosEventCursorUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WorkosEventCursorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WorkosEventCursorDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown WorkosEventCursor mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Agent, Bookmark, Message, Response, Thread, User []ent.Hook
+		Agent, Bookmark, Message, Tenant, Thread, User, WorkosEventCursor []ent.Hook
 	}
 	inters struct {
-		Agent, Bookmark, Message, Response, Thread, User []ent.Interceptor
+		Agent, Bookmark, Message, Tenant, Thread, User,
+		WorkosEventCursor []ent.Interceptor
 	}
 )

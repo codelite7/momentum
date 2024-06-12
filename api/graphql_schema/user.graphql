@@ -1,3 +1,7 @@
 extend type Mutation {
     createUser(input: CreateUserInput!): User
 }
+
+extend type Query {
+    user:User! # no args, api uses jwt to pull the user so this is specific to the authenticated user
+}
