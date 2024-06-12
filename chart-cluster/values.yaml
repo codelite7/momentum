@@ -51,3 +51,21 @@ certManager:
         maxDuration: 3m
 cloudnativePg:
   enabled: true
+  targetRevision: "0.21.4"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ServerSideApply=true
+      - Replace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  values: {}
