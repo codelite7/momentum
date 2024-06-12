@@ -4,17 +4,33 @@ api:
     image:
       repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
     defaultAgents: '${defaultAgents}'
-    supertokens:
-      apiKey: ${supertokensApiKey}
     apiLangchain:
       baseUrl: http://api-langchain.api-langchain:6543
     ingress:
       enabled: true
       clusterIssuer: letsencrypt-prod
+    workos:
+      clientId: 'client_01HY70VRFAXS6Z3K0Z161PNQA3'
+      apiKey: ${workosApiKey}
 apiLangchain:
   targetRevision: main
   values:
     image:
       repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
-    perplexity:
-      apiKey: ${perplexityApiKey}
+    openai:
+      apiKey: ${openaiApiKey}
+    groq:
+      apiKey: ${groqApiKey}
+    anthropic:
+      apiKey: ${anthropicApiKey}
+ui:
+  targetRevision: main
+  values:
+    image:
+      repository: 942910146681.dkr.ecr.us-west-2.amazonaws.com/personal
+    workos:
+      cookiePassword: ${workosCookiePassword}
+      redirectUri: https://stratifi.derp.ninja/auth/callback
+      clientId: 'client_01HY70VRFAXS6Z3K0Z161PNQA3'
+      apiKey: ${workosApiKey}
+    apiAddress: https://api.derp.ninja/query

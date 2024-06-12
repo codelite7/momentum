@@ -106,7 +106,7 @@ tolerations: []
 
 affinity: {}
 workos:
-  cookiePasword: ''
+  cookiePassword: ''
   redirectUri: http://localhost:3000/auth/callback
   clientId: ''
   apiKey: ''
