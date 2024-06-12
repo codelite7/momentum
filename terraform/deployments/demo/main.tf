@@ -24,12 +24,3 @@ module "app" {
     anthropicApiKey: local.secrets.anthropicApiKey,
   })
 }
-
-module "deployment" {
-  source = "../../modules/deployment"
-  content-path = "../../../ui/dist/ui/browser"
-  domain = "manifold.derp.ninja"
-  cloudflareZoneId = "e3e1e8f58492cf7bd325b30a6a022295"
-  proxied = true
-  ttl = 1
-}
