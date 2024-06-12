@@ -12,9 +12,9 @@ spec:
   tls:
     - secretName: api-tls-cert
       hosts:
-        - api.manifold.derp.ninja
+        - api.stratifi.derp.ninja
   rules:
-    - host: api.manifold.derp.ninja
+    - host: api.stratifi.derp.ninja
       http:
         paths:
           - pathType: Prefix
