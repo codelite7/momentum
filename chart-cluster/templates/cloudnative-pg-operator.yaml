@@ -1,0 +1,27 @@
+{{- if .Values.cloudnativePg.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Release.Name }}-cloudnative-pg
+  namespace: {{ .Values.argoNamespace }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://cloudnative-pg.github.io/charts
+    chart: cloudnative-pg
+    targetRevision: {{ .Values.cloudnativePg.targetRevision | quote }}
+    helm:
+      releaseName: cloudnative-pg
+      version: v3
+      {{- with .Values.cloudnativePg.values }}
+      values: |
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloudnative-pg
+  syncPolicy:
+  {{- toYaml .Values.cloudnativePg.syncPolicy | nindent 4 }}
+{{- end }}
