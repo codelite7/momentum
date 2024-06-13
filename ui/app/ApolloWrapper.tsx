@@ -35,8 +35,6 @@ type props = {
 };
 
 export function ApolloWrapper({ accessToken, children, apiAddress }: props) {
-  const router = useRouter();
-
   function makeClient() {
     const errorLink = onError(
       ({ graphQLErrors, networkError, operation, forward }) => {

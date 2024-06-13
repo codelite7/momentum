@@ -1,5 +1,3 @@
-"use server";
-
 import { ReactNode } from "react";
 import { getUser } from "@workos-inc/authkit-nextjs";
 
