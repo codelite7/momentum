@@ -19,6 +19,8 @@ import { useRouter } from "next/navigation";
 import React from "react";
 
 import { Thread } from "@/__generated__/graphql";
+import getAccessToken from "@/actions/token";
+import { verifyAccessToken } from "@/actions/auth";
 
 declare module "@apollo/client" {
   export interface DefaultContext {
@@ -33,8 +35,6 @@ type props = {
 };
 
 export function ApolloWrapper({ accessToken, children, apiAddress }: props) {
-  const router = useRouter();
-
   function makeClient() {
     const errorLink = onError(
       ({ graphQLErrors, networkError, operation, forward }) => {
@@ -58,7 +58,12 @@ export function ApolloWrapper({ accessToken, children, apiAddress }: props) {
       fetchOptions: { cache: "no-store" },
     });
     const authLink = setContext(async (_, { headers, token }) => {
-      // const accessToken = await getAccessToken();
+      const valid = await verifyAccessToken(accessToken);
+
+      if (!valid) {
+        accessToken = await getAccessToken();
+      }
+
       return {
         headers: {
           ...headers,

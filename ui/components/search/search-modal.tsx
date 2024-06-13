@@ -22,8 +22,8 @@ const DynamicSearchResults = dynamic(
   {
     loading: () => {
       return (
-        <div className="flex place-content-center">
-          <Spinner color="primary" size="lg" />
+        <div className="flex w-full h-14 place-content-center">
+          <Spinner />
         </div>
       );
     },

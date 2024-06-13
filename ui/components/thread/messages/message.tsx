@@ -27,6 +27,7 @@ import {
   threadBookmarksQuery,
 } from "@/graphql-queries/queries";
 import { getSentAtDisplay } from "@/common/helpers";
+import Markdown from "react-markdown";
 
 type props = {
   message: Message;
@@ -234,19 +235,9 @@ export default function Message({ message, animate, refetch }: props) {
         )}
       </CardHeader>
       <CardBody>
-        {animate ? (
-          <>
-            {message.content ? (
-              <>
-                <span>{message.content}</span>
-              </>
-            ) : (
-              <Cursor cursorColor="red" />
-            )}
-          </>
-        ) : (
-          message.content
-        )}
+        <Markdown>
+          {message.content}
+        </Markdown>
       </CardBody>
     </Card>
   );

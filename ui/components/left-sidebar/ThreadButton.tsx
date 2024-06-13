@@ -137,8 +137,9 @@ export default function ThreadButton({ thread }: props) {
       ) : renaming ? (
         <div className="flex flex-row start w-full pt-1">
           <Input
+            variant="bordered"
+            color="primary"
             autoFocus
-            className="focus:border-0"
             size="sm"
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
