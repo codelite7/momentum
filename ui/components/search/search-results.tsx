@@ -1,6 +1,5 @@
 import { memo } from "react";
-import { useQuery } from "@apollo/client";
-import { toast } from "sonner";
+import { useSuspenseQuery } from "@apollo/client";
 import { ScrollShadow } from "@nextui-org/react";
 
 import { searchResultsQuery } from "@/graphql-queries/queries";
@@ -12,14 +11,9 @@ interface props {
 }
 
 export default memo(function SearchResults({ query }: props) {
-  const { data } = useQuery(searchResultsQuery, {
-    notifyOnNetworkStatusChange: true,
+  const { data } = useSuspenseQuery(searchResultsQuery, {
     variables: {
       query: query,
-    },
-    onError: (e) => {
-      toast.error("Error performing search");
-      console.error(e);
     },
   });
 
